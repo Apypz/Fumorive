@@ -1,0 +1,5 @@
+echo "pylsl>=1.16.0" >> requirements.txt
+echo "mne>=1.5" >> requirements.txt
+echo "numpy" >> requirements.txt
+echo "scipy" >> requirements.txt
+echo "websockets" >> requirements.txt
