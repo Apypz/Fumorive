@@ -1,5 +1,0 @@
-pylsl>=1.16.0
-mne>=1.5
-numpy
-scipy
-websockets
