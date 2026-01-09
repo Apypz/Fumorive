@@ -1,34 +1,59 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { GameCanvas } from './components/GameCanvas'
+import { LoadingScreen } from './components/LoadingScreen'
+import { DebugOverlay } from './components/DebugOverlay'
+import { GraphicsSettings } from './components/GraphicsSettings'
+import { useGameStore } from './stores/gameStore'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const { gameState } = useGameStore()
+  const [showSettings, setShowSettings] = useState(false)
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div className="app">
+      {/* Game Canvas */}
+      <GameCanvas />
+
+      {/* Loading Screen */}
+      <LoadingScreen />
+
+      {/* Debug Overlay */}
+      <DebugOverlay />
+
+      {/* Pause Menu */}
+      {gameState === 'paused' && (
+        <div className="pause-menu">
+          <div className="pause-content">
+            <h2>PAUSED</h2>
+            <button
+              className="menu-button"
+              onClick={() => useGameStore.getState().setGameState('playing')}
+            >
+              Resume
+            </button>
+            <button
+              className="menu-button"
+              onClick={() => setShowSettings(true)}
+            >
+              Settings
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <GraphicsSettings onClose={() => setShowSettings(false)} />
+      )}
+
+      {/* Controls Hint */}
+      {gameState === 'playing' && (
+        <div className="controls-hint">
+          <span>Drag to rotate • Scroll to zoom • F3 Debug • ESC Pause</span>
+        </div>
+      )}
+    </div>
   )
 }
 
