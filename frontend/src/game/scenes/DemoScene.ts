@@ -63,11 +63,11 @@ export class DemoScene implements GameScene {
     // Set active camera
     this.scene.activeCamera = this.cameraController.getCamera()
 
-    // Setup lighting
+    // Setup lighting - bright daylight
     this.lightingSetup = new LightingSetup(this.scene, this.graphicsConfig, {
-      sunDirection: new Vector3(-1, -3, -2),
-      sunIntensity: 1.5,
-      ambientIntensity: 0.4,
+      sunDirection: new Vector3(-1, -2, -1),
+      sunIntensity: 3,
+      ambientIntensity: 1.5,
     })
 
     // Setup environment
