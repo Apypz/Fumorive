@@ -23,18 +23,20 @@ export class GameEngine {
     this.canvas = config.canvas
     this.graphicsConfig = config.graphics ?? DEFAULT_GRAPHICS_CONFIG
 
-    // Create the Babylon.js engine with optimal settings
+    // Create the Babylon.js engine with optimal settings for high quality
     this.engine = new Engine(config.canvas, config.antialias ?? true, {
       preserveDrawingBuffer: true,
       stencil: true,
       disableWebGL2Support: false,
       failIfMajorPerformanceCaveat: false,
       adaptToDeviceRatio: true,
+      antialias: true,
+      powerPreference: 'high-performance',
       ...config.engineOptions,
     })
 
-    // Enable hardware scaling level based on device
-    this.engine.setHardwareScalingLevel(1 / window.devicePixelRatio)
+    // Set hardware scaling to 1 for best quality (no downscaling)
+    this.engine.setHardwareScalingLevel(1)
 
     // Handle window resize
     window.addEventListener('resize', this.handleResize)

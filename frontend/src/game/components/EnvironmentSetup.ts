@@ -133,7 +133,7 @@ export class EnvironmentSetup {
       {
         width: size,
         height: size,
-        subdivisions: 32,
+        subdivisions: 128, // Higher subdivisions for smoother appearance
       },
       this.scene
     )
@@ -142,8 +142,14 @@ export class EnvironmentSetup {
       const groundMaterial = new PBRMaterial('groundMaterial', this.scene)
       groundMaterial.albedoColor = color
       groundMaterial.metallic = 0.0
-      groundMaterial.roughness = 0.8
-      groundMaterial.environmentIntensity = 0.5
+      groundMaterial.roughness = 0.95 // Very rough for asphalt-like look
+      groundMaterial.environmentIntensity = 0.3
+      
+      // Add micro-surface detail
+      groundMaterial.usePhysicalLightFalloff = true
+      groundMaterial.useRadianceOcclusion = true
+      groundMaterial.useHorizonOcclusion = true
+      
       ground.material = groundMaterial
     } else {
       const groundMaterial = new StandardMaterial('groundMaterial', this.scene)
