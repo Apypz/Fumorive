@@ -6,7 +6,14 @@ import {
   PBRMaterial,
   Animation,
   AbstractMesh,
+  SceneLoader,
+  StandardMaterial,
+  Texture,
 } from '@babylonjs/core'
+// Import all available loaders
+import '@babylonjs/loaders/OBJ'
+import '@babylonjs/loaders/glTF'
+import '@babylonjs/loaders'
 import type { GameScene, SceneContext, GraphicsConfig } from '../types'
 import { CameraController } from '../components/CameraController'
 import { LightingSetup } from '../components/LightingSetup'
@@ -26,6 +33,7 @@ export class DemoScene implements GameScene {
   private inputManager: InputManager | null = null
 
   private animatedMeshes: AbstractMesh[] = []
+  private carMesh: AbstractMesh | null = null
   private graphicsConfig: GraphicsConfig
 
   constructor(graphicsConfig?: GraphicsConfig) {
@@ -44,11 +52,11 @@ export class DemoScene implements GameScene {
     // Setup camera (orbit camera for demo)
     this.cameraController = new CameraController(this.scene, canvas, {
       type: 'orbit',
-      target: new Vector3(0, 1, 0),
-      alpha: Math.PI / 2,
+      target: new Vector3(0, 0.5, 0),
+      alpha: Math.PI / 4,
       beta: Math.PI / 3,
-      radius: 15,
-      lowerRadiusLimit: 5,
+      radius: 8,
+      lowerRadiusLimit: 2,
       upperRadiusLimit: 50,
     })
 
@@ -80,10 +88,177 @@ export class DemoScene implements GameScene {
       })
     }
 
-    // Create demo objects
-    this.createDemoObjects()
+    // Load the car model
+    await this.loadCarModel()
+
+    // Create demo objects (optional, can be removed if you only want the car)
+    // this.createDemoObjects()
 
     console.log('[DemoScene] Initialized')
+  }
+
+  /**
+   * Load the car model from assets
+   */
+  private async loadCarModel(): Promise<void> {
+    if (!this.scene) return
+
+    console.log('[DemoScene] Loading car model...')
+
+    try {
+      // Load the GLB model
+      const modelPath = '/assets/cicada-retro-cartoon-car/'
+      const modelFile = 'cicada_-_retro_cartoon_car.glb'
+      
+      console.log(`[DemoScene] Attempting to load: ${modelPath}${modelFile}`)
+      
+      // Load the model using SceneLoader
+      const result = await SceneLoader.ImportMeshAsync(
+        '', // Import all meshes
+        modelPath, // Path to the folder
+        modelFile, // File name
+        this.scene
+      )
+
+      console.log('[DemoScene] Car model loaded, meshes:', result.meshes.length)
+
+      // Get the root mesh (first one is usually the root)
+      if (result.meshes.length > 0) {
+        const rootMesh = result.meshes[0]
+        this.carMesh = rootMesh
+
+        // Position the car at center, slightly above ground
+        rootMesh.position = new Vector3(0, 0, 0)
+        
+        // Scale the car (adjust as needed based on the model)
+        // GLB models from Sketchfab are often large, so we may need to scale down
+        rootMesh.scaling = new Vector3(0.5, 0.5, 0.5)
+        
+        // Log bounding info for debugging
+        rootMesh.computeWorldMatrix(true)
+        const boundingInfo = rootMesh.getHierarchyBoundingVectors()
+        console.log('[DemoScene] Model bounds:', boundingInfo)
+
+        // Apply texture and materials to all meshes
+        result.meshes.forEach((mesh) => {
+          // Add shadow casting
+          this.lightingSetup?.addShadowCaster(mesh)
+          
+          // Make mesh receive shadows
+          mesh.receiveShadows = true
+        })
+
+        console.log('[DemoScene] Car model setup complete')
+      }
+    } catch (error) {
+      console.error('[DemoScene] Failed to load car model:', error)
+      console.log('[DemoScene] Note: FBX format is not supported natively.')
+      console.log('[DemoScene] Please convert your FBX file to GLB format using Blender or an online converter.')
+      // Create a fallback box to show something
+      this.createFallbackCar()
+    }
+  }
+
+  /**
+   * Create a fallback car placeholder if model loading fails
+   */
+  private createFallbackCar(): void {
+    if (!this.scene) return
+
+    console.log('[DemoScene] Creating fallback car placeholder')
+
+    // Create a more detailed car-like placeholder
+    // Main car body
+    const carBody = MeshBuilder.CreateBox('carBody', { width: 4, height: 1, depth: 2 }, this.scene)
+    carBody.position = new Vector3(0, 0.6, 0)
+
+    // Car cabin (roof)
+    const carCabin = MeshBuilder.CreateBox('carCabin', { width: 2.2, height: 0.9, depth: 1.8 }, this.scene)
+    carCabin.position = new Vector3(-0.3, 1.55, 0)
+
+    // Hood (front)
+    const hood = MeshBuilder.CreateBox('hood', { width: 1, height: 0.3, depth: 1.8 }, this.scene)
+    hood.position = new Vector3(1.3, 0.9, 0)
+
+    // Create wheels
+    const wheelPositions = [
+      new Vector3(1.2, 0.35, 1.1),   // Front right
+      new Vector3(1.2, 0.35, -1.1),  // Front left
+      new Vector3(-1.2, 0.35, 1.1),  // Back right
+      new Vector3(-1.2, 0.35, -1.1), // Back left
+    ]
+
+    const wheelMaterial = new PBRMaterial('wheelMaterial', this.scene)
+    wheelMaterial.albedoColor = new Color3(0.1, 0.1, 0.1)
+    wheelMaterial.metallic = 0.3
+    wheelMaterial.roughness = 0.8
+
+    wheelPositions.forEach((pos, i) => {
+      const wheel = MeshBuilder.CreateCylinder(`wheel_${i}`, {
+        diameter: 0.7,
+        height: 0.3,
+        tessellation: 24
+      }, this.scene!)
+      wheel.rotation.x = Math.PI / 2
+      wheel.position = pos
+      wheel.material = wheelMaterial
+      this.lightingSetup?.addShadowCaster(wheel)
+    })
+
+    // Create materials
+    const bodyMaterial = new PBRMaterial('carBodyMaterial', this.scene)
+    bodyMaterial.albedoColor = new Color3(0.8, 0.2, 0.2) // Red car
+    bodyMaterial.metallic = 0.7
+    bodyMaterial.roughness = 0.3
+    carBody.material = bodyMaterial
+    hood.material = bodyMaterial
+
+    const cabinMaterial = new PBRMaterial('cabinMaterial', this.scene)
+    cabinMaterial.albedoColor = new Color3(0.1, 0.1, 0.15) // Dark windows
+    cabinMaterial.metallic = 0.9
+    cabinMaterial.roughness = 0.1
+    carCabin.material = cabinMaterial
+
+    // Headlights
+    const headlightMaterial = new PBRMaterial('headlightMaterial', this.scene)
+    headlightMaterial.albedoColor = new Color3(1, 1, 0.9)
+    headlightMaterial.emissiveColor = new Color3(1, 1, 0.8)
+    headlightMaterial.emissiveIntensity = 1
+
+    const headlightPositions = [
+      new Vector3(2, 0.6, 0.6),
+      new Vector3(2, 0.6, -0.6),
+    ]
+
+    headlightPositions.forEach((pos, i) => {
+      const headlight = MeshBuilder.CreateSphere(`headlight_${i}`, { diameter: 0.3 }, this.scene!)
+      headlight.position = pos
+      headlight.material = headlightMaterial
+    })
+
+    // Taillights
+    const taillightMaterial = new PBRMaterial('taillightMaterial', this.scene)
+    taillightMaterial.albedoColor = new Color3(1, 0.1, 0.1)
+    taillightMaterial.emissiveColor = new Color3(1, 0, 0)
+    taillightMaterial.emissiveIntensity = 0.5
+
+    const taillightPositions = [
+      new Vector3(-2, 0.6, 0.6),
+      new Vector3(-2, 0.6, -0.6),
+    ]
+
+    taillightPositions.forEach((pos, i) => {
+      const taillight = MeshBuilder.CreateBox(`taillight_${i}`, { width: 0.1, height: 0.2, depth: 0.4 }, this.scene!)
+      taillight.position = pos
+      taillight.material = taillightMaterial
+    })
+
+    this.carMesh = carBody
+    this.lightingSetup?.addShadowCaster(carBody)
+    this.lightingSetup?.addShadowCaster(carCabin)
+    this.lightingSetup?.addShadowCaster(hood)
+
+    console.log('[DemoScene] Fallback car created')
   }
 
   private createDemoObjects(): void {
@@ -283,6 +458,11 @@ export class DemoScene implements GameScene {
 
     this.animatedMeshes.forEach((mesh) => mesh.dispose())
     this.animatedMeshes = []
+
+    if (this.carMesh) {
+      this.carMesh.dispose()
+      this.carMesh = null
+    }
 
     console.log('[DemoScene] Disposed')
   }
