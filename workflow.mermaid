@@ -1,0 +1,165 @@
+graph TB
+    %% ===== LAYER 1: HARDWARE =====
+    EEGDevice["EEG Device<br/>(Muse/OpenBCI/Emotiv)"]
+    Webcam["Web Camera<br/>(720p+)"]
+
+    %% ===== LAYER 2: PYTHON LSL MIDDLEWARE =====
+    LSLStream["LSL Stream Manager"]
+    SignalProc["Signal Processing<br/>(scipy, numpy, mne)"]
+    Filter["Filtering<br/>(Bandpass 1-50Hz)"]
+    FeatureExt["Feature Extraction<br/>(Band Power)"]
+    CogDetect["Cognitive State<br/>(Fatigue Detection)"]
+    QualityMon["Signal Quality Monitor"]
+    DataRecord["Data Recording<br/>(XDF, CSV)"]
+    WSServer["WebSocket Server"]
+
+    %% ===== LAYER 2B: FACE RECOGNITION (BROWSER) =====
+    CameraAccess["Camera Access<br/>(MediaDevices API)"]
+    FaceDetect["Face Detection<br/>(TensorFlow.js)"]
+    EyeDetect["Eye State Detection<br/>(PERCLOS, EAR)"]
+    YawnDetect["Yawn Detection<br/>(MAR)"]
+    BlinkAnalysis["Blink Rate Analysis"]
+    HeadPose["Head Pose Estimation<br/>(Yaw, Pitch, Roll)"]
+    GazeTrack["Visual Attention Tracking"]
+    FaceFatigue["Face-based Fatigue Score"]
+
+    %% ===== LAYER 3: MULTIMODAL FUSION =====
+    DataSync["Data Synchronization<br/>(Timestamp Alignment)"]
+    MultimodalFusion["Multimodal Fusion<br/>(60% EEG + 40% Face)"]
+    CombinedFatigue["Combined Fatigue Score"]
+    ContextAware["Context-aware Detection"]
+
+    %% ===== LAYER 4: BACKEND API =====
+    AuthAPI["Authentication API<br/>(JWT + OAuth2)"]
+    SessionAPI["Session Management"]
+    DataAPI["Data Storage API"]
+    AnalyticsAPI["Analytics API"]
+    DB[("PostgreSQL +<br/>TimescaleDB")]
+    Redis[("Redis Cache")]
+    MinIO[("MinIO S3<br/>Storage")]
+
+    %% ===== LAYER 5: WEB FRONTEND =====
+    Login["Login/Register"]
+    Dashboard["Main Dashboard"]
+    Calibration["Calibration Wizard"]
+    
+    %% Game Components
+    GameEngine["Game Engine<br/>(Babylon.js)"]
+    CarPhysics["Car Physics"]
+    Environment["3D Environment"]
+    GameEffects["Fatigue Effects<br/>(Blur, Vignette, Sway)"]
+    
+    %% Monitoring Components
+    EEGViz["EEG Visualization<br/>(D3.js/Recharts)"]
+    FaceViz["Face Status Display<br/>(Eye, Yawn, Blink)"]
+    FatigueScore["Combined Fatigue Score"]
+    AlertSystem["Alert System<br/>(Progressive Alerts)"]
+    PerfMetrics["Performance Metrics"]
+    
+    PostSession["Post-Session Report"]
+    UserProfile["User Profile"]
+
+    %% ===== CONNECTIONS =====
+    %% Initialization Flow
+    Start([User Start]) --> Login
+    Login -->|Authenticated| Dashboard
+    Dashboard --> Calibration
+    Calibration -->|Calibrate EEG| EEGDevice
+    Calibration -->|Calibrate Camera| CameraAccess
+    Calibration -->|Start Session| GameEngine
+    
+    %% EEG Data Flow
+    EEGDevice -->|LSL Protocol| LSLStream
+    LSLStream --> SignalProc
+    SignalProc --> Filter
+    Filter --> FeatureExt
+    FeatureExt --> CogDetect
+    FeatureExt --> QualityMon
+    
+    %% Face Recognition Flow
+    Webcam -->|Video Stream| CameraAccess
+    CameraAccess --> FaceDetect
+    FaceDetect --> EyeDetect
+    FaceDetect --> YawnDetect
+    FaceDetect --> BlinkAnalysis
+    FaceDetect --> HeadPose
+    FaceDetect --> GazeTrack
+    
+    EyeDetect --> FaceFatigue
+    YawnDetect --> FaceFatigue
+    BlinkAnalysis --> FaceFatigue
+    HeadPose --> FaceFatigue
+    GazeTrack --> FaceFatigue
+    
+    %% Multimodal Fusion
+    CogDetect -->|EEG Features| DataSync
+    FaceFatigue -->|Face Features| DataSync
+    DataSync --> MultimodalFusion
+    MultimodalFusion --> CombinedFatigue
+    CombinedFatigue --> ContextAware
+    
+    %% WebSocket Communication
+    ContextAware -->|Combined Score| WSServer
+    QualityMon -->|EEG Quality| WSServer
+    FaceFatigue -->|Face Status| WSServer
+    
+    WSServer -->|WebSocket| EEGViz
+    WSServer -->|WebSocket| FaceViz
+    WSServer --> FatigueScore
+    WSServer --> AlertSystem
+    
+    %% Game Integration
+    FatigueScore -->|Check Threshold| AlertSystem
+    FatigueScore -->|Apply Effects| GameEffects
+    AlertSystem -->|Warning Level| GameEffects
+    GameEffects --> GameEngine
+    GameEngine --> CarPhysics
+    CarPhysics --> Environment
+    GameEngine --> PerfMetrics
+    
+    %% Data Synchronization to Backend
+    PerfMetrics --> SessionAPI
+    CogDetect --> DataRecord
+    FaceFatigue --> DataRecord
+    DataRecord --> DataAPI
+    WSServer --> SessionAPI
+    
+    %% Backend Storage
+    SessionAPI --> DB
+    DataAPI --> DB
+    SessionAPI --> Redis
+    DataRecord --> MinIO
+    
+    %% Post-Session Flow
+    GameEngine -->|End Session| PostSession
+    PostSession --> AnalyticsAPI
+    AnalyticsAPI --> DB
+    PostSession --> UserProfile
+    UserProfile --> Dashboard
+    
+    %% Real-time Monitoring Display
+    EEGViz -.->|Display| Dashboard
+    FaceViz -.->|Display| Dashboard
+    FatigueScore -.->|Display| Dashboard
+    PerfMetrics -.->|Display| Dashboard
+    
+    %% ===== STYLING =====
+    classDef hardware fill:#ff6b6b,stroke:#c92a2a,stroke-width:2px,color:#fff
+    classDef python fill:#4c6ef5,stroke:#364fc7,stroke-width:2px,color:#fff
+    classDef face fill:#e64980,stroke:#c2255c,stroke-width:2px,color:#fff
+    classDef fusion fill:#9775fa,stroke:#7950f2,stroke-width:2px,color:#fff
+    classDef backend fill:#51cf66,stroke:#2f9e44,stroke-width:2px,color:#fff
+    classDef frontend fill:#ffd43b,stroke:#fab005,stroke-width:2px,color:#000
+    classDef game fill:#ff922b,stroke:#e8590c,stroke-width:2px,color:#fff
+    classDef monitor fill:#748ffc,stroke:#4c6ef5,stroke-width:2px,color:#fff
+    classDef storage fill:#20c997,stroke:#0ca678,stroke-width:2px,color:#fff
+    
+    class EEGDevice,Webcam hardware
+    class LSLStream,SignalProc,Filter,FeatureExt,CogDetect,QualityMon,DataRecord,WSServer python
+    class CameraAccess,FaceDetect,EyeDetect,YawnDetect,BlinkAnalysis,HeadPose,GazeTrack,FaceFatigue face
+    class DataSync,MultimodalFusion,CombinedFatigue,ContextAware fusion
+    class AuthAPI,SessionAPI,DataAPI,AnalyticsAPI backend
+    class Login,Dashboard,Calibration,PostSession,UserProfile frontend
+    class GameEngine,CarPhysics,Environment,GameEffects game
+    class EEGViz,FaceViz,FatigueScore,AlertSystem,PerfMetrics monitor
+    class DB,Redis,MinIO storage
