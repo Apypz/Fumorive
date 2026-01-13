@@ -148,17 +148,17 @@ export const GRAPHICS_PRESETS: Record<string, GraphicsConfig> = {
   },
   ultra: {
     shadowQuality: 'ultra',
-    postProcessing: true,
+    postProcessing: false,
     antialiasing: true,
-    hdr: true,
-    ssao: true,
-    bloom: true,
-    motionBlur: true,
-    chromaticAberration: true,
-    vignette: true,
+    hdr: false,
+    ssao: false,
+    bloom: false,
+    motionBlur: false,
+    chromaticAberration: false,
+    vignette: false,
     fxaa: true,
-    sharpen: true,
+    sharpen: false,
   },
 }
 
-export const DEFAULT_GRAPHICS_CONFIG: GraphicsConfig = GRAPHICS_PRESETS.high
+export const DEFAULT_GRAPHICS_CONFIG: GraphicsConfig = GRAPHICS_PRESETS.ultra

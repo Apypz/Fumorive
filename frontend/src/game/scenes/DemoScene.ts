@@ -49,15 +49,15 @@ export class DemoScene implements GameScene {
     // Setup input manager
     this.inputManager = new InputManager(this.scene, canvas)
 
-    // Setup camera (orbit camera for demo)
+    // Setup camera (orbit camera centered on car)
     this.cameraController = new CameraController(this.scene, canvas, {
       type: 'orbit',
-      target: new Vector3(0, 0.5, 0),
-      alpha: Math.PI / 4,
-      beta: Math.PI / 3,
-      radius: 8,
-      lowerRadiusLimit: 2,
-      upperRadiusLimit: 50,
+      target: new Vector3(0, 0.8, 0), // Target car center
+      alpha: -Math.PI / 4, // 45 degrees from front-left
+      beta: Math.PI / 3.5, // Slightly above
+      radius: 6, // Closer to the car
+      lowerRadiusLimit: 3,
+      upperRadiusLimit: 30,
     })
 
     // Set active camera
@@ -70,14 +70,14 @@ export class DemoScene implements GameScene {
       ambientIntensity: 1.5,
     })
 
-    // Setup environment
+    // Setup environment with better ground
     this.environmentSetup = new EnvironmentSetup(this.scene, this.graphicsConfig)
     this.environmentSetup.createProceduralSkybox(
-      new Color3(0.05, 0.1, 0.25), // Top color (deep blue)
-      new Color3(0.6, 0.65, 0.8) // Bottom color (light blue)
+      new Color3(0.4, 0.6, 0.9), // Top color (bright blue sky)
+      new Color3(0.7, 0.8, 0.95) // Bottom color (light horizon)
     )
-    this.environmentSetup.createGround(100, true, new Color3(0.15, 0.15, 0.18))
-    this.environmentSetup.setupGlowLayer(0.4)
+    this.environmentSetup.createGround(200, true, new Color3(0.35, 0.4, 0.35)) // Greenish ground
+    this.environmentSetup.setupGlowLayer(0.3)
 
     // Setup post-processing
     if (this.scene.activeCamera) {
