@@ -11,6 +11,7 @@ export default defineConfig({
       '@game': path.resolve(__dirname, './src/game'),
       '@components': path.resolve(__dirname, './src/components'),
       '@assets': path.resolve(__dirname, './src/assets'),
+      '@models': path.resolve(__dirname, './assets'),
     },
   },
   build: {
@@ -40,9 +41,14 @@ export default defineConfig({
       '@babylonjs/post-processes',
     ],
   },
-  assetsInclude: ['**/*.glb', '**/*.gltf', '**/*.babylon', '**/*.hdr', '**/*.env', '**/*.dds'],
+  assetsInclude: ['**/*.glb', '**/*.gltf', '**/*.babylon', '**/*.hdr', '**/*.env', '**/*.dds', '**/*.fbx', '**/*.png'],
   server: {
     port: 3000,
     open: true,
+    fs: {
+      // Allow serving files from assets folder
+      allow: ['..'],
+    },
   },
+  publicDir: 'public',
 })
