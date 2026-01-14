@@ -11,6 +11,8 @@ export { InputManager } from './engine/InputManager'
 export { CameraController } from './components/CameraController'
 export { LightingSetup } from './components/LightingSetup'
 export { EnvironmentSetup } from './components/EnvironmentSetup'
+export { CarController } from './components/CarController'
+export { SimpleMap } from './components/SimpleMap'
 
 // Scenes
 export { DemoScene } from './scenes/DemoScene'
