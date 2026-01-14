@@ -20,6 +20,8 @@ import { LightingSetup } from '../components/LightingSetup'
 import { EnvironmentSetup } from '../components/EnvironmentSetup'
 import { PostProcessingPipeline } from '../engine/PostProcessingPipeline'
 import { InputManager } from '../engine/InputManager'
+import { VehicleController } from '../engine/VehicleController'
+import { MapGenerator } from '../components/MapGenerator'
 import { DEFAULT_GRAPHICS_CONFIG } from '../types'
 
 export class DemoScene implements GameScene {
@@ -34,6 +36,7 @@ export class DemoScene implements GameScene {
 
   private animatedMeshes: AbstractMesh[] = []
   private carMesh: AbstractMesh | null = null
+  private vehicleController: VehicleController | null = null
   private graphicsConfig: GraphicsConfig
 
   constructor(graphicsConfig?: GraphicsConfig) {
@@ -78,6 +81,24 @@ export class DemoScene implements GameScene {
     )
     this.environmentSetup.createGround(200, true, new Color3(0.35, 0.4, 0.35)) // Greenish ground
     this.environmentSetup.setupGlowLayer(0.3)
+
+    // Create a 3D city map (roads, buildings, boundaries)
+    const map = MapGenerator.createMap(this.scene, {
+      cols: 22,
+      rows: 14,
+      cellSize: 4,
+      primarySpacing: 4,
+      secondaryProb: 0.12,
+      roadWidth: 1.4,
+      buildingProb: 0.45,
+      maxBuildingHeight: 6,
+      numRoutes: 4,
+    })
+
+    // Add city meshes as shadow casters
+    map.parent.getChildMeshes().forEach((m) => {
+      this.lightingSetup?.addShadowCaster(m)
+    })
 
     // Setup post-processing
     if (this.scene.activeCamera) {
@@ -149,6 +170,19 @@ export class DemoScene implements GameScene {
         })
 
         console.log('[DemoScene] Car model setup complete')
+
+        // Initialize vehicle controller when car is ready
+        if (this.inputManager && this.carMesh) {
+          this.vehicleController = new VehicleController(this.carMesh, this.inputManager)
+
+          // If we have an orbit camera, set its alpha once so it sits behind the car and then don't rotate
+          const orbit = this.cameraController?.getOrbitCamera()
+          if (orbit) {
+            const heading = this.carMesh.rotation.y
+            orbit.alpha = -heading + Math.PI / 2
+            orbit.setTarget(this.carMesh.position.add(new Vector3(0, 0.9, 0)))
+          }
+        }
       }
     } catch (error) {
       console.error('[DemoScene] Failed to load car model:', error)
@@ -257,6 +291,19 @@ export class DemoScene implements GameScene {
     this.lightingSetup?.addShadowCaster(carBody)
     this.lightingSetup?.addShadowCaster(carCabin)
     this.lightingSetup?.addShadowCaster(hood)
+
+    // Create vehicle controller for fallback car as well
+    if (this.inputManager && this.carMesh) {
+      this.vehicleController = new VehicleController(this.carMesh, this.inputManager)
+
+      // Lock orbit camera behind fallback car
+      const orbit = this.cameraController?.getOrbitCamera()
+      if (orbit) {
+        const heading = this.carMesh.rotation.y
+        orbit.alpha = -heading + Math.PI / 2
+        orbit.setTarget(this.carMesh.position.add(new Vector3(0, 0.9, 0)))
+      }
+    }
 
     console.log('[DemoScene] Fallback car created')
   }
@@ -447,6 +494,23 @@ export class DemoScene implements GameScene {
   update(deltaTime: number): void {
     // Update camera controller if using FPS camera
     this.cameraController?.update(deltaTime)
+
+    // Update vehicle controller (moves the car)
+    this.vehicleController?.update(deltaTime)
+
+    // Make orbit camera follow the car (set target to car position and align behind it)
+    if (this.carMesh && this.cameraController) {
+      const carTarget = this.carMesh.position.add(new Vector3(0, 0.9, 0))
+      this.cameraController.setTarget(carTarget)
+
+      const orbit = this.cameraController.getOrbitCamera()
+      if (orbit) {
+        // Keep a stable overhead angle; do NOT rotate alpha to follow small steering input.
+        // Camera will be positioned behind the car by keeping a fixed alpha and following car position.
+        const desiredBeta = Math.PI / 3.5
+        orbit.beta = orbit.beta + (desiredBeta - orbit.beta) * Math.min(1, 4 * deltaTime)
+      }
+    }
   }
 
   dispose(): void {

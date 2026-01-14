@@ -131,7 +131,13 @@ export class CameraController {
     // Enable panning
     camera.panningSensibility = 1000
 
-    // Attach controls
+    // Disable keyboard arrow keys (we want camera to be controlled by game logic, not keyboard)
+    camera.keysUp = []
+    camera.keysDown = []
+    camera.keysLeft = []
+    camera.keysRight = []
+
+    // Attach controls (mouse still works)
     camera.attachControl(this.canvas, true)
 
     return camera
