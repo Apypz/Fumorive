@@ -60,9 +60,9 @@ export class DemoScene implements GameScene {
       target: new Vector3(0, 0.8, 0), // Target car center
       alpha: -Math.PI / 4, // 45 degrees from front-left
       beta: Math.PI / 3.5, // Slightly above
-      radius: 1, // Close to the car
-      lowerRadiusLimit: 0.5,
-      upperRadiusLimit: 5,
+      radius: 8, // Distance from car
+      lowerRadiusLimit: 4,
+      upperRadiusLimit: 20,
     })
 
     // Set active camera
@@ -160,11 +160,8 @@ export class DemoScene implements GameScene {
 
         // Setup car controller for WASD movement
         this.carController = new CarController(this.scene!, rootMesh, {
-          maxSpeed: 40,
-          acceleration: 20,
-          brakeForce: 30,
-          turnSpeed: 2.0,
-          friction: 0.985,
+          // Customize physics here - all values use real-world units
+          // See CarControllerConfig interface for documentation
         })
 
         // Set camera to follow car
