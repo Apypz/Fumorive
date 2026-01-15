@@ -115,8 +115,8 @@ export class DemoScene implements GameScene {
 
     try {
       // Load the GLB model
-      const modelPath = '/assets/car_for_games_unity/'
-      const modelFile = 'car_for_games_unity.glb'
+      const modelPath = '/assets/low_poly_small_car/'
+      const modelFile = 'low_poly_small_car.glb'
       
       console.log(`[DemoScene] Attempting to load: ${modelPath}${modelFile}`)
       
