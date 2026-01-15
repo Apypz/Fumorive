@@ -2,10 +2,10 @@ import {
   Scene,
   Vector3,
   AbstractMesh,
-  Quaternion,
   KeyboardEventTypes,
   ArcRotateCamera,
 } from '@babylonjs/core'
+import { SimpleMap } from './SimpleMap'
 
 /**
  * Car Physics Configuration
@@ -91,6 +91,7 @@ export class CarController {
   private carMesh: AbstractMesh
   private config: CarControllerConfig
   private camera: ArcRotateCamera | null = null
+  private map: SimpleMap | null = null  // Reference to map for collision
 
   // === PHYSICS STATE ===
   // Position and velocity in world space
@@ -116,6 +117,9 @@ export class CarController {
   // Body dynamics for visual effect
   private bodyRoll: number = 0
   private bodyPitch: number = 0
+  
+  // Collision
+  private collisionRadius: number = 1.8  // Car collision radius
 
   // === INPUT STATE ===
   private input = {
@@ -145,6 +149,13 @@ export class CarController {
 
   setCamera(camera: ArcRotateCamera): void {
     this.camera = camera
+  }
+
+  /**
+   * Set reference to map for collision detection
+   */
+  setMap(map: SimpleMap): void {
+    this.map = map
   }
 
   private setupInput(): void {
@@ -333,13 +344,35 @@ export class CarController {
       this.verticalVelocity += this.config.gravity * dt
     }
     
-    // === 8. UPDATE POSITION ===
+    // === 8. UPDATE POSITION WITH COLLISION ===
     const movement = new Vector3(
       this.velocity.x * dt,
       this.verticalVelocity * dt,
       this.velocity.z * dt
     )
-    const newPosition = this.carMesh.position.add(movement)
+    let newPosition = this.carMesh.position.add(movement)
+    
+    // Check collision with map
+    if (this.map) {
+      const collision = this.map.checkCollision(newPosition, this.collisionRadius)
+      if (collision.collided) {
+        // Push car out of collision
+        newPosition = newPosition.add(collision.normal.scale(collision.penetration))
+        
+        // Reflect velocity off the collision surface
+        const velocityDot = Vector3.Dot(this.velocity, collision.normal)
+        if (velocityDot < 0) {
+          // Only reflect if moving into the surface
+          const reflection = collision.normal.scale(velocityDot * 1.5) // 1.5 = bounciness
+          this.velocity = this.velocity.subtract(reflection)
+          
+          // Reduce speed on collision (energy loss)
+          this.velocity = this.velocity.scale(0.7)
+          this.forwardVelocity *= 0.7
+          this.lateralVelocity *= 0.7
+        }
+      }
+    }
     
     // Ground collision
     if (newPosition.y <= 0) {

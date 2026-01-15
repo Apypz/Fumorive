@@ -135,14 +135,14 @@ export class DemoScene implements GameScene {
         const rootMesh = result.meshes[0]
         this.carMesh = rootMesh
 
-        // Position the car at start line
-        rootMesh.position = new Vector3(0, 0, 25)
+        // Position the car on the main road
+        rootMesh.position = new Vector3(-50, 0, 0)
         
         // Scale the car (adjust as needed based on the model)
         rootMesh.scaling = new Vector3(0.5, 0.5, 0.5)
         
-        // Rotate car to face forward on the track
-        rootMesh.rotation.y = Math.PI / 2
+        // Rotate car to face along the road
+        rootMesh.rotation.y = 0
         
         // Log bounding info for debugging
         rootMesh.computeWorldMatrix(true)
@@ -163,6 +163,11 @@ export class DemoScene implements GameScene {
           // Customize physics here - all values use real-world units
           // See CarControllerConfig interface for documentation
         })
+
+        // Set map reference for collision detection
+        if (this.simpleMap) {
+          this.carController.setMap(this.simpleMap)
+        }
 
         // Set camera to follow car
         const camera = this.cameraController?.getCamera() as ArcRotateCamera
