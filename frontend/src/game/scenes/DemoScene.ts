@@ -23,6 +23,7 @@ import { PostProcessingPipeline } from '../engine/PostProcessingPipeline'
 import { InputManager } from '../engine/InputManager'
 import { CarController } from '../components/CarController'
 import { SimpleMap } from '../components/SimpleMap'
+import { MapGenerator } from '../components/MapGenerator'
 import { DEFAULT_GRAPHICS_CONFIG } from '../types'
 
 export class DemoScene implements GameScene {
