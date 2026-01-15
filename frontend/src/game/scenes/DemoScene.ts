@@ -9,6 +9,7 @@ import {
   SceneLoader,
   StandardMaterial,
   Texture,
+  ArcRotateCamera,
 } from '@babylonjs/core'
 // Import all available loaders
 import '@babylonjs/loaders/OBJ'
@@ -20,8 +21,8 @@ import { LightingSetup } from '../components/LightingSetup'
 import { EnvironmentSetup } from '../components/EnvironmentSetup'
 import { PostProcessingPipeline } from '../engine/PostProcessingPipeline'
 import { InputManager } from '../engine/InputManager'
-import { VehicleController } from '../engine/VehicleController'
-import { MapGenerator } from '../components/MapGenerator'
+import { CarController } from '../components/CarController'
+import { SimpleMap } from '../components/SimpleMap'
 import { DEFAULT_GRAPHICS_CONFIG } from '../types'
 
 export class DemoScene implements GameScene {
@@ -33,6 +34,8 @@ export class DemoScene implements GameScene {
   private environmentSetup: EnvironmentSetup | null = null
   private postProcessing: PostProcessingPipeline | null = null
   private inputManager: InputManager | null = null
+  private carController: CarController | null = null
+  private simpleMap: SimpleMap | null = null
 
   private animatedMeshes: AbstractMesh[] = []
   private carMesh: AbstractMesh | null = null
@@ -58,9 +61,9 @@ export class DemoScene implements GameScene {
       target: new Vector3(0, 0.8, 0), // Target car center
       alpha: -Math.PI / 4, // 45 degrees from front-left
       beta: Math.PI / 3.5, // Slightly above
-      radius: 6, // Closer to the car
-      lowerRadiusLimit: 3,
-      upperRadiusLimit: 30,
+      radius: 1, // Close to the car
+      lowerRadiusLimit: 0.5,
+      upperRadiusLimit: 5,
     })
 
     // Set active camera
@@ -73,13 +76,16 @@ export class DemoScene implements GameScene {
       ambientIntensity: 1.5,
     })
 
-    // Setup environment with better ground
+    // Create simple map/track (replaces old environment ground)
+    this.simpleMap = new SimpleMap(this.scene, this.lightingSetup)
+    this.simpleMap.createRaceTrack()
+
+    // Setup environment (skybox only, ground is from map)
     this.environmentSetup = new EnvironmentSetup(this.scene, this.graphicsConfig)
     this.environmentSetup.createProceduralSkybox(
       new Color3(0.4, 0.6, 0.9), // Top color (bright blue sky)
       new Color3(0.7, 0.8, 0.95) // Bottom color (light horizon)
     )
-    this.environmentSetup.createGround(200, true, new Color3(0.35, 0.4, 0.35)) // Greenish ground
     this.environmentSetup.setupGlowLayer(0.3)
 
     // Create a 3D city map (roads, buildings, boundaries)
@@ -128,8 +134,8 @@ export class DemoScene implements GameScene {
 
     try {
       // Load the GLB model
-      const modelPath = '/assets/cicada-retro-cartoon-car/'
-      const modelFile = 'cicada_-_retro_cartoon_car.glb'
+      const modelPath = '/assets/car_for_games_unity/'
+      const modelFile = 'car_for_games_unity.glb'
       
       console.log(`[DemoScene] Attempting to load: ${modelPath}${modelFile}`)
       
@@ -148,12 +154,14 @@ export class DemoScene implements GameScene {
         const rootMesh = result.meshes[0]
         this.carMesh = rootMesh
 
-        // Position the car at center, slightly above ground
-        rootMesh.position = new Vector3(0, 0, 0)
+        // Position the car at start line
+        rootMesh.position = new Vector3(0, 0, 25)
         
         // Scale the car (adjust as needed based on the model)
-        // GLB models from Sketchfab are often large, so we may need to scale down
         rootMesh.scaling = new Vector3(0.5, 0.5, 0.5)
+        
+        // Rotate car to face forward on the track
+        rootMesh.rotation.y = Math.PI / 2
         
         // Log bounding info for debugging
         rootMesh.computeWorldMatrix(true)
@@ -169,20 +177,23 @@ export class DemoScene implements GameScene {
           mesh.receiveShadows = true
         })
 
-        console.log('[DemoScene] Car model setup complete')
+        // Setup car controller for WASD movement
+        this.carController = new CarController(this.scene!, rootMesh, {
+          maxSpeed: 40,
+          acceleration: 20,
+          brakeForce: 30,
+          turnSpeed: 2.0,
+          friction: 0.985,
+        })
 
-        // Initialize vehicle controller when car is ready
-        if (this.inputManager && this.carMesh) {
-          this.vehicleController = new VehicleController(this.carMesh, this.inputManager)
-
-          // If we have an orbit camera, set its alpha once so it sits behind the car and then don't rotate
-          const orbit = this.cameraController?.getOrbitCamera()
-          if (orbit) {
-            const heading = this.carMesh.rotation.y
-            orbit.alpha = -heading + Math.PI / 2
-            orbit.setTarget(this.carMesh.position.add(new Vector3(0, 0.9, 0)))
-          }
+        // Set camera to follow car
+        const camera = this.cameraController?.getCamera() as ArcRotateCamera
+        if (camera) {
+          this.carController.setCamera(camera)
+          camera.target = rootMesh.position.add(new Vector3(0, 0.8, 0))
         }
+
+        console.log('[DemoScene] Car model setup complete with controls')
       }
     } catch (error) {
       console.error('[DemoScene] Failed to load car model:', error)
@@ -492,6 +503,9 @@ export class DemoScene implements GameScene {
   }
 
   update(deltaTime: number): void {
+    // Update car controller (physics and movement)
+    this.carController?.update(deltaTime)
+    
     // Update camera controller if using FPS camera
     this.cameraController?.update(deltaTime)
 
@@ -519,6 +533,8 @@ export class DemoScene implements GameScene {
     this.lightingSetup?.dispose()
     this.cameraController?.dispose()
     this.inputManager?.dispose()
+    this.carController?.dispose()
+    this.simpleMap?.dispose()
 
     this.animatedMeshes.forEach((mesh) => mesh.dispose())
     this.animatedMeshes = []
