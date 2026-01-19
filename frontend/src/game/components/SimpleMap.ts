@@ -54,6 +54,7 @@ export class SimpleMap {
     ground.material = groundMaterial
     ground.receiveShadows = true
     ground.position.y = -0.01 // Slightly below road
+    ground.checkCollisions = true
 
     this.meshes.push(ground)
   }
@@ -112,6 +113,10 @@ export class SimpleMap {
     road2.receiveShadows = true
     curve1.receiveShadows = true
     curve2.receiveShadows = true
+    road1.checkCollisions = true
+    road2.checkCollisions = true
+    curve1.checkCollisions = true
+    curve2.checkCollisions = true
 
     this.meshes.push(road1, road2, curve1, curve2)
 
@@ -147,6 +152,33 @@ export class SimpleMap {
   }
 
   private createBarriers(): void {
+        // Tambahkan barrier di sisi luar dan dalam tikungan (curve)
+        const curveBarriers = [
+          // Tikungan kanan (timur)
+          { center: new Vector3(100, 0, 0), radius: 36, angleStart: Math.PI * 1.5, angleEnd: Math.PI * 2, count: 16 }, // luar
+          { center: new Vector3(100, 0, 0), radius: 24, angleStart: Math.PI * 1.5, angleEnd: Math.PI * 2, count: 10 }, // dalam
+          // Tikungan kiri (barat)
+          { center: new Vector3(-100, 0, 0), radius: 36, angleStart: Math.PI, angleEnd: Math.PI * 1.5, count: 16 }, // luar
+          { center: new Vector3(-100, 0, 0), radius: 24, angleStart: Math.PI, angleEnd: Math.PI * 1.5, count: 10 }, // dalam
+        ];
+        curveBarriers.forEach((cb, idx) => {
+          for (let i = 0; i < cb.count; i++) {
+            const t = i / (cb.count - 1);
+            const angle = cb.angleStart + t * (cb.angleEnd - cb.angleStart);
+            const x = cb.center.x + cb.radius * Math.cos(angle);
+            const z = cb.center.z + cb.radius * Math.sin(angle);
+            const barrier = MeshBuilder.CreateBox(`curve_barrier_${idx}_${i}`, {
+              width: 3.8,
+              height: 1.5,
+              depth: 1.2,
+            }, this.scene);
+            barrier.position = new Vector3(x, 0.75, z);
+            barrier.material = i % 2 === 0 ? barrierMaterial : whiteMaterial;
+            this.lightingSetup?.addShadowCaster(barrier);
+            barrier.checkCollisions = true;
+            this.meshes.push(barrier);
+          }
+        });
     const barrierMaterial = new PBRMaterial('barrierMaterial', this.scene)
     barrierMaterial.albedoColor = new Color3(0.9, 0.1, 0.1) // Red
     barrierMaterial.metallic = 0.3
@@ -175,19 +207,58 @@ export class SimpleMap {
       for (let i = 0; i < numBlocks; i++) {
         const barrier = MeshBuilder.CreateBox(`barrier_${index}_${i}`, {
           width: 3.8,
-          height: 0.8,
-          depth: 0.5,
+          height: 1.5, // lebih tinggi agar tidak bisa dilompati
+          depth: 1.2,  // lebih tebal agar collision lebih baik
         }, this.scene)
         barrier.position = new Vector3(
           pos.x - pos.length / 2 + i * 4 + 2,
-          0.4,
+          0.75,
           pos.z
         )
         barrier.material = i % 2 === 0 ? barrierMaterial : whiteMaterial
         this.lightingSetup?.addShadowCaster(barrier)
+        barrier.checkCollisions = true // Aktifkan collision
         this.meshes.push(barrier)
       }
     })
+
+    // Pembatas map (tembok kota)
+    const wallMaterial = new PBRMaterial('wallMaterial', this.scene)
+    wallMaterial.albedoColor = new Color3(0.5, 0.5, 0.5)
+    wallMaterial.metallic = 0.2
+    wallMaterial.roughness = 0.8
+
+    // Batas kota (rectangle besar di pinggir map)
+    const wallThickness = 3
+    const wallHeight = 8
+    const wallLength = 500
+    const wallZ = 250
+    const wallX = 250
+
+    // 4 sisi tembok
+    const wallNorth = MeshBuilder.CreateBox('wallNorth', { width: wallLength, height: wallHeight, depth: wallThickness }, this.scene)
+    wallNorth.position = new Vector3(0, wallHeight / 2, wallZ)
+    wallNorth.material = wallMaterial
+    wallNorth.checkCollisions = true
+    this.meshes.push(wallNorth)
+
+    const wallSouth = MeshBuilder.CreateBox('wallSouth', { width: wallLength, height: wallHeight, depth: wallThickness }, this.scene)
+    wallSouth.position = new Vector3(0, wallHeight / 2, -wallZ)
+    wallSouth.material = wallMaterial
+    wallSouth.checkCollisions = true
+    this.meshes.push(wallSouth)
+
+    const wallEast = MeshBuilder.CreateBox('wallEast', { width: wallThickness, height: wallHeight, depth: wallLength }, this.scene)
+    wallEast.position = new Vector3(wallX, wallHeight / 2, 0)
+    wallEast.material = wallMaterial
+    wallEast.checkCollisions = true
+    this.meshes.push(wallEast)
+
+    const wallWest = MeshBuilder.CreateBox('wallWest', { width: wallThickness, height: wallHeight, depth: wallLength }, this.scene)
+    wallWest.position = new Vector3(-wallX, wallHeight / 2, 0)
+    wallWest.material = wallMaterial
+    wallWest.checkCollisions = true
+    this.meshes.push(wallWest)
   }
 
   private createDecorations(): void {
