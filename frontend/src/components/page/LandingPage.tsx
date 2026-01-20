@@ -14,7 +14,6 @@ const LandingPage = () => {
             <SolutionSection />
             <DemoSection />
             <FeaturesSection />
-            <PartnersSection />
             <ValidationSection />
             <PricingSection />
             <FAQSection />
@@ -32,7 +31,7 @@ const Navbar = () => {
     useEffect(() => {
         const handleScroll = () => {
             const offset = window.scrollY;
-            if (offset > 50) {
+            if (offset > 20) {
                 setScrolled(true);
             } else {
                 setScrolled(false);
@@ -46,54 +45,23 @@ const Navbar = () => {
     }, []);
 
     return (
-        <nav
-            className={`navbar ${scrolled ? 'navbar-scrolled' : 'navbar-transparent'}`}
-            style={{
-                position: 'fixed',
-                top: 0,
-                width: '100%',
-                zIndex: 1000,
-                padding: scrolled ? '12px 0' : '20px 0',
-                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
-        >
-            <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '2rem' }}>
-                <div 
-                    style={{ 
-                        fontSize: '1.4rem', 
-                        fontWeight: 800, 
-                        background: 'linear-gradient(135deg, #2563eb, #06b6d4)', 
-                        WebkitBackgroundClip: 'text', 
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        cursor: 'pointer',
-                        letterSpacing: '-0.5px',
-                        flexShrink: 0
-                    }} 
+        <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
+            <div className="container navbar-container">
+                <div
+                    className="navbar-logo"
                     onClick={() => window.scrollTo(0, 0)}
                 >
                     Fumorive
                 </div>
 
-                <div style={{ display: 'flex', gap: '3rem', alignItems: 'center', flex: 1 }}>
+                <div className="navbar-links">
                     <div className="nav-item">
-                        <a href="#hero" style={{ 
-                            color: 'var(--color-text-primary)', 
-                            textDecoration: 'none', 
-                            fontWeight: 500,
-                            fontSize: '0.95rem',
-                            transition: 'color 0.3s ease'
-                        }}>Home</a>
+                        <a href="#hero">Home</a>
                     </div>
 
-                    <div className="nav-item" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ 
-                            color: 'var(--color-text-primary)', 
-                            fontWeight: 500,
-                            fontSize: '0.95rem',
-                            transition: 'color 0.3s ease'
-                        }}>Solutions</span>
-                        <ChevronDown size={16} color="var(--color-text-secondary)" style={{ transition: 'transform 0.3s ease' }} />
+                    <div className="nav-item">
+                        <span>Solutions</span>
+                        <ChevronDown size={16} className="chevron-icon" />
                         <div className="submenu">
                             <a href="#" className="submenu-link">For Researchers</a>
                             <a href="#" className="submenu-link">For Enterprise</a>
@@ -101,14 +69,9 @@ const Navbar = () => {
                         </div>
                     </div>
 
-                    <div className="nav-item" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ 
-                            color: 'var(--color-text-primary)', 
-                            fontWeight: 500,
-                            fontSize: '0.95rem',
-                            transition: 'color 0.3s ease'
-                        }}>Resources</span>
-                        <ChevronDown size={16} color="var(--color-text-secondary)" style={{ transition: 'transform 0.3s ease' }} />
+                    <div className="nav-item">
+                        <span>Resources</span>
+                        <ChevronDown size={16} className="chevron-icon" />
                         <div className="submenu">
                             <a href="#" className="submenu-link">Documentation</a>
                             <a href="#" className="submenu-link">API Reference</a>
@@ -116,18 +79,11 @@ const Navbar = () => {
                         </div>
                     </div>
 
-                    <a href="#pricing" style={{ 
-                        color: 'var(--color-text-primary)', 
-                        textDecoration: 'none', 
-                        fontWeight: 500,
-                        fontSize: '0.95rem',
-                        transition: 'color 0.3s ease'
-                    }}>Pricing</a>
+                    <a href="#pricing" className="nav-link">Pricing</a>
                 </div>
 
                 <button
-                    className="btn btn-solid"
-                    style={{ padding: '10px 24px', fontSize: '0.9rem', fontWeight: 600, flexShrink: 0 }}
+                    className="btn btn-solid navbar-btn"
                     onClick={() => navigate('/session')}
                 >
                     Get Started
@@ -365,96 +321,7 @@ const FeaturesSection = () => {
     )
 }
 
-const PartnersSection = () => {
-    return (
-        <section className="section">
-            <div className="container">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6 }}
-                >
-                    <h2 className="section-title">Trusted by Industry Leaders</h2>
-                    <p className="section-subtitle">Fumorive powers research and development at leading automotive and neurotech companies worldwide.</p>
-                </motion.div>
 
-                <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
-                    gap: '2.5rem',
-                    marginTop: '4rem',
-                    alignItems: 'center',
-                    justifyItems: 'center'
-                }}>
-                    {[
-                        { name: 'AutoSafety', color: '#2563eb' },
-                        { name: 'NeuroLab', color: '#06b6d4' },
-                        { name: 'Tesla Research', color: '#dc2626' },
-                        { name: 'MIT Brain AI', color: '#8b5cf6' },
-                        { name: 'Bosch Innovation', color: '#059669' },
-                        { name: 'Cognitive Tech', color: '#d97706' }
-                    ].map((partner, idx) => (
-                        <motion.div
-                            key={idx}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: idx * 0.1, duration: 0.5 }}
-                            style={{
-                                padding: '1.5rem',
-                                borderRadius: '14px',
-                                background: 'rgba(255, 255, 255, 0.6)',
-                                border: '1px solid rgba(0, 0, 0, 0.08)',
-                                backdropFilter: 'blur(10px)',
-                                WebkitBackdropFilter: 'blur(10px)',
-                                cursor: 'pointer',
-                                transition: 'all 0.3s ease',
-                                height: '120px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                textAlign: 'center'
-                            }}
-                            whileHover={{
-                                transform: 'translateY(-8px)',
-                                boxShadow: '0 12px 24px rgba(0, 0, 0, 0.1)'
-                            }}
-                        >
-                            <div style={{
-                                fontSize: '0.9rem',
-                                fontWeight: 600,
-                                color: partner.color,
-                                letterSpacing: '0.5px'
-                            }}>
-                                {partner.name}
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.3 }}
-                    style={{
-                        marginTop: '4rem',
-                        padding: '2rem',
-                        background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(6, 182, 212, 0.05))',
-                        borderRadius: '16px',
-                        border: '1px solid rgba(37, 99, 235, 0.1)',
-                        textAlign: 'center'
-                    }}
-                >
-                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.95rem', margin: 0 }}>
-                        Join leading organizations using Fumorive for breakthrough research and development
-                    </p>
-                </motion.div>
-            </div>
-        </section>
-    )
-}
 
 const ValidationSection = () => {
     return (
@@ -622,7 +489,7 @@ const PricingCard = ({ title, price, period, features, highlight }: any) => (
     >
         {highlight && <div style={{
             position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)',
-            background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-neon))', 
+            background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-neon))',
             color: 'white',
             padding: '4px 16px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700,
             boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',

@@ -19,7 +19,7 @@
     /* Cyan 500 */
     --color-accent-light-blue: #3b82f6;
     /* Blue 500 */
-    
+
     --color-white: #ffffff;
 
     /* Glassmorphism Variables */
@@ -216,66 +216,166 @@ body {
 }
 
 /* Navbar */
+/* Navbar */
 .navbar {
-    background: rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(0px);
-    -webkit-backdrop-filter: blur(0px);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.navbar-transparent {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    /* Center initially too to simplify transition */
+    transform: translateX(-50%);
+    width: 100%;
+    z-index: 1000;
     background: transparent;
+    padding: 20px 0;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 0;
 }
 
-.navbar-scrolled {
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid rgba(37, 99, 235, 0.1);
-    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.08);
+.navbar.scrolled {
+    top: 20px;
+    width: 90%;
+    max-width: 1200px;
+    /* Optional: Keep it from getting too wide on huge screens */
+    padding: 10px 30px;
+    /* Add horizontal padding for the pill shape */
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border-radius: 50px;
+    /* Round shape */
 }
 
-/* Submenu */
+.navbar-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    width: 100%;
+    /* Ensure container takes full available width of the navbar */
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.navbar-logo {
+    font-size: 1.4rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #2563eb, #06b6d4);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    cursor: pointer;
+    letter-spacing: -0.5px;
+    flex-shrink: 0;
+    transition: all 0.4s ease;
+}
+
+.navbar.scrolled .navbar-logo {
+    font-size: 1.25rem;
+    /* Shrink logo slightly */
+}
+
+
+.navbar-links {
+    display: flex;
+    gap: 3rem;
+    align-items: center;
+    flex: 1;
+    justify-content: center;
+    /* Center the menu items */
+}
+
+.navbar-btn {
+    padding: 10px 24px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.navbar.scrolled .navbar-btn {
+    padding: 8px 20px;
+    /* Shrink button slightly */
+    font-size: 0.85rem;
+}
+
+/* Nav Items & Links */
 .nav-item {
     position: relative;
-    padding: 0.5rem 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
-.nav-item a:hover {
-    color: var(--color-accent-blue) !important;
+.nav-item a,
+.nav-item span,
+.nav-link {
+    color: var(--color-text-primary);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
     transition: color 0.3s ease;
 }
 
+.nav-item:hover a,
+.nav-item:hover span,
+.nav-link:hover {
+    color: var(--color-accent-blue);
+}
+
+.chevron-icon {
+    color: var(--color-text-secondary);
+    transition: transform 0.3s ease;
+}
+
+.nav-item:hover .chevron-icon {
+    transform: rotate(180deg);
+    color: var(--color-accent-blue);
+}
+
+/* Submenu */
 .submenu {
     position: absolute;
     top: 100%;
     left: 50%;
-    transform: translateX(-50%) translateY(10px);
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    padding: 1rem;
-    border-radius: 12px;
-    box-shadow: var(--glass-shadow);
-    display: none;
-    min-width: 200px;
-    border: 1px solid rgba(37, 99, 235, 0.15);
+    transform: translateX(-50%) translateY(20px);
+    /* Lower start for slide up */
+    background: rgba(255, 255, 255, 0.85);
+    /* More glass-like */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding: 0.5rem;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    display: flex;
+    /* Changed from none/block to flex/opacity for animation if using pure CSS, but standard display:none is safer for layout. Let's stick to pointer-events/opacity for smoother anims if possible, but existing code used display:none */
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 220px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
     opacity: 0;
+    pointer-events: none;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    visibility: hidden;
+    /* Use visibility instead of display:none to allow transitions */
+    margin-top: 12px;
 }
 
 .nav-item:hover .submenu {
-    display: block;
     opacity: 1;
     transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+    visibility: visible;
 }
 
 .submenu-link {
     display: block;
-    padding: 0.6rem 1rem;
+    padding: 0.75rem 1rem;
     color: var(--color-text-secondary);
     text-decoration: none;
-    border-radius: 6px;
+    border-radius: 12px;
     font-size: 0.9rem;
     font-weight: 500;
     transition: all 0.2s ease;
@@ -283,7 +383,9 @@ body {
 
 .submenu-link:hover {
     background: rgba(37, 99, 235, 0.08);
+    /* Light blue tint */
     color: var(--color-accent-blue);
+    transform: translateX(4px);
 }
 
 /* Animations */
@@ -304,6 +406,7 @@ body {
             opacity: 0;
             transform: translateY(20px);
         }
+
         to {
             opacity: 1;
             transform: translateY(0);
@@ -315,6 +418,7 @@ body {
             opacity: 0;
             transform: scale(0.95);
         }
+
         to {
             opacity: 1;
             transform: scale(1);
