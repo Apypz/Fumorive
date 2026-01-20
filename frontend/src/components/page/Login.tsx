@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, User, Eye, EyeOff, Chrome, Apple, Instagram, Youtube, Twitter } from 'lucide-react'; // Using Lucide for partners too as placeholders
+import { Eye, EyeOff, Chrome, Instagram, Youtube, Twitter } from 'lucide-react'; // Using Lucide for partners too as placeholders
 import './Login.css';
 
 const Login = () => {
@@ -116,7 +116,7 @@ const Login = () => {
                             </div>
                         )}
 
-                        <button type="submit" className="btn-primary">
+                        <button type="submit" className="login-btn-primary">
                             {isLogin ? 'Log In' : 'Sign Up'}
                         </button>
 

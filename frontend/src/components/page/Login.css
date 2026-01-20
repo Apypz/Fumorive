@@ -253,7 +253,7 @@
     font-weight: 500;
 }
 
-.btn-primary {
+.login-btn-primary {
     padding: 14px;
     background: #4f46e5;
     /* Match reference purplish-blue button */
@@ -266,7 +266,7 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.btn-primary:hover {
+.login-btn-primary:hover {
     background: #4338ca;
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
