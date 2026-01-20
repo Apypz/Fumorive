@@ -84,7 +84,7 @@ const Navbar = () => {
 
                 <button
                     className="btn btn-solid navbar-btn"
-                    onClick={() => navigate('/session')}
+                    onClick={() => navigate('/login')}
                 >
                     Get Started
                 </button>

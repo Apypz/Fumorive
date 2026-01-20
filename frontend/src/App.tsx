@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Landing from './components/page/LandingPage'
 import Session from './components/page/Session'
+import Login from './components/page/Login'
 
 function App() {
   return (
@@ -9,6 +10,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/session" element={<Session />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
     </BrowserRouter>
   )
