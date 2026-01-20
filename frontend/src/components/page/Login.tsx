@@ -1,18 +1,43 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Chrome, Instagram, Youtube, Twitter } from 'lucide-react'; // Using Lucide for partners too as placeholders
+import { Eye, EyeOff, Chrome, Instagram, Youtube, Twitter } from 'lucide-react';
+import { useUserStore } from '../../stores/userStore';
 import './Login.css';
 
 const Login = () => {
     const [isLogin, setIsLogin] = useState(true); // Default to True (Login)
     const [showPassword, setShowPassword] = useState(false);
 
-    // const navigate = useNavigate();
+    // Form States
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [name, setName] = useState('');
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const navigate = useNavigate();
+    const { login, register, isLoading, error } = useUserStore();
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log(isLogin ? 'Logging in...' : 'Registering...');
+
+        try {
+            if (isLogin) {
+                await login({ email, password });
+                navigate('/dashboard');
+            } else {
+                await register({
+                    email,
+                    password,
+                    full_name: name,
+                    role: 'student'
+                });
+                alert('Registration successful! Please log in.');
+                setIsLogin(true); // Switch to login view
+            }
+        } catch (err) {
+            console.error("Auth error:", err);
+            // Error is already set in the store
+        }
     };
 
     return (
@@ -65,6 +90,12 @@ const Login = () => {
                     </div>
 
                     <form className="auth-form" onSubmit={handleSubmit}>
+                        {error && (
+                            <div style={{ color: 'red', marginBottom: '1rem', fontSize: '0.9rem', background: '#fee2e2', padding: '10px', borderRadius: '8px' }}>
+                                {error}
+                            </div>
+                        )}
+
                         <AnimatePresence mode="wait">
                             {!isLogin && (
                                 <motion.div
@@ -75,14 +106,28 @@ const Login = () => {
                                     style={{ overflow: 'hidden' }}
                                 >
                                     <label className="input-label">Name</label>
-                                    <input type="text" placeholder="Enter your name..." className="custom-input" required={!isLogin} />
+                                    <input
+                                        type="text"
+                                        placeholder="Enter your name..."
+                                        className="custom-input"
+                                        required={!isLogin}
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                    />
                                 </motion.div>
                             )}
                         </AnimatePresence>
 
                         <div className="input-group">
                             <label className="input-label">Email address</label>
-                            <input type="email" placeholder="workmail@gmail.com" className="custom-input" required />
+                            <input
+                                type="email"
+                                placeholder="workmail@gmail.com"
+                                className="custom-input"
+                                required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                            />
                         </div>
 
                         <div className="input-group">
@@ -96,6 +141,8 @@ const Login = () => {
                                     placeholder="............"
                                     className="custom-input"
                                     required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                 />
                                 <div
                                     className="password-toggle"
@@ -116,8 +163,8 @@ const Login = () => {
                             </div>
                         )}
 
-                        <button type="submit" className="login-btn-primary">
-                            {isLogin ? 'Log In' : 'Sign Up'}
+                        <button type="submit" className="login-btn-primary" disabled={isLoading}>
+                            {isLoading ? 'Loading...' : (isLogin ? 'Log In' : 'Sign Up')}
                         </button>
 
                         <div className="toggle-text">
