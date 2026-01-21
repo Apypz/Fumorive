@@ -176,7 +176,7 @@ export class AssetManager {
    * Load all queued assets
    */
   async load(): Promise<LoadedAssets> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       this.assetsManager.onFinish = () => {
         console.log('[AssetManager] All assets loaded')
         resolve(this.loadedAssets)

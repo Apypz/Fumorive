@@ -10,6 +10,7 @@ import {
   HighlightLayer,
   ReflectionProbe,
   AbstractMesh,
+  Mesh,
 } from '@babylonjs/core'
 import type { GraphicsConfig } from '../types'
 
@@ -245,7 +246,7 @@ export class EnvironmentSetup {
     if (!this.highlightLayer) {
       this.setupHighlightLayer()
     }
-    this.highlightLayer!.addMesh(mesh, color)
+    this.highlightLayer!.addMesh(mesh as Mesh, color)
   }
 
   /**
@@ -253,7 +254,7 @@ export class EnvironmentSetup {
    */
   unhighlightMesh(mesh: AbstractMesh): void {
     if (this.highlightLayer) {
-      this.highlightLayer.removeMesh(mesh)
+      this.highlightLayer.removeMesh(mesh as Mesh)
     }
   }
 

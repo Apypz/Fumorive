@@ -21,6 +21,8 @@
     "@mantine/hooks": "^8.3.11",
     "@types/d3": "^7.4.3",
     "d3": "^7.9.0",
+    "framer-motion": "^12.27.1",
+    "lucide-react": "^0.562.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.12.0",

@@ -5,374 +5,1098 @@ import {
   MeshBuilder,
   PBRMaterial,
   StandardMaterial,
-  Texture,
   AbstractMesh,
 } from '@babylonjs/core'
 import { LightingSetup } from './LightingSetup'
+
+interface Collider {
+  min: Vector3
+  max: Vector3
+  mesh?: AbstractMesh
+}
 
 export class SimpleMap {
   private scene: Scene
   private lightingSetup: LightingSetup | null
   private meshes: AbstractMesh[] = []
+  private colliders: Collider[] = []
+  
+  // Map boundaries
+  private mapBounds = {
+    minX: -200,
+    maxX: 200,
+    minZ: -300,
+    maxZ: 200,
+  }
 
   constructor(scene: Scene, lightingSetup?: LightingSetup) {
     this.scene = scene
     this.lightingSetup = lightingSetup ?? null
   }
 
-  /**
-   * Create a simple race track map
-   */
+  getColliders(): Collider[] {
+    return this.colliders
+  }
+
+  getMapBounds() {
+    return this.mapBounds
+  }
+
+  checkCollision(position: Vector3, radius: number = 1.5): { collided: boolean; normal: Vector3; penetration: number } {
+    let result = { collided: false, normal: Vector3.Zero(), penetration: 0 }
+    
+    // Check map boundaries
+    const boundaryCheck = this.checkBoundaryCollision(position, radius)
+    if (boundaryCheck.collided) {
+      return boundaryCheck
+    }
+    
+    // Check colliders
+    for (const collider of this.colliders) {
+      const closest = new Vector3(
+        Math.max(collider.min.x, Math.min(position.x, collider.max.x)),
+        Math.max(collider.min.y, Math.min(position.y, collider.max.y)),
+        Math.max(collider.min.z, Math.min(position.z, collider.max.z))
+      )
+      
+      const distance = Vector3.Distance(position, closest)
+      
+      if (distance < radius) {
+        const normal = position.subtract(closest).normalize()
+        if (normal.length() === 0) {
+          const dx = Math.min(position.x - collider.min.x, collider.max.x - position.x)
+          const dz = Math.min(position.z - collider.min.z, collider.max.z - position.z)
+          if (dx < dz) {
+            normal.x = position.x < (collider.min.x + collider.max.x) / 2 ? -1 : 1
+          } else {
+            normal.z = position.z < (collider.min.z + collider.max.z) / 2 ? -1 : 1
+          }
+        }
+        
+        result = {
+          collided: true,
+          normal: normal,
+          penetration: radius - distance
+        }
+        break
+      }
+    }
+    
+    return result
+  }
+
+  private checkBoundaryCollision(position: Vector3, radius: number): { collided: boolean; normal: Vector3; penetration: number } {
+    const bounds = this.mapBounds
+    
+    if (position.x - radius < bounds.minX) {
+      return { collided: true, normal: new Vector3(1, 0, 0), penetration: bounds.minX - (position.x - radius) }
+    }
+    if (position.x + radius > bounds.maxX) {
+      return { collided: true, normal: new Vector3(-1, 0, 0), penetration: (position.x + radius) - bounds.maxX }
+    }
+    if (position.z - radius < bounds.minZ) {
+      return { collided: true, normal: new Vector3(0, 0, 1), penetration: bounds.minZ - (position.z - radius) }
+    }
+    if (position.z + radius > bounds.maxZ) {
+      return { collided: true, normal: new Vector3(0, 0, -1), penetration: (position.z + radius) - bounds.maxZ }
+    }
+    
+    return { collided: false, normal: Vector3.Zero(), penetration: 0 }
+  }
+
   createRaceTrack(): void {
-    // Main ground/grass
     this.createGround()
+    this.createRoads()
+    this.createRoadBarriers()
+    this.createBuildings()
+    this.createLake()
+    this.createTrees()
+    this.createBushes()
+    this.createMapBoundaryWalls()
+    
+    console.log('[SimpleMap] Town map created with', this.colliders.length, 'colliders')
+  }
 
-    // Road/track
-    this.createRoad()
-
-    // Barriers
-    this.createBarriers()
-
-    // Decorations
-    this.createDecorations()
-
-    console.log('[SimpleMap] Race track created')
+  createCityMap(): void {
+    this.createRaceTrack()
   }
 
   private createGround(): void {
-    // Large grass ground
+    // Green grass ground
     const ground = MeshBuilder.CreateGround('ground', {
-      width: 500,
+      width: 400,
       height: 500,
-      subdivisions: 64,
+      subdivisions: 32,
     }, this.scene)
 
     const groundMaterial = new PBRMaterial('groundMaterial', this.scene)
-    groundMaterial.albedoColor = new Color3(0.2, 0.5, 0.2) // Green grass
+    groundMaterial.albedoColor = new Color3(0.55, 0.65, 0.45) // Sage green
     groundMaterial.metallic = 0
     groundMaterial.roughness = 0.95
     ground.material = groundMaterial
     ground.receiveShadows = true
-    ground.position.y = -0.01 // Slightly below road
-    ground.checkCollisions = true
+    ground.position.y = -0.02
+    ground.position.z = -50
 
     this.meshes.push(ground)
   }
 
-  private createRoad(): void {
-    // Main straight road
-    const roadWidth = 12
-    const roadLength = 200
-
-    // Create a simple oval track
-    // Straight sections
-    const road1 = MeshBuilder.CreateGround('road1', {
-      width: roadLength,
-      height: roadWidth,
-    }, this.scene)
-    road1.position = new Vector3(0, 0, 30)
-    road1.rotation.y = Math.PI / 2
-
-    const road2 = MeshBuilder.CreateGround('road2', {
-      width: roadLength,
-      height: roadWidth,
-    }, this.scene)
-    road2.position = new Vector3(0, 0, -30)
-    road2.rotation.y = Math.PI / 2
-
-    // Curved sections (using discs approximation)
-    const curve1 = MeshBuilder.CreateDisc('curve1', {
-      radius: 30,
-      arc: 0.5,
-      tessellation: 32,
-    }, this.scene)
-    curve1.rotation.x = Math.PI / 2
-    curve1.position = new Vector3(100, 0, 0)
-
-    const curve2 = MeshBuilder.CreateDisc('curve2', {
-      radius: 30,
-      arc: 0.5,
-      tessellation: 32,
-    }, this.scene)
-    curve2.rotation.x = Math.PI / 2
-    curve2.rotation.y = Math.PI
-    curve2.position = new Vector3(-100, 0, 0)
-
-    // Road material (asphalt)
+  private createRoads(): void {
     const roadMaterial = new PBRMaterial('roadMaterial', this.scene)
-    roadMaterial.albedoColor = new Color3(0.15, 0.15, 0.18) // Dark gray asphalt
-    roadMaterial.metallic = 0.1
-    roadMaterial.roughness = 0.8
+    roadMaterial.albedoColor = new Color3(0.45, 0.48, 0.42) // Gray-green road
+    roadMaterial.metallic = 0.05
+    roadMaterial.roughness = 0.85
 
-    road1.material = roadMaterial
-    road2.material = roadMaterial
-    curve1.material = roadMaterial
-    curve2.material = roadMaterial
+    const roadWidth = 16
 
-    road1.receiveShadows = true
-    road2.receiveShadows = true
-    curve1.receiveShadows = true
-    curve2.receiveShadows = true
-    road1.checkCollisions = true
-    road2.checkCollisions = true
-    curve1.checkCollisions = true
-    curve2.checkCollisions = true
+    // ============================================
+    // ROAD LAYOUT BASED ON REFERENCE IMAGE
+    // ============================================
 
-    this.meshes.push(road1, road2, curve1, curve2)
+    // === HORIZONTAL ROADS ===
+    
+    // Top horizontal road (between Gedung A and B area)
+    this.createRoadSegment('road_top', -40, 150, 180, roadWidth, roadMaterial)
+    
+    // Middle horizontal road (between Gedung C/D area)
+    this.createRoadSegment('road_mid', 5, 50, 180, roadWidth, roadMaterial)
+    
+    // Lower horizontal road (between Gedung F and G area)
+    this.createRoadSegment('road_lower', -10, -50, 120, roadWidth, roadMaterial)
+    
+    // Horizontal road connecting to Gedung H
+    this.createRoadSegment('road_to_H', 135, -102, 70, roadWidth, roadMaterial)
+    
+    // Horizontal road south of Gedung H
+    this.createRoadSegment('road_south_H', 110, -178, 130, roadWidth, roadMaterial)
 
-    // Add road lines
-    this.createRoadLines()
+    // === VERTICAL ROADS ===
+    
+    // Main center vertical road (runs through the map)
+    this.createRoadSegment('road_center_v', 50, -10, roadWidth, 340, roadMaterial)
+    
+    // Left vertical road
+    this.createRoadSegment('road_left_v', -80, 50, roadWidth, 200, roadMaterial)
+    
+    // Right vertical road - to junction with Gedung H road
+    this.createRoadSegment('road_right_v', 90, -27, roadWidth, 170, roadMaterial)
+    
+    // Vertical road to Gedung H (east side) - connects top and bottom horizontal roads
+    this.createRoadSegment('road_gedungH_east', 170, -140, roadWidth, 92, roadMaterial)
+
+    // === CURVED ROAD SECTIONS ===
+    
+    // Top-left curve (near Gedung A)
+    this.createCurveRoad('curve_tl', -80, 150, 0, Math.PI / 2, roadWidth)
+    
+    // Top-right curve
+    this.createCurveRoad('curve_tr', 50, 150, Math.PI / 2, Math.PI, roadWidth)
+
+    // Junction patches at intersections
+    this.createJunction(-80, 150, roadWidth)
+    this.createJunction(50, 150, roadWidth)
+    this.createJunction(-80, 50, roadWidth)
+    this.createJunction(50, 50, roadWidth)
+    this.createJunction(-80, -50, roadWidth)
+    this.createJunction(50, -50, roadWidth)
+    this.createJunction(90, -102, roadWidth)
+    this.createJunction(170, -102, roadWidth)
+    this.createJunction(170, -178, roadWidth)
+    this.createJunction(50, -178, roadWidth)  // road_center_v & road_south_H
+
+    // Road markings
+    this.createRoadMarkings()
   }
 
-  private createRoadLines(): void {
+  private createRoadSegment(
+    name: string, 
+    x: number, 
+    z: number, 
+    width: number, 
+    height: number, 
+    material: PBRMaterial
+  ): void {
+    const road = MeshBuilder.CreateGround(name, {
+      width: width,
+      height: height,
+    }, this.scene)
+    road.position = new Vector3(x, 0.01, z)
+    road.material = material
+    road.receiveShadows = true
+    this.meshes.push(road)
+  }
+
+  private createCurveRoad(
+    name: string,
+    x: number,
+    z: number,
+    startAngle: number,
+    endAngle: number,
+    roadWidth: number
+  ): void {
+    const material = new PBRMaterial(`${name}_mat`, this.scene)
+    material.albedoColor = new Color3(0.45, 0.48, 0.42)
+    material.metallic = 0.05
+    material.roughness = 0.85
+
+    const curve = MeshBuilder.CreateDisc(name, {
+      radius: roadWidth / 2 + 1,
+      arc: Math.abs(endAngle - startAngle) / (2 * Math.PI),
+      tessellation: 24,
+    }, this.scene)
+    curve.rotation.x = Math.PI / 2
+    curve.rotation.y = startAngle
+    curve.position = new Vector3(x, 0.01, z)
+    curve.material = material
+    curve.receiveShadows = true
+    this.meshes.push(curve)
+  }
+
+  private createJunction(x: number, z: number, size: number): void {
+    const material = new PBRMaterial(`junction_${x}_${z}`, this.scene)
+    material.albedoColor = new Color3(0.45, 0.48, 0.42)
+    material.metallic = 0.05
+    material.roughness = 0.85
+
+    const junction = MeshBuilder.CreateGround(`junction_${x}_${z}`, {
+      width: size + 4,
+      height: size + 4,
+    }, this.scene)
+    junction.position = new Vector3(x, 0.015, z)
+    junction.material = material
+    junction.receiveShadows = true
+    this.meshes.push(junction)
+  }
+
+  private createRoadMarkings(): void {
     const lineMaterial = new StandardMaterial('lineMaterial', this.scene)
-    lineMaterial.diffuseColor = new Color3(1, 1, 1)
-    lineMaterial.emissiveColor = new Color3(0.5, 0.5, 0.5)
+    lineMaterial.diffuseColor = new Color3(1, 1, 0.9)
+    lineMaterial.emissiveColor = new Color3(0.3, 0.3, 0.25)
 
-    // Center dashed line on straight sections
-    for (let i = -90; i < 90; i += 8) {
-      const line1 = MeshBuilder.CreateBox(`line1_${i}`, {
-        width: 4,
-        height: 0.02,
-        depth: 0.3,
-      }, this.scene)
-      line1.position = new Vector3(i, 0.01, 30)
-      line1.material = lineMaterial
-
-      const line2 = MeshBuilder.CreateBox(`line2_${i}`, {
-        width: 4,
-        height: 0.02,
-        depth: 0.3,
-      }, this.scene)
-      line2.position = new Vector3(i, 0.01, -30)
-      line2.material = lineMaterial
-
-      this.meshes.push(line1, line2)
-    }
-  }
-
-  private createBarriers(): void {
-        // Tambahkan barrier di sisi luar dan dalam tikungan (curve)
-        const curveBarriers = [
-          // Tikungan kanan (timur)
-          { center: new Vector3(100, 0, 0), radius: 36, angleStart: Math.PI * 1.5, angleEnd: Math.PI * 2, count: 16 }, // luar
-          { center: new Vector3(100, 0, 0), radius: 24, angleStart: Math.PI * 1.5, angleEnd: Math.PI * 2, count: 10 }, // dalam
-          // Tikungan kiri (barat)
-          { center: new Vector3(-100, 0, 0), radius: 36, angleStart: Math.PI, angleEnd: Math.PI * 1.5, count: 16 }, // luar
-          { center: new Vector3(-100, 0, 0), radius: 24, angleStart: Math.PI, angleEnd: Math.PI * 1.5, count: 10 }, // dalam
-        ];
-        curveBarriers.forEach((cb, idx) => {
-          for (let i = 0; i < cb.count; i++) {
-            const t = i / (cb.count - 1);
-            const angle = cb.angleStart + t * (cb.angleEnd - cb.angleStart);
-            const x = cb.center.x + cb.radius * Math.cos(angle);
-            const z = cb.center.z + cb.radius * Math.sin(angle);
-            const barrier = MeshBuilder.CreateBox(`curve_barrier_${idx}_${i}`, {
-              width: 3.8,
-              height: 1.5,
-              depth: 1.2,
-            }, this.scene);
-            barrier.position = new Vector3(x, 0.75, z);
-            barrier.material = i % 2 === 0 ? barrierMaterial : whiteMaterial;
-            this.lightingSetup?.addShadowCaster(barrier);
-            barrier.checkCollisions = true;
-            this.meshes.push(barrier);
-          }
-        });
-    const barrierMaterial = new PBRMaterial('barrierMaterial', this.scene)
-    barrierMaterial.albedoColor = new Color3(0.9, 0.1, 0.1) // Red
-    barrierMaterial.metallic = 0.3
-    barrierMaterial.roughness = 0.5
-
-    const whiteMaterial = new PBRMaterial('whiteMaterial', this.scene)
-    whiteMaterial.albedoColor = new Color3(0.95, 0.95, 0.95)
-    whiteMaterial.metallic = 0.3
-    whiteMaterial.roughness = 0.5
-
-    // Outer barriers along straight sections
-    const barrierPositions = [
-      // Top straight - outer
-      { x: 0, z: 36, length: 200, rotation: 0 },
-      // Bottom straight - outer
-      { x: 0, z: -36, length: 200, rotation: 0 },
-      // Top straight - inner
-      { x: 0, z: 24, length: 140, rotation: 0 },
-      // Bottom straight - inner
-      { x: 0, z: -24, length: 140, rotation: 0 },
+    // Dashed center lines for horizontal roads
+    const horizontalRoads = [
+      { x: -40, z: 150, length: 180 },
+      { x: 5, z: 50, length: 180 },
+      { x: -10, z: -50, length: 120 },
+      { x: 135, z: -102, length: 70 },
+      { x: 110, z: -178, length: 130 },
     ]
 
-    barrierPositions.forEach((pos, index) => {
-      // Create alternating red/white barrier blocks
-      const numBlocks = Math.floor(pos.length / 4)
-      for (let i = 0; i < numBlocks; i++) {
-        const barrier = MeshBuilder.CreateBox(`barrier_${index}_${i}`, {
-          width: 3.8,
-          height: 1.5, // lebih tinggi agar tidak bisa dilompati
-          depth: 1.2,  // lebih tebal agar collision lebih baik
+    horizontalRoads.forEach(road => {
+      for (let i = road.x - road.length / 2 + 5; i < road.x + road.length / 2; i += 10) {
+        const dash = MeshBuilder.CreateBox(`dash_h_${road.z}_${i}`, {
+          width: 5,
+          height: 0.02,
+          depth: 0.3,
         }, this.scene)
-        barrier.position = new Vector3(
-          pos.x - pos.length / 2 + i * 4 + 2,
-          0.75,
-          pos.z
-        )
-        barrier.material = i % 2 === 0 ? barrierMaterial : whiteMaterial
-        this.lightingSetup?.addShadowCaster(barrier)
-        barrier.checkCollisions = true // Aktifkan collision
-        this.meshes.push(barrier)
+        dash.position = new Vector3(i, 0.02, road.z)
+        dash.material = lineMaterial
+        this.meshes.push(dash)
       }
     })
 
-    // Pembatas map (tembok kota)
-    const wallMaterial = new PBRMaterial('wallMaterial', this.scene)
-    wallMaterial.albedoColor = new Color3(0.5, 0.5, 0.5)
-    wallMaterial.metallic = 0.2
-    wallMaterial.roughness = 0.8
-
-    // Batas kota (rectangle besar di pinggir map)
-    const wallThickness = 3
-    const wallHeight = 8
-    const wallLength = 500
-    const wallZ = 250
-    const wallX = 250
-
-    // 4 sisi tembok
-    const wallNorth = MeshBuilder.CreateBox('wallNorth', { width: wallLength, height: wallHeight, depth: wallThickness }, this.scene)
-    wallNorth.position = new Vector3(0, wallHeight / 2, wallZ)
-    wallNorth.material = wallMaterial
-    wallNorth.checkCollisions = true
-    this.meshes.push(wallNorth)
-
-    const wallSouth = MeshBuilder.CreateBox('wallSouth', { width: wallLength, height: wallHeight, depth: wallThickness }, this.scene)
-    wallSouth.position = new Vector3(0, wallHeight / 2, -wallZ)
-    wallSouth.material = wallMaterial
-    wallSouth.checkCollisions = true
-    this.meshes.push(wallSouth)
-
-    const wallEast = MeshBuilder.CreateBox('wallEast', { width: wallThickness, height: wallHeight, depth: wallLength }, this.scene)
-    wallEast.position = new Vector3(wallX, wallHeight / 2, 0)
-    wallEast.material = wallMaterial
-    wallEast.checkCollisions = true
-    this.meshes.push(wallEast)
-
-    const wallWest = MeshBuilder.CreateBox('wallWest', { width: wallThickness, height: wallHeight, depth: wallLength }, this.scene)
-    wallWest.position = new Vector3(-wallX, wallHeight / 2, 0)
-    wallWest.material = wallMaterial
-    wallWest.checkCollisions = true
-    this.meshes.push(wallWest)
-  }
-
-  private createDecorations(): void {
-    // Trees around the track
-    const treePositions = [
-      new Vector3(50, 0, 60),
-      new Vector3(-50, 0, 60),
-      new Vector3(80, 0, 50),
-      new Vector3(-80, 0, 50),
-      new Vector3(50, 0, -60),
-      new Vector3(-50, 0, -60),
-      new Vector3(80, 0, -50),
-      new Vector3(-80, 0, -50),
-      new Vector3(140, 0, 0),
-      new Vector3(-140, 0, 0),
-      new Vector3(130, 0, 30),
-      new Vector3(130, 0, -30),
-      new Vector3(-130, 0, 30),
-      new Vector3(-130, 0, -30),
+    // Dashed center lines for vertical roads
+    const verticalRoads = [
+      { x: 50, z: -20, length: 340 },
+      { x: -80, z: 50, length: 200 },
+      { x: 90, z: -27, length: 170 },
+      { x: 170, z: -140, length: 92 },
     ]
 
+    verticalRoads.forEach(road => {
+      for (let i = road.z - road.length / 2 + 5; i < road.z + road.length / 2; i += 10) {
+        const dash = MeshBuilder.CreateBox(`dash_v_${road.x}_${i}`, {
+          width: 0.3,
+          height: 0.02,
+          depth: 5,
+        }, this.scene)
+        dash.position = new Vector3(road.x, 0.02, i)
+        dash.material = lineMaterial
+        this.meshes.push(dash)
+      }
+    })
+  }
+
+  private createRoadBarriers(): void {
+    const barrierMaterial = new PBRMaterial('barrierMaterial', this.scene)
+    barrierMaterial.albedoColor = new Color3(0.85, 0.85, 0.8) // Light gray/white
+    barrierMaterial.metallic = 0.3
+    barrierMaterial.roughness = 0.6
+
+    const barrierHeight = 1.0
+    const barrierWidth = 0.4
+    const roadWidth = 16
+    const offset = roadWidth / 2 + barrierWidth / 2 // Place barriers at road edge
+    const junctionGap = roadWidth + 2 // Gap size at intersections
+
+    // All junction positions (where barriers should have gaps)
+    const junctions = [
+      { x: -80, z: 150 },
+      { x: 50, z: 150 },
+      { x: -80, z: 50 },
+      { x: 50, z: 50 },
+      { x: 90, z: 50 },    // road_mid & road_right_v intersection
+      { x: -80, z: -50 },
+      { x: 50, z: -50 },
+      { x: 90, z: -102 },
+      { x: 170, z: -102 },
+      { x: 170, z: -178 },
+      { x: 50, z: -178 },
+    ]
+
+    // Horizontal roads with their barrier positions
+    const horizontalRoads = [
+      { x: -40, z: 150, length: 180 },   // road_top
+      { x: 5, z: 50, length: 180 },      // road_mid
+      { x: -10, z: -50, length: 120 },   // road_lower
+      { x: 135, z: -102, length: 70 },   // road_to_H
+      { x: 110, z: -178, length: 130 },  // road_south_H
+    ]
+
+    // Create barriers for horizontal roads with gaps at junctions
+    horizontalRoads.forEach((road, roadIdx) => {
+      const startX = road.x - road.length / 2
+      const endX = road.x + road.length / 2
+      
+      // Find junctions that intersect this road (same z)
+      const roadJunctions = junctions
+        .filter(j => Math.abs(j.z - road.z) < 1 && j.x >= startX && j.x <= endX)
+        .map(j => j.x)
+        .sort((a, b) => a - b)
+
+      // Create barrier segments with gaps at junctions
+      this.createBarriersWithGaps(
+        `barrier_h_n_${roadIdx}`,
+        startX, endX,
+        road.z + offset,
+        roadJunctions,
+        junctionGap,
+        barrierHeight, barrierWidth,
+        barrierMaterial,
+        'horizontal'
+      )
+      this.createBarriersWithGaps(
+        `barrier_h_s_${roadIdx}`,
+        startX, endX,
+        road.z - offset,
+        roadJunctions,
+        junctionGap,
+        barrierHeight, barrierWidth,
+        barrierMaterial,
+        'horizontal'
+      )
+    })
+
+    // Vertical roads
+    const verticalRoads = [
+      { x: 50, z: -10, length: 340 },    // road_center_v
+      { x: -80, z: 50, length: 200 },    // road_left_v
+      { x: 90, z: -27, length: 170 },    // road_right_v
+      { x: 170, z: -140, length: 92 },   // road_gedungH_east
+    ]
+
+    // Create barriers for vertical roads with gaps at junctions
+    verticalRoads.forEach((road, roadIdx) => {
+      const startZ = road.z - road.length / 2
+      const endZ = road.z + road.length / 2
+      
+      // Find junctions that intersect this road (same x)
+      const roadJunctions = junctions
+        .filter(j => Math.abs(j.x - road.x) < 1 && j.z >= startZ && j.z <= endZ)
+        .map(j => j.z)
+        .sort((a, b) => a - b)
+
+      // Create barrier segments with gaps at junctions
+      this.createBarriersWithGaps(
+        `barrier_v_e_${roadIdx}`,
+        startZ, endZ,
+        road.x + offset,
+        roadJunctions,
+        junctionGap,
+        barrierHeight, barrierWidth,
+        barrierMaterial,
+        'vertical'
+      )
+      this.createBarriersWithGaps(
+        `barrier_v_w_${roadIdx}`,
+        startZ, endZ,
+        road.x - offset,
+        roadJunctions,
+        junctionGap,
+        barrierHeight, barrierWidth,
+        barrierMaterial,
+        'vertical'
+      )
+    })
+
+    // Add special barriers for T-junctions (forced turn)
+    this.createTJunctionBarriers(offset, barrierHeight, barrierWidth, barrierMaterial)
+
+    // Add corner pieces at junctions to close diagonal gaps
+    this.createJunctionCorners(junctions, offset, barrierHeight, barrierWidth, barrierMaterial)
+  }
+
+  private createJunctionCorners(
+    junctions: { x: number; z: number }[],
+    offset: number,
+    height: number,
+    width: number,
+    material: PBRMaterial
+  ): void {
+    const cornerSize = width + 0.5 // Size of corner piece
+
+    junctions.forEach((junction, i) => {
+      // Create 4 corner pieces for each junction (NE, NW, SE, SW)
+      const corners = [
+        { x: junction.x + offset, z: junction.z + offset, name: 'NE' },  // North-East
+        { x: junction.x - offset, z: junction.z + offset, name: 'NW' },  // North-West
+        { x: junction.x + offset, z: junction.z - offset, name: 'SE' },  // South-East
+        { x: junction.x - offset, z: junction.z - offset, name: 'SW' },  // South-West
+      ]
+
+      corners.forEach(corner => {
+        const cornerPiece = MeshBuilder.CreateBox(`corner_${i}_${corner.name}`, {
+          width: cornerSize,
+          height: height,
+          depth: cornerSize,
+        }, this.scene)
+        cornerPiece.position = new Vector3(corner.x, height / 2, corner.z)
+        cornerPiece.material = material
+        cornerPiece.receiveShadows = true
+        this.lightingSetup?.addShadowCaster(cornerPiece)
+        this.meshes.push(cornerPiece)
+        this.addBoxCollider(cornerPiece)
+      })
+    })
+  }
+
+  private createTJunctionBarriers(
+    offset: number,
+    height: number,
+    width: number,
+    material: PBRMaterial
+  ): void {
+    const roadWidth = 16
+
+    // T-junction at road_top & road_left_v (-80, 150)
+    // Block west and north sides
+    
+    // Barrier blocking west side of junction
+    const blockWest0 = MeshBuilder.CreateBox('tjunc_-80_150_block_west', {
+      width: width,
+      height: height,
+      depth: roadWidth,
+    }, this.scene)
+    blockWest0.position = new Vector3(-80 - offset, height / 2, 150)
+    blockWest0.material = material
+    blockWest0.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockWest0)
+    this.meshes.push(blockWest0)
+    this.addBoxCollider(blockWest0)
+
+    // Barrier blocking north side of junction
+    const blockNorth0 = MeshBuilder.CreateBox('tjunc_-80_150_block_north', {
+      width: roadWidth,
+      height: height,
+      depth: width,
+    }, this.scene)
+    blockNorth0.position = new Vector3(-80, height / 2, 150 + offset)
+    blockNorth0.material = material
+    blockNorth0.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockNorth0)
+    this.meshes.push(blockNorth0)
+    this.addBoxCollider(blockNorth0)
+
+    // T-junction at road_mid & road_right_v (90, 50)
+    // Block going straight (east) and turning left (north)
+    // This forces cars coming from west to turn right (south)
+    
+    // Barrier blocking straight path (east side of junction)
+    const blockEast1 = MeshBuilder.CreateBox('tjunc_90_50_block_east', {
+      width: width,
+      height: height,
+      depth: roadWidth,
+    }, this.scene)
+    blockEast1.position = new Vector3(90 + offset, height / 2, 50)
+    blockEast1.material = material
+    blockEast1.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockEast1)
+    this.meshes.push(blockEast1)
+    this.addBoxCollider(blockEast1)
+
+    // Barrier blocking left turn (north side of junction)
+    const blockNorth1 = MeshBuilder.CreateBox('tjunc_90_50_block_north', {
+      width: roadWidth,
+      height: height,
+      depth: width,
+    }, this.scene)
+    blockNorth1.position = new Vector3(90, height / 2, 50 + offset)
+    blockNorth1.material = material
+    blockNorth1.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockNorth1)
+    this.meshes.push(blockNorth1)
+    this.addBoxCollider(blockNorth1)
+
+    // T-junction at road_center_v & road_top (50, 150)
+    // Block going straight (east) and turning left (north)
+    
+    // Barrier blocking straight path (east side of junction)
+    const blockEast2 = MeshBuilder.CreateBox('tjunc_50_150_block_east', {
+      width: width,
+      height: height,
+      depth: roadWidth,
+    }, this.scene)
+    blockEast2.position = new Vector3(50 + offset, height / 2, 150)
+    blockEast2.material = material
+    blockEast2.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockEast2)
+    this.meshes.push(blockEast2)
+    this.addBoxCollider(blockEast2)
+
+    // Barrier blocking left turn (north side of junction)
+    const blockNorth2 = MeshBuilder.CreateBox('tjunc_50_150_block_north', {
+      width: roadWidth,
+      height: height,
+      depth: width,
+    }, this.scene)
+    blockNorth2.position = new Vector3(50, height / 2, 150 + offset)
+    blockNorth2.material = material
+    blockNorth2.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockNorth2)
+    this.meshes.push(blockNorth2)
+    this.addBoxCollider(blockNorth2)
+
+    // T-junction at road_left_v & road_mid (-80, 50)
+    // Block going straight (west side only)
+    
+    // Barrier blocking west side of junction
+    const blockWest3 = MeshBuilder.CreateBox('tjunc_-80_50_block_west', {
+      width: width,
+      height: height,
+      depth: roadWidth,
+    }, this.scene)
+    blockWest3.position = new Vector3(-80 - offset, height / 2, 50)
+    blockWest3.material = material
+    blockWest3.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockWest3)
+    this.meshes.push(blockWest3)
+    this.addBoxCollider(blockWest3)
+
+    // T-junction at road_left_v & road_lower (-80, -50)
+    // Block west and south sides
+    
+    // Barrier blocking west side of junction
+    const blockWest4 = MeshBuilder.CreateBox('tjunc_-80_-50_block_west', {
+      width: width,
+      height: height,
+      depth: roadWidth,
+    }, this.scene)
+    blockWest4.position = new Vector3(-80 - offset, height / 2, -50)
+    blockWest4.material = material
+    blockWest4.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockWest4)
+    this.meshes.push(blockWest4)
+    this.addBoxCollider(blockWest4)
+
+    // Barrier blocking south side of junction
+    const blockSouth4 = MeshBuilder.CreateBox('tjunc_-80_-50_block_south', {
+      width: roadWidth,
+      height: height,
+      depth: width,
+    }, this.scene)
+    blockSouth4.position = new Vector3(-80, height / 2, -50 - offset)
+    blockSouth4.material = material
+    blockSouth4.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockSouth4)
+    this.meshes.push(blockSouth4)
+    this.addBoxCollider(blockSouth4)
+
+    // T-junction at road_center_v & road_lower (50, -50)
+    // Block east side
+    
+    // Barrier blocking east side of junction
+    const blockEast5 = MeshBuilder.CreateBox('tjunc_50_-50_block_east', {
+      width: width,
+      height: height,
+      depth: roadWidth,
+    }, this.scene)
+    blockEast5.position = new Vector3(50 + offset, height / 2, -50)
+    blockEast5.material = material
+    blockEast5.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockEast5)
+    this.meshes.push(blockEast5)
+    this.addBoxCollider(blockEast5)
+
+    // T-junction at road_center_v & road_south_H (50, -178)
+    // Block west and south sides
+    
+    // Barrier blocking west side of junction
+    const blockWest6 = MeshBuilder.CreateBox('tjunc_50_-178_block_west', {
+      width: width,
+      height: height,
+      depth: roadWidth,
+    }, this.scene)
+    blockWest6.position = new Vector3(50 - offset, height / 2, -178)
+    blockWest6.material = material
+    blockWest6.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockWest6)
+    this.meshes.push(blockWest6)
+    this.addBoxCollider(blockWest6)
+
+    // Barrier blocking south side of junction
+    const blockSouth6 = MeshBuilder.CreateBox('tjunc_50_-178_block_south', {
+      width: roadWidth,
+      height: height,
+      depth: width,
+    }, this.scene)
+    blockSouth6.position = new Vector3(50, height / 2, -178 - offset)
+    blockSouth6.material = material
+    blockSouth6.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockSouth6)
+    this.meshes.push(blockSouth6)
+    this.addBoxCollider(blockSouth6)
+
+    // T-junction at road_south_H & road_gedungH_east (170, -178)
+    // Block east and south sides
+    
+    // Barrier blocking east side of junction
+    const blockEast7 = MeshBuilder.CreateBox('tjunc_170_-178_block_east', {
+      width: width,
+      height: height,
+      depth: roadWidth,
+    }, this.scene)
+    blockEast7.position = new Vector3(170 + offset, height / 2, -178)
+    blockEast7.material = material
+    blockEast7.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockEast7)
+    this.meshes.push(blockEast7)
+    this.addBoxCollider(blockEast7)
+
+    // Barrier blocking south side of junction
+    const blockSouth7 = MeshBuilder.CreateBox('tjunc_170_-178_block_south', {
+      width: roadWidth,
+      height: height,
+      depth: width,
+    }, this.scene)
+    blockSouth7.position = new Vector3(170, height / 2, -178 - offset)
+    blockSouth7.material = material
+    blockSouth7.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockSouth7)
+    this.meshes.push(blockSouth7)
+    this.addBoxCollider(blockSouth7)
+
+    // T-junction at road_gedungH_east & road_to_H (170, -102)
+    // Block east and north sides
+    
+    // Barrier blocking east side of junction
+    const blockEast8 = MeshBuilder.CreateBox('tjunc_170_-102_block_east', {
+      width: width,
+      height: height,
+      depth: roadWidth,
+    }, this.scene)
+    blockEast8.position = new Vector3(170 + offset, height / 2, -102)
+    blockEast8.material = material
+    blockEast8.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockEast8)
+    this.meshes.push(blockEast8)
+    this.addBoxCollider(blockEast8)
+
+    // Barrier blocking north side of junction
+    const blockNorth8 = MeshBuilder.CreateBox('tjunc_170_-102_block_north', {
+      width: roadWidth,
+      height: height,
+      depth: width,
+    }, this.scene)
+    blockNorth8.position = new Vector3(170, height / 2, -102 + offset)
+    blockNorth8.material = material
+    blockNorth8.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockNorth8)
+    this.meshes.push(blockNorth8)
+    this.addBoxCollider(blockNorth8)
+
+    // T-junction at road_to_H & road_right_v (90, -102)
+    // Block south and west sides
+    
+    // Barrier blocking west side of junction
+    const blockWest9 = MeshBuilder.CreateBox('tjunc_90_-102_block_west', {
+      width: width,
+      height: height,
+      depth: roadWidth,
+    }, this.scene)
+    blockWest9.position = new Vector3(90 - offset, height / 2, -102)
+    blockWest9.material = material
+    blockWest9.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockWest9)
+    this.meshes.push(blockWest9)
+    this.addBoxCollider(blockWest9)
+
+    // Barrier blocking south side of junction
+    const blockSouth9 = MeshBuilder.CreateBox('tjunc_90_-102_block_south', {
+      width: roadWidth,
+      height: height,
+      depth: width,
+    }, this.scene)
+    blockSouth9.position = new Vector3(90, height / 2, -102 - offset)
+    blockSouth9.material = material
+    blockSouth9.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockSouth9)
+    this.meshes.push(blockSouth9)
+    this.addBoxCollider(blockSouth9)
+  }
+
+  private createBarriersWithGaps(
+    baseName: string,
+    start: number,
+    end: number,
+    fixedCoord: number,
+    gapPositions: number[],
+    gapSize: number,
+    height: number,
+    width: number,
+    material: PBRMaterial,
+    orientation: 'horizontal' | 'vertical'
+  ): void {
+    // Build segments between gaps
+    const segments: { start: number; end: number }[] = []
+    let currentStart = start
+
+    gapPositions.forEach(gapCenter => {
+      const gapStart = gapCenter - gapSize / 2
+      const gapEnd = gapCenter + gapSize / 2
+
+      if (gapStart > currentStart) {
+        segments.push({ start: currentStart, end: gapStart })
+      }
+      currentStart = gapEnd
+    })
+
+    // Add final segment after last gap
+    if (currentStart < end) {
+      segments.push({ start: currentStart, end: end })
+    }
+
+    // Create barrier meshes for each segment
+    segments.forEach((seg, i) => {
+      const length = seg.end - seg.start
+      if (length <= 0) return
+
+      const center = (seg.start + seg.end) / 2
+
+      const barrier = MeshBuilder.CreateBox(`${baseName}_${i}`, {
+        width: orientation === 'horizontal' ? length : width,
+        height: height,
+        depth: orientation === 'horizontal' ? width : length,
+      }, this.scene)
+
+      if (orientation === 'horizontal') {
+        barrier.position = new Vector3(center, height / 2, fixedCoord)
+      } else {
+        barrier.position = new Vector3(fixedCoord, height / 2, center)
+      }
+
+      barrier.material = material
+      barrier.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(barrier)
+      this.meshes.push(barrier)
+      this.addBoxCollider(barrier)
+    })
+  }
+
+  private createBuildings(): void {
+    // Building colors
+    const buildingMaterial = new PBRMaterial('buildingMaterial', this.scene)
+    buildingMaterial.albedoColor = new Color3(0.95, 0.93, 0.88) // Cream/off-white
+    buildingMaterial.metallic = 0.1
+    buildingMaterial.roughness = 0.8
+
+    const outlineMaterial = new PBRMaterial('outlineMaterial', this.scene)
+    outlineMaterial.albedoColor = new Color3(0.4, 0.4, 0.38)
+    outlineMaterial.metallic = 0.1
+    outlineMaterial.roughness = 0.8
+
+    // Buildings based on reference image layout
+    const buildings = [
+      // Gedung A - top left
+      { name: 'Gedung A', x: -120, z: 150, width: 60, depth: 35, height: 12 },
+      // Gedung B - top right
+      { name: 'Gedung B', x: 130, z: 150, width: 50, depth: 40, height: 14 },
+      // Gedung C - center left (smaller, inside loop)
+      { name: 'Gedung C', x: -20, z: 100, width: 40, depth: 30, height: 10 },
+      // Gedung D - center right
+      { name: 'Gedung D', x: 150, z: 10, width: 45, depth: 50, height: 11 },
+      // Gedung F - bottom left
+      { name: 'Gedung F', x: -120, z: -10, width: 55, depth: 45, height: 15 },
+      // Gedung G - bottom right middle
+      { name: 'Gedung G', x: 150, z: -70, width: 45, depth: 40, height: 12 },
+      // Gedung H - far bottom right
+      { name: 'Gedung H', x: 130, z: -145, width: 55, depth: 45, height: 13 },
+    ]
+
+    buildings.forEach((b) => {
+      // Main building body
+      const building = MeshBuilder.CreateBox(`building_${b.name}`, {
+        width: b.width,
+        height: b.height,
+        depth: b.depth,
+      }, this.scene)
+      
+      building.position = new Vector3(b.x, b.height / 2, b.z)
+      building.material = buildingMaterial
+      building.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(building)
+      this.meshes.push(building)
+
+      // Add collider for building
+      this.addBoxCollider(building)
+
+      // Building outline/border
+      const outline = MeshBuilder.CreateBox(`outline_${b.name}`, {
+        width: b.width + 1,
+        height: 0.3,
+        depth: b.depth + 1,
+      }, this.scene)
+      outline.position = new Vector3(b.x, 0.15, b.z)
+      outline.material = outlineMaterial
+      this.meshes.push(outline)
+
+      // Building label
+      this.createBuildingLabel(b.name, b.x, b.z, b.height)
+    })
+  }
+
+  private createBuildingLabel(name: string, x: number, z: number, height: number): void {
+    // Simple colored marker for building identification
+    const markerMaterial = new StandardMaterial(`marker_${name}`, this.scene)
+    markerMaterial.diffuseColor = new Color3(0.2, 0.2, 0.2)
+    markerMaterial.emissiveColor = new Color3(0.1, 0.1, 0.1)
+
+    const marker = MeshBuilder.CreateBox(`label_${name}`, {
+      width: 8,
+      height: 0.5,
+      depth: 4,
+    }, this.scene)
+    marker.position = new Vector3(x, height + 1, z)
+    marker.material = markerMaterial
+    this.meshes.push(marker)
+  }
+
+  private createLake(): void {
+    // Lake in bottom-left corner (based on reference)
+    const lakeMaterial = new PBRMaterial('lakeMaterial', this.scene)
+    lakeMaterial.albedoColor = new Color3(0.5, 0.75, 0.8) // Light blue
+    lakeMaterial.metallic = 0.3
+    lakeMaterial.roughness = 0.2
+
+    const lake = MeshBuilder.CreateDisc('lake', {
+      radius: 35,
+      tessellation: 32,
+    }, this.scene)
+    lake.rotation.x = Math.PI / 2
+    lake.position = new Vector3(-140, 0.02, -200)
+    lake.material = lakeMaterial
+    lake.receiveShadows = true
+    this.meshes.push(lake)
+
+    // Lake edge/shore
+    const shoreMaterial = new PBRMaterial('shoreMaterial', this.scene)
+    shoreMaterial.albedoColor = new Color3(0.6, 0.7, 0.5)
+    shoreMaterial.metallic = 0
+    shoreMaterial.roughness = 0.9
+
+    const shore = MeshBuilder.CreateDisc('shore', {
+      radius: 40,
+      tessellation: 32,
+    }, this.scene)
+    shore.rotation.x = Math.PI / 2
+    shore.position = new Vector3(-140, 0.01, -200)
+    shore.material = shoreMaterial
+    this.meshes.push(shore)
+
+    // Add lake as obstacle (can't drive through)
+    this.colliders.push({
+      min: new Vector3(-175, 0, -235),
+      max: new Vector3(-105, 2, -165),
+    })
+  }
+
+  private createTrees(): void {
     const trunkMaterial = new PBRMaterial('trunkMaterial', this.scene)
-    trunkMaterial.albedoColor = new Color3(0.4, 0.25, 0.1)
+    trunkMaterial.albedoColor = new Color3(0.4, 0.28, 0.15)
     trunkMaterial.metallic = 0
     trunkMaterial.roughness = 0.9
 
     const leavesMaterial = new PBRMaterial('leavesMaterial', this.scene)
-    leavesMaterial.albedoColor = new Color3(0.1, 0.4, 0.15)
+    leavesMaterial.albedoColor = new Color3(0.25, 0.5, 0.3)
     leavesMaterial.metallic = 0
     leavesMaterial.roughness = 0.8
+
+    const leavesDarkMaterial = new PBRMaterial('leavesDarkMaterial', this.scene)
+    leavesDarkMaterial.albedoColor = new Color3(0.2, 0.4, 0.25)
+    leavesDarkMaterial.metallic = 0
+    leavesDarkMaterial.roughness = 0.8
+
+    // Tree positions based on reference image
+    const treePositions = [
+      // Near Gedung A
+      { x: -160, z: 120, scale: 1.2 },
+      { x: -165, z: 105, scale: 0.9 },
+      // Near Gedung B  
+      { x: 170, z: 120, scale: 1.0 },
+      { x: 175, z: 135, scale: 1.1 },
+      { x: 180, z: 105, scale: 0.8 },
+      // Near Gedung D
+      { x: 175, z: 20, scale: 1.0 },
+      { x: 180, z: 0, scale: 1.2 },
+      // Near Gedung G
+      { x: 190, z: -130, scale: 1.1 },
+      { x: 195, z: -150, scale: 0.9 },
+      // Near lake
+      { x: -170, z: -160, scale: 1.0 },
+      { x: -115, z: -160, scale: 0.8 },
+      { x: -100, z: -180, scale: 1.1 },
+      // Center area
+      { x: 10, z: 110, scale: 0.9 },
+      { x: -30, z: 130, scale: 1.0 },
+    ]
 
     treePositions.forEach((pos, i) => {
       // Trunk
       const trunk = MeshBuilder.CreateCylinder(`trunk_${i}`, {
-        diameter: 0.8,
-        height: 4,
+        diameter: 0.6 * pos.scale,
+        height: 3 * pos.scale,
       }, this.scene)
-      trunk.position = pos.add(new Vector3(0, 2, 0))
+      trunk.position = new Vector3(pos.x, 1.5 * pos.scale, pos.z)
       trunk.material = trunkMaterial
       this.lightingSetup?.addShadowCaster(trunk)
+      this.meshes.push(trunk)
 
-      // Leaves (cone shape)
-      const leaves = MeshBuilder.CreateCylinder(`leaves_${i}`, {
-        diameterTop: 0,
-        diameterBottom: 4,
-        height: 5,
+      // Leaves (layered spheres for fuller look)
+      const leavesBottom = MeshBuilder.CreateSphere(`leaves_b_${i}`, {
+        diameter: 4 * pos.scale,
+        segments: 8,
       }, this.scene)
-      leaves.position = pos.add(new Vector3(0, 6, 0))
-      leaves.material = leavesMaterial
-      this.lightingSetup?.addShadowCaster(leaves)
+      leavesBottom.position = new Vector3(pos.x, 4 * pos.scale, pos.z)
+      leavesBottom.material = leavesDarkMaterial
+      this.lightingSetup?.addShadowCaster(leavesBottom)
+      this.meshes.push(leavesBottom)
 
-      this.meshes.push(trunk, leaves)
+      const leavesTop = MeshBuilder.CreateSphere(`leaves_t_${i}`, {
+        diameter: 3 * pos.scale,
+        segments: 8,
+      }, this.scene)
+      leavesTop.position = new Vector3(pos.x, 5.5 * pos.scale, pos.z)
+      leavesTop.material = leavesMaterial
+      this.lightingSetup?.addShadowCaster(leavesTop)
+      this.meshes.push(leavesTop)
+
+      // Tree collider
+      this.colliders.push({
+        min: new Vector3(pos.x - 0.5, 0, pos.z - 0.5),
+        max: new Vector3(pos.x + 0.5, 6 * pos.scale, pos.z + 0.5),
+      })
     })
-
-    // Start/Finish line
-    const finishLine = MeshBuilder.CreateGround('finishLine', {
-      width: 12,
-      height: 3,
-    }, this.scene)
-    finishLine.position = new Vector3(0, 0.02, 30)
-    
-    const checkerMaterial = new StandardMaterial('checkerMaterial', this.scene)
-    checkerMaterial.diffuseColor = new Color3(1, 1, 1)
-    // Simple checker pattern would need a texture, use white for now
-    finishLine.material = checkerMaterial
-
-    this.meshes.push(finishLine)
-
-    // Start arch
-    this.createStartArch()
   }
 
-  private createStartArch(): void {
-    const archMaterial = new PBRMaterial('archMaterial', this.scene)
-    archMaterial.albedoColor = new Color3(0.8, 0.1, 0.1)
-    archMaterial.metallic = 0.5
-    archMaterial.roughness = 0.4
+  private createBushes(): void {
+    const bushMaterial = new PBRMaterial('bushMaterial', this.scene)
+    bushMaterial.albedoColor = new Color3(0.3, 0.5, 0.25)
+    bushMaterial.metallic = 0
+    bushMaterial.roughness = 0.85
 
-    // Left pillar
-    const leftPillar = MeshBuilder.CreateBox('leftPillar', {
-      width: 1,
-      height: 8,
-      depth: 1,
-    }, this.scene)
-    leftPillar.position = new Vector3(-7, 4, 30)
-    leftPillar.material = archMaterial
-    this.lightingSetup?.addShadowCaster(leftPillar)
+    const bushDarkMaterial = new PBRMaterial('bushDarkMaterial', this.scene)
+    bushDarkMaterial.albedoColor = new Color3(0.25, 0.42, 0.22)
+    bushDarkMaterial.metallic = 0
+    bushDarkMaterial.roughness = 0.85
 
-    // Right pillar
-    const rightPillar = MeshBuilder.CreateBox('rightPillar', {
-      width: 1,
-      height: 8,
-      depth: 1,
-    }, this.scene)
-    rightPillar.position = new Vector3(7, 4, 30)
-    rightPillar.material = archMaterial
-    this.lightingSetup?.addShadowCaster(rightPillar)
+    // Bush clusters based on reference
+    const bushClusters = [
+      // Near lake
+      { x: -175, z: -175, count: 3 },
+      { x: -180, z: -190, count: 2 },
+      { x: -120, z: -240, count: 2 },
+      // Near Gedung F
+      { x: -160, z: -100, count: 2 },
+      // Decorative around map
+      { x: -170, z: 80, count: 2 },
+      { x: 180, z: 80, count: 2 },
+    ]
 
-    // Top beam
-    const topBeam = MeshBuilder.CreateBox('topBeam', {
-      width: 15,
-      height: 1.5,
-      depth: 1,
-    }, this.scene)
-    topBeam.position = new Vector3(0, 8.5, 30)
-    topBeam.material = archMaterial
-    this.lightingSetup?.addShadowCaster(topBeam)
+    bushClusters.forEach((cluster, ci) => {
+      for (let i = 0; i < cluster.count; i++) {
+        const offsetX = (Math.random() - 0.5) * 10
+        const offsetZ = (Math.random() - 0.5) * 10
+        const scale = 0.8 + Math.random() * 0.4
 
-    this.meshes.push(leftPillar, rightPillar, topBeam)
+        const bush = MeshBuilder.CreateSphere(`bush_${ci}_${i}`, {
+          diameter: 2.5 * scale,
+          segments: 6,
+        }, this.scene)
+        bush.position = new Vector3(
+          cluster.x + offsetX, 
+          1 * scale, 
+          cluster.z + offsetZ
+        )
+        bush.scaling.y = 0.7
+        bush.material = i % 2 === 0 ? bushMaterial : bushDarkMaterial
+        this.lightingSetup?.addShadowCaster(bush)
+        this.meshes.push(bush)
+      }
+    })
+  }
+
+  private createMapBoundaryWalls(): void {
+    const wallMaterial = new PBRMaterial('boundaryWallMaterial', this.scene)
+    wallMaterial.albedoColor = new Color3(0.5, 0.5, 0.5)
+    wallMaterial.metallic = 0.2
+    wallMaterial.roughness = 0.8
+
+    const wallHeight = 3
+    const wallThickness = 2
+
+    // Create boundary walls and add colliders
+    const walls = [
+      { x: 0, z: 200, width: 400, rotation: 0 },      // North
+      { x: 0, z: -300, width: 400, rotation: 0 },     // South
+      { x: 200, z: -50, width: 500, rotation: Math.PI / 2 },   // East
+      { x: -200, z: -50, width: 500, rotation: Math.PI / 2 },  // West
+    ]
+
+    walls.forEach((wall, i) => {
+      const mesh = MeshBuilder.CreateBox(`boundaryWall_${i}`, {
+        width: wall.width,
+        height: wallHeight,
+        depth: wallThickness,
+      }, this.scene)
+      mesh.position = new Vector3(wall.x, wallHeight / 2, wall.z)
+      mesh.rotation.y = wall.rotation
+      mesh.material = wallMaterial
+      mesh.receiveShadows = true
+      mesh.checkCollisions = true
+      this.lightingSetup?.addShadowCaster(mesh)
+      this.meshes.push(mesh)
+
+      // Add collider for boundary wall
+      this.addBoxCollider(mesh)
+    })
+  }
+
+  private addBoxCollider(mesh: AbstractMesh): void {
+    mesh.computeWorldMatrix(true)
+    const boundingInfo = mesh.getBoundingInfo()
+    const min = boundingInfo.boundingBox.minimumWorld
+    const max = boundingInfo.boundingBox.maximumWorld
+    
+    this.colliders.push({
+      min: min.clone(),
+      max: max.clone(),
+      mesh: mesh,
+    })
   }
 
   dispose(): void {
     this.meshes.forEach(mesh => mesh.dispose())
     this.meshes = []
+    this.colliders = []
     console.log('[SimpleMap] Disposed')
   }
 }
