@@ -200,6 +200,12 @@
     gap: 1.5rem;
 }
 
+/* Dashboard Content (for tabs) */
+.dashboard-content {
+    display: flex;
+    flex-direction: column;
+}
+
 .widget-card {
     background: white;
     border-radius: 20px;
