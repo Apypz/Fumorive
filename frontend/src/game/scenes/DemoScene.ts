@@ -6,19 +6,18 @@ import {
   PBRMaterial,
   AbstractMesh,
   SceneLoader,
-  ArcRotateCamera,
 } from '@babylonjs/core'
 // Import all available loaders
 import '@babylonjs/loaders/OBJ'
 import '@babylonjs/loaders/glTF'
 import '@babylonjs/loaders'
 import type { GameScene, SceneContext, GraphicsConfig } from '../types'
-import { CameraController } from '../components/CameraController'
 import { LightingSetup } from '../components/LightingSetup'
 import { EnvironmentSetup } from '../components/EnvironmentSetup'
 import { PostProcessingPipeline } from '../engine/PostProcessingPipeline'
 import { InputManager } from '../engine/InputManager'
 import { CarController } from '../components/CarController'
+import type { CameraMode, CameraPositionConfig } from '../components/CarController'
 import { SimpleMap } from '../components/SimpleMap'
 import { DEFAULT_GRAPHICS_CONFIG } from '../types'
 
@@ -26,7 +25,7 @@ export class DemoScene implements GameScene {
   name = 'DemoScene'
 
   private scene: Scene | null = null
-  private cameraController: CameraController | null = null
+  private canvas: HTMLCanvasElement | null = null
   private lightingSetup: LightingSetup | null = null
   private environmentSetup: EnvironmentSetup | null = null
   private postProcessing: PostProcessingPipeline | null = null
@@ -38,32 +37,46 @@ export class DemoScene implements GameScene {
   private carMesh: AbstractMesh | null = null
   private graphicsConfig: GraphicsConfig
 
+  // Camera mode change callback
+  private onCameraModeChange: ((mode: CameraMode) => void) | null = null
+
   constructor(graphicsConfig?: GraphicsConfig) {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
   }
 
+  /**
+   * Set callback for camera mode changes (to update UI)
+   */
+  setOnCameraModeChange(callback: (mode: CameraMode) => void): void {
+    this.onCameraModeChange = callback
+    // Also set on car controller if already initialized
+    if (this.carController) {
+      this.carController.onCameraModeChanged(callback)
+    }
+  }
+
+  /**
+   * Get current camera mode
+   */
+  getCameraMode(): CameraMode {
+    return this.carController?.getCameraMode() ?? 'third-person'
+  }
+
+  /**
+   * Get camera position config for UI adjustment
+   */
+  getCameraConfig(): CameraPositionConfig | null {
+    return this.carController ? null : null // Can be extended to expose config
+  }
+
   async init(context: SceneContext): Promise<void> {
     this.scene = context.scene
-    const canvas = context.canvas
+    this.canvas = context.canvas
 
     console.log('[DemoScene] Initializing...')
 
     // Setup input manager
-    this.inputManager = new InputManager(this.scene, canvas)
-
-    // Setup camera (orbit camera centered on car)
-    this.cameraController = new CameraController(this.scene, canvas, {
-      type: 'orbit',
-      target: new Vector3(0, 0.8, 0), // Target car center
-      alpha: -Math.PI / 4, // 45 degrees from front-left
-      beta: Math.PI / 3.5, // Slightly above
-      radius: 8, // Distance from car
-      lowerRadiusLimit: 4,
-      upperRadiusLimit: 20,
-    })
-
-    // Set active camera
-    this.scene.activeCamera = this.cameraController.getCamera()
+    this.inputManager = new InputManager(this.scene, this.canvas)
 
     // Setup lighting - bright daylight
     this.lightingSetup = new LightingSetup(this.scene, this.graphicsConfig, {
@@ -160,25 +173,56 @@ export class DemoScene implements GameScene {
           mesh.receiveShadows = true
         })
 
-        // Setup car controller for WASD movement
-        this.carController = new CarController(this.scene!, rootMesh, {
-          // Customize physics here - all values use real-world units
-          // See CarControllerConfig interface for documentation
-        })
+        // Setup car controller for WASD movement with dual camera system
+        // Camera position config - EASILY ADJUSTABLE VALUES
+        const cameraConfig: Partial<CameraPositionConfig> = {
+          thirdPerson: {
+            distance: 8,              // Distance from car
+            heightOffset: 1.0,        // Height above car
+            targetHeightOffset: 0.8,  // Look at point height
+            alpha: -Math.PI / 4,      // Horizontal angle
+            beta: Math.PI / 3.5,      // Vertical angle
+            lowerRadiusLimit: 4,
+            upperRadiusLimit: 20,
+          },
+          firstPerson: {
+            forwardOffset: 0,       // Forward from car center (driver position)
+            heightOffset: 2.0,        // Eye level height
+            sideOffset: 0.25,         // Slight right offset (driver seat)
+            fov: 1.3,                 // Field of view (~75 degrees)
+            lookAheadDistance: 50,    // How far to look ahead
+          },
+        }
+
+        this.carController = new CarController(
+          this.scene!, 
+          rootMesh, 
+          {}, // Car physics config (use defaults)
+          cameraConfig
+        )
+
+        // Setup cameras with canvas
+        if (this.canvas) {
+          this.carController.setupCameras(this.canvas)
+        }
+
+        // Set camera mode change callback
+        if (this.onCameraModeChange) {
+          this.carController.onCameraModeChanged(this.onCameraModeChange)
+        }
 
         // Set map reference for collision detection
         if (this.simpleMap) {
           this.carController.setMap(this.simpleMap)
         }
 
-        // Set camera to follow car
-        const camera = this.cameraController?.getCamera() as ArcRotateCamera
-        if (camera) {
-          this.carController.setCamera(camera)
-          camera.target = rootMesh.position.add(new Vector3(0, 0.8, 0))
+        // Set active camera from car controller
+        const activeCamera = this.carController.getActiveCamera()
+        if (activeCamera) {
+          this.scene!.activeCamera = activeCamera
         }
 
-        console.log('[DemoScene] Car model setup complete with controls')
+        console.log('[DemoScene] Car model setup complete with dual camera system')
       }
     } catch (error) {
       console.error('[DemoScene] Failed to load car model:', error)
@@ -292,18 +336,14 @@ export class DemoScene implements GameScene {
   }
 
   update(deltaTime: number): void {
-    // Update car controller (physics and movement)
+    // Update car controller (physics, movement, and camera)
     this.carController?.update(deltaTime)
-    
-    // Update camera controller if using FPS camera
-    this.cameraController?.update(deltaTime)
   }
 
   dispose(): void {
     this.postProcessing?.dispose()
     this.environmentSetup?.dispose()
     this.lightingSetup?.dispose()
-    this.cameraController?.dispose()
     this.inputManager?.dispose()
     this.carController?.dispose()
     if (typeof this.simpleMap?.dispose === 'function') {
@@ -317,6 +357,9 @@ export class DemoScene implements GameScene {
       this.carMesh.dispose()
       this.carMesh = null
     }
+
+    this.onCameraModeChange = null
+    this.canvas = null
 
     console.log('[DemoScene] Disposed')
   }

@@ -4,8 +4,62 @@ import {
   AbstractMesh,
   KeyboardEventTypes,
   ArcRotateCamera,
+  UniversalCamera,
+  Camera,
 } from '@babylonjs/core'
 import { SimpleMap } from './SimpleMap'
+
+/**
+ * Camera Mode Types
+ */
+export type CameraMode = 'third-person' | 'first-person'
+
+/**
+ * Camera Position Configuration
+ * Easy to adjust camera positions for both modes
+ */
+export interface CameraPositionConfig {
+  // Third Person (Orbit) Camera Settings
+  thirdPerson: {
+    distance: number        // Distance from car (radius)
+    heightOffset: number    // Height above car center
+    targetHeightOffset: number // Where camera looks at (height offset)
+    alpha: number           // Horizontal angle (radians)
+    beta: number            // Vertical angle (radians) 
+    lowerRadiusLimit: number
+    upperRadiusLimit: number
+  }
+  // First Person (Cockpit) Camera Settings
+  firstPerson: {
+    forwardOffset: number   // Forward/backward from car center (+forward)
+    heightOffset: number    // Height above car floor
+    sideOffset: number      // Left/right offset (+ = right)
+    fov: number             // Field of view (radians)
+    lookAheadDistance: number // How far ahead to look
+  }
+}
+
+/**
+ * Default Camera Configuration - EASILY ADJUSTABLE
+ */
+export const DEFAULT_CAMERA_CONFIG: CameraPositionConfig = {
+  thirdPerson: {
+    distance: 8,
+    heightOffset: 1.0,
+    targetHeightOffset: 0.8,
+    alpha: -Math.PI / 4,
+    beta: Math.PI / 3.5,
+    lowerRadiusLimit: 4,
+    upperRadiusLimit: 20,
+  },
+  firstPerson: {
+    forwardOffset: 0.3,     // Slightly forward (driver seat position)
+    heightOffset: 0.8,      // Eye level inside car
+    sideOffset: 0.3,        // Slightly right (driver's seat)
+    fov: 1.2,               // Wider FOV for immersion (~70 degrees)
+    lookAheadDistance: 50,  // Look far ahead
+  },
+}
 
 /**
  * Car Physics Configuration
@@ -90,8 +144,14 @@ export class CarController {
   private scene: Scene
   private carMesh: AbstractMesh
   private config: CarControllerConfig
-  private camera: ArcRotateCamera | null = null
+  private cameraConfig: CameraPositionConfig
   private map: SimpleMap | null = null  // Reference to map for collision
+
+  // === CAMERA SYSTEM ===
+  private thirdPersonCamera: ArcRotateCamera | null = null
+  private firstPersonCamera: UniversalCamera | null = null
+  private currentCameraMode: CameraMode = 'third-person'
+  private onCameraModeChange: ((mode: CameraMode) => void) | null = null
 
   // === PHYSICS STATE ===
   // Position and velocity in world space
@@ -129,10 +189,19 @@ export class CarController {
     handbrake: false,
   }
 
-  constructor(scene: Scene, carMesh: AbstractMesh, config?: Partial<CarControllerConfig>) {
+  constructor(
+    scene: Scene, 
+    carMesh: AbstractMesh, 
+    config?: Partial<CarControllerConfig>,
+    cameraConfig?: Partial<CameraPositionConfig>
+  ) {
     this.scene = scene
     this.carMesh = carMesh
     this.config = { ...DEFAULT_CONFIG, ...config }
+    this.cameraConfig = {
+      thirdPerson: { ...DEFAULT_CAMERA_CONFIG.thirdPerson, ...cameraConfig?.thirdPerson },
+      firstPerson: { ...DEFAULT_CAMERA_CONFIG.firstPerson, ...cameraConfig?.firstPerson },
+    }
 
     // Handle rotationQuaternion from imported models
     if (this.carMesh.rotationQuaternion) {
@@ -147,8 +216,118 @@ export class CarController {
     console.log('[CarController] Physics engine initialized')
   }
 
+  /**
+   * Setup cameras - call after constructor with canvas
+   */
+  setupCameras(canvas: HTMLCanvasElement): void {
+    // Create Third Person Camera (ArcRotate)
+    const tpConfig = this.cameraConfig.thirdPerson
+    this.thirdPersonCamera = new ArcRotateCamera(
+      'thirdPersonCamera',
+      tpConfig.alpha,
+      tpConfig.beta,
+      tpConfig.distance,
+      this.carMesh.position.add(new Vector3(0, tpConfig.targetHeightOffset, 0)),
+      this.scene
+    )
+    this.thirdPersonCamera.lowerRadiusLimit = tpConfig.lowerRadiusLimit
+    this.thirdPersonCamera.upperRadiusLimit = tpConfig.upperRadiusLimit
+    this.thirdPersonCamera.lowerBetaLimit = 0.1
+    this.thirdPersonCamera.upperBetaLimit = Math.PI / 2 - 0.1
+    this.thirdPersonCamera.inertia = 0.9
+    this.thirdPersonCamera.panningSensibility = 0 // Disable panning
+    this.thirdPersonCamera.keysUp = []
+    this.thirdPersonCamera.keysDown = []
+    this.thirdPersonCamera.keysLeft = []
+    this.thirdPersonCamera.keysRight = []
+    this.thirdPersonCamera.attachControl(canvas, true)
+
+    // Create First Person Camera (Universal)
+    const fpConfig = this.cameraConfig.firstPerson
+    this.firstPersonCamera = new UniversalCamera(
+      'firstPersonCamera',
+      Vector3.Zero(), // Will be updated in updateCamera
+      this.scene
+    )
+    this.firstPersonCamera.fov = fpConfig.fov
+    this.firstPersonCamera.minZ = 0.1
+    this.firstPersonCamera.maxZ = 1000
+    this.firstPersonCamera.inputs.clear() // We control it manually
+
+    // Start with third person
+    this.scene.activeCamera = this.thirdPersonCamera
+    console.log('[CarController] Cameras initialized - Mode: third-person')
+  }
+
+  /**
+   * Set callback for camera mode changes
+   */
+  onCameraModeChanged(callback: (mode: CameraMode) => void): void {
+    this.onCameraModeChange = callback
+  }
+
+  /**
+   * Toggle between camera modes
+   */
+  toggleCameraMode(): void {
+    if (this.currentCameraMode === 'third-person') {
+      this.setCameraMode('first-person')
+    } else {
+      this.setCameraMode('third-person')
+    }
+  }
+
+  /**
+   * Set specific camera mode
+   */
+  setCameraMode(mode: CameraMode): void {
+    this.currentCameraMode = mode
+    
+    if (mode === 'third-person' && this.thirdPersonCamera) {
+      this.scene.activeCamera = this.thirdPersonCamera
+      console.log('[CarController] Switched to Third Person camera')
+    } else if (mode === 'first-person' && this.firstPersonCamera) {
+      this.scene.activeCamera = this.firstPersonCamera
+      console.log('[CarController] Switched to First Person camera')
+    }
+
+    // Notify listeners
+    if (this.onCameraModeChange) {
+      this.onCameraModeChange(mode)
+    }
+  }
+
+  /**
+   * Get current camera mode
+   */
+  getCameraMode(): CameraMode {
+    return this.currentCameraMode
+  }
+
+  /**
+   * Get active camera
+   */
+  getActiveCamera(): Camera | null {
+    return this.currentCameraMode === 'third-person' 
+      ? this.thirdPersonCamera 
+      : this.firstPersonCamera
+  }
+
+  /**
+   * Update camera configuration at runtime
+   */
+  updateCameraConfig(config: Partial<CameraPositionConfig>): void {
+    if (config.thirdPerson) {
+      this.cameraConfig.thirdPerson = { ...this.cameraConfig.thirdPerson, ...config.thirdPerson }
+    }
+    if (config.firstPerson) {
+      this.cameraConfig.firstPerson = { ...this.cameraConfig.firstPerson, ...config.firstPerson }
+    }
+  }
+
+  // Legacy method for backward compatibility
   setCamera(camera: ArcRotateCamera): void {
-    this.camera = camera
+    this.thirdPersonCamera = camera
   }
 
   /**
@@ -185,6 +364,12 @@ export class CarController {
           break
         case 'shift':
           this.input.brake = pressed
+          break
+        case 'v':
+          // Toggle camera on key down only
+          if (pressed) {
+            this.toggleCameraMode()
+          }
           break
       }
     })
@@ -424,13 +609,52 @@ export class CarController {
   }
   
   /**
-   * Smooth camera follow
+   * Update camera based on current mode
    */
   private updateCamera(): void {
-    if (!this.camera) return
+    if (this.currentCameraMode === 'third-person') {
+      this.updateThirdPersonCamera()
+    } else {
+      this.updateFirstPersonCamera()
+    }
+  }
+
+  /**
+   * Update Third Person (Orbit) camera - smooth follow
+   */
+  private updateThirdPersonCamera(): void {
+    if (!this.thirdPersonCamera) return
     
-    const targetPosition = this.carMesh.position.add(new Vector3(0, 1, 0))
-    this.camera.target = Vector3.Lerp(this.camera.target, targetPosition, 0.15)
+    const tpConfig = this.cameraConfig.thirdPerson
+    const targetPosition = this.carMesh.position.add(new Vector3(0, tpConfig.targetHeightOffset, 0))
+    this.thirdPersonCamera.target = Vector3.Lerp(this.thirdPersonCamera.target, targetPosition, 0.15)
+  }
+
+  /**
+   * Update First Person camera - rigidly attached to car interior (no smoothing)
+   */
+  private updateFirstPersonCamera(): void {
+    if (!this.firstPersonCamera) return
+    
+    const fpConfig = this.cameraConfig.firstPerson
+    
+    // Calculate camera position in local car space
+    const forward = this.getForwardVector()
+    const right = this.getRightVector()
+    
+    // Position camera at driver's eye level - RIGIDLY attached to car
+    const cameraPosition = this.carMesh.position
+      .add(forward.scale(fpConfig.forwardOffset))
+      .add(right.scale(fpConfig.sideOffset))
+      .add(new Vector3(0, fpConfig.heightOffset, 0))
+    
+    // Look ahead in the direction the car is facing
+    const lookTarget = cameraPosition.add(forward.scale(fpConfig.lookAheadDistance))
+    
+    // Direct position update - NO smoothing/lerp for FPS camera
+    // Camera is rigidly attached to the car like a real cockpit view
+    this.firstPersonCamera.position.copyFrom(cameraPosition)
+    this.firstPersonCamera.setTarget(lookTarget)
   }
   
   /**
@@ -474,6 +698,15 @@ export class CarController {
   }
 
   dispose(): void {
+    if (this.thirdPersonCamera) {
+      this.thirdPersonCamera.dispose()
+      this.thirdPersonCamera = null
+    }
+    if (this.firstPersonCamera) {
+      this.firstPersonCamera.dispose()
+      this.firstPersonCamera = null
+    }
+    this.onCameraModeChange = null
     console.log('[CarController] Disposed')
   }
 }

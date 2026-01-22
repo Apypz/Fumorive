@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { GraphicsConfig, AssetLoadProgress } from '../game/types'
 import { GRAPHICS_PRESETS, DEFAULT_GRAPHICS_CONFIG } from '../game/types'
+import type { CameraMode } from '../game/components/CarController'
 
 export type GameState = 'loading' | 'menu' | 'playing' | 'paused'
 
@@ -19,6 +20,10 @@ interface GameStoreState {
   graphicsConfig: GraphicsConfig
   setGraphicsConfig: (config: Partial<GraphicsConfig>) => void
   setGraphicsPreset: (preset: 'low' | 'medium' | 'high' | 'ultra') => void
+
+  // Camera
+  cameraMode: CameraMode
+  setCameraMode: (mode: CameraMode) => void
 
   // Performance
   fps: number
@@ -52,6 +57,10 @@ export const useGameStore = create<GameStoreState>((set) => ({
     set({
       graphicsConfig: GRAPHICS_PRESETS[preset],
     }),
+
+  // Camera
+  cameraMode: 'third-person',
+  setCameraMode: (cameraMode) => set({ cameraMode }),
 
   // Performance
   fps: 0,

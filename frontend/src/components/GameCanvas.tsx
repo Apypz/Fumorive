@@ -12,6 +12,7 @@ export function GameCanvas() {
     setLoading,
     setFps,
     setGameState,
+    setCameraMode,
     showInspector,
   } = useGameStore()
 
@@ -38,6 +39,11 @@ export function GameCanvas() {
       const demoScene = new DemoScene(graphicsConfig)
       sceneRef.current = demoScene
 
+      // Set camera mode change callback to update UI
+      demoScene.setOnCameraModeChange((mode) => {
+        setCameraMode(mode)
+      })
+
       await demoScene.init(engine.getContext())
 
       // Start render loop
@@ -61,7 +67,7 @@ export function GameCanvas() {
       console.error('[GameCanvas] Failed to initialize game:', error)
       setLoading(false)
     }
-  }, [graphicsConfig, setLoading, setFps, setGameState])
+  }, [graphicsConfig, setLoading, setFps, setGameState, setCameraMode])
 
   // Handle inspector toggle
   useEffect(() => {
