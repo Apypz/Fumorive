@@ -56,7 +56,6 @@ export class GameEngine {
 
     this.scene = new Scene(this.engine, {
       useClonedMeshMap: true,
-      useGeometryIdsMap: true,
       useMaterialMeshMap: true,
     })
 
