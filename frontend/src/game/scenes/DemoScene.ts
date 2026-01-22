@@ -4,11 +4,8 @@ import {
   Color3,
   MeshBuilder,
   PBRMaterial,
-  Animation,
   AbstractMesh,
   SceneLoader,
-  StandardMaterial,
-  Texture,
   ArcRotateCamera,
 } from '@babylonjs/core'
 // Import all available loaders
@@ -23,7 +20,6 @@ import { PostProcessingPipeline } from '../engine/PostProcessingPipeline'
 import { InputManager } from '../engine/InputManager'
 import { CarController } from '../components/CarController'
 import { SimpleMap } from '../components/SimpleMap'
-import { MapGenerator } from '../components/MapGenerator'
 import { DEFAULT_GRAPHICS_CONFIG } from '../types'
 
 export class DemoScene implements GameScene {
@@ -40,7 +36,6 @@ export class DemoScene implements GameScene {
 
   private animatedMeshes: AbstractMesh[] = []
   private carMesh: AbstractMesh | null = null
-  private vehicleController: VehicleController | null = null
   private graphicsConfig: GraphicsConfig
 
   constructor(graphicsConfig?: GraphicsConfig) {
@@ -88,24 +83,6 @@ export class DemoScene implements GameScene {
       new Color3(0.7, 0.8, 0.95) // Bottom color (light horizon)
     )
     this.environmentSetup.setupGlowLayer(0.3)
-
-    // Create a 3D city map (roads, buildings, boundaries)
-    const map = MapGenerator.createMap(this.scene, {
-      cols: 22,
-      rows: 14,
-      cellSize: 4,
-      primarySpacing: 4,
-      secondaryProb: 0.12,
-      roadWidth: 1.4,
-      buildingProb: 0.45,
-      maxBuildingHeight: 6,
-      numRoutes: 4,
-    })
-
-    // Add city meshes as shadow casters
-    map.parent.getChildMeshes().forEach((m) => {
-      this.lightingSetup?.addShadowCaster(m)
-    })
 
     // Setup post-processing
     if (this.scene.activeCamera) {
@@ -155,15 +132,21 @@ export class DemoScene implements GameScene {
         const rootMesh = result.meshes[0]
         this.carMesh = rootMesh
 
-        // Position the car on the main road
-        rootMesh.position = new Vector3(-50, 0, 0)
+        // Position the car on road_center_v (vertical road at x:50)
+        rootMesh.position = new Vector3(50, 0, 50)
         
         // Scale the car (adjust as needed based on the model)
         rootMesh.scaling = new Vector3(0.5, 0.5, 0.5)
         
-        // Rotate car to face along the road
-        rootMesh.rotation.y = 0
+        // Rotate car to face North (+Z direction) - adjust based on model's default orientation
+        rootMesh.rotation.y = Math.PI / 2
         
+        // Enable collision on car mesh
+        rootMesh.checkCollisions = true
+        result.meshes.forEach((mesh) => {
+          mesh.checkCollisions = true
+        })
+
         // Log bounding info for debugging
         rootMesh.computeWorldMatrix(true)
         const boundingInfo = rootMesh.getHierarchyBoundingVectors()
@@ -173,7 +156,6 @@ export class DemoScene implements GameScene {
         result.meshes.forEach((mesh) => {
           // Add shadow casting
           this.lightingSetup?.addShadowCaster(mesh)
-          
           // Make mesh receive shadows
           mesh.receiveShadows = true
         })
@@ -218,11 +200,11 @@ export class DemoScene implements GameScene {
     // Create a more detailed car-like placeholder
     // Main car body
     const carBody = MeshBuilder.CreateBox('carBody', { width: 4, height: 1, depth: 2 }, this.scene)
-    carBody.position = new Vector3(0, 0.6, 0)
+    carBody.position = new Vector3(0, 0.6, 50)
 
     // Car cabin (roof)
     const carCabin = MeshBuilder.CreateBox('carCabin', { width: 2.2, height: 0.9, depth: 1.8 }, this.scene)
-    carCabin.position = new Vector3(-0.3, 1.55, 0)
+    carCabin.position = new Vector3(-0.3, 1.55, 50)
 
     // Hood (front)
     const hood = MeshBuilder.CreateBox('hood', { width: 1, height: 0.3, depth: 1.8 }, this.scene)
@@ -306,203 +288,7 @@ export class DemoScene implements GameScene {
     this.lightingSetup?.addShadowCaster(carCabin)
     this.lightingSetup?.addShadowCaster(hood)
 
-    // Create vehicle controller for fallback car as well
-    if (this.inputManager && this.carMesh) {
-      this.vehicleController = new VehicleController(this.carMesh, this.inputManager)
-
-      // Lock orbit camera behind fallback car
-      const orbit = this.cameraController?.getOrbitCamera()
-      if (orbit) {
-        const heading = this.carMesh.rotation.y
-        orbit.alpha = -heading + Math.PI / 2
-        orbit.setTarget(this.carMesh.position.add(new Vector3(0, 0.9, 0)))
-      }
-    }
-
     console.log('[DemoScene] Fallback car created')
-  }
-
-  private createDemoObjects(): void {
-    if (!this.scene) return
-
-    // Create central glowing sphere
-    const centerSphere = MeshBuilder.CreateSphere(
-      'centerSphere',
-      { diameter: 2, segments: 32 },
-      this.scene
-    )
-    centerSphere.position.y = 1
-
-    const sphereMaterial = new PBRMaterial('sphereMaterial', this.scene)
-    sphereMaterial.albedoColor = new Color3(0.9, 0.2, 0.3)
-    sphereMaterial.metallic = 0.9
-    sphereMaterial.roughness = 0.1
-    sphereMaterial.emissiveColor = new Color3(0.5, 0.1, 0.15)
-    sphereMaterial.emissiveIntensity = 0.5
-    centerSphere.material = sphereMaterial
-
-    this.lightingSetup?.addShadowCaster(centerSphere)
-
-    // Add floating animation
-    this.addFloatingAnimation(centerSphere, 1, 0.3, 2)
-    this.animatedMeshes.push(centerSphere)
-
-    // Create surrounding cubes
-    const cubeColors = [
-      new Color3(0.2, 0.6, 0.9), // Blue
-      new Color3(0.2, 0.8, 0.4), // Green
-      new Color3(0.9, 0.7, 0.2), // Gold
-      new Color3(0.7, 0.3, 0.9), // Purple
-      new Color3(0.9, 0.5, 0.2), // Orange
-      new Color3(0.3, 0.8, 0.8), // Cyan
-    ]
-
-    const radius = 6
-    const cubeCount = 6
-
-    for (let i = 0; i < cubeCount; i++) {
-      const angle = (i / cubeCount) * Math.PI * 2
-      const x = Math.cos(angle) * radius
-      const z = Math.sin(angle) * radius
-
-      const cube = MeshBuilder.CreateBox(
-        `cube_${i}`,
-        { size: 1.5 },
-        this.scene
-      )
-      cube.position = new Vector3(x, 0.75, z)
-
-      const cubeMaterial = new PBRMaterial(`cubeMaterial_${i}`, this.scene)
-      cubeMaterial.albedoColor = cubeColors[i]
-      cubeMaterial.metallic = 0.3
-      cubeMaterial.roughness = 0.4
-      cube.material = cubeMaterial
-
-      this.lightingSetup?.addShadowCaster(cube)
-
-      // Add rotation animation
-      this.addRotationAnimation(cube, i * 0.5)
-      this.animatedMeshes.push(cube)
-    }
-
-    // Create metallic pillars
-    const pillarPositions = [
-      new Vector3(-12, 3, -12),
-      new Vector3(12, 3, -12),
-      new Vector3(-12, 3, 12),
-      new Vector3(12, 3, 12),
-    ]
-
-    pillarPositions.forEach((pos, i) => {
-      const pillar = MeshBuilder.CreateCylinder(
-        `pillar_${i}`,
-        { diameter: 1.5, height: 6, tessellation: 24 },
-        this.scene!
-      )
-      pillar.position = pos
-
-      const pillarMaterial = new PBRMaterial(`pillarMaterial_${i}`, this.scene!)
-      pillarMaterial.albedoColor = new Color3(0.8, 0.75, 0.6)
-      pillarMaterial.metallic = 1.0
-      pillarMaterial.roughness = 0.2
-      pillar.material = pillarMaterial
-
-      this.lightingSetup?.addShadowCaster(pillar)
-
-      // Create glowing top
-      const glowSphere = MeshBuilder.CreateSphere(
-        `glowSphere_${i}`,
-        { diameter: 0.6, segments: 16 },
-        this.scene!
-      )
-      glowSphere.position = pos.add(new Vector3(0, 3.5, 0))
-
-      const glowMaterial = new PBRMaterial(`glowMaterial_${i}`, this.scene!)
-      glowMaterial.albedoColor = new Color3(1, 0.9, 0.5)
-      glowMaterial.emissiveColor = new Color3(1, 0.8, 0.3)
-      glowMaterial.emissiveIntensity = 2
-      glowSphere.material = glowMaterial
-
-      // Add point light at pillar top
-      this.lightingSetup?.addPointLight(
-        `pillarLight_${i}`,
-        pos.add(new Vector3(0, 3.5, 0)),
-        new Color3(1, 0.8, 0.5),
-        0.5,
-        15
-      )
-    })
-
-    // Create a torus for visual interest
-    const torus = MeshBuilder.CreateTorus(
-      'torus',
-      { diameter: 4, thickness: 0.5, tessellation: 48 },
-      this.scene
-    )
-    torus.position.y = 1
-    torus.rotation.x = Math.PI / 2
-
-    const torusMaterial = new PBRMaterial('torusMaterial', this.scene)
-    torusMaterial.albedoColor = new Color3(0.3, 0.3, 0.35)
-    torusMaterial.metallic = 0.8
-    torusMaterial.roughness = 0.2
-    torus.material = torusMaterial
-
-    this.lightingSetup?.addShadowCaster(torus)
-    this.addRotationAnimation(torus, 0, 'y', 0.2)
-    this.animatedMeshes.push(torus)
-
-    console.log('[DemoScene] Demo objects created')
-  }
-
-  private addFloatingAnimation(
-    mesh: AbstractMesh,
-    baseY: number,
-    amplitude: number,
-    duration: number
-  ): void {
-    const animation = new Animation(
-      'floatAnimation',
-      'position.y',
-      30,
-      Animation.ANIMATIONTYPE_FLOAT,
-      Animation.ANIMATIONLOOPMODE_CYCLE
-    )
-
-    const keys = [
-      { frame: 0, value: baseY },
-      { frame: 30 * (duration / 2), value: baseY + amplitude },
-      { frame: 30 * duration, value: baseY },
-    ]
-
-    animation.setKeys(keys)
-    mesh.animations.push(animation)
-    this.scene?.beginAnimation(mesh, 0, 30 * duration, true)
-  }
-
-  private addRotationAnimation(
-    mesh: AbstractMesh,
-    delay: number,
-    axis: 'x' | 'y' | 'z' = 'y',
-    speed: number = 0.5
-  ): void {
-    const animation = new Animation(
-      `rotateAnimation_${axis}`,
-      `rotation.${axis}`,
-      30,
-      Animation.ANIMATIONTYPE_FLOAT,
-      Animation.ANIMATIONLOOPMODE_CYCLE
-    )
-
-    const duration = (Math.PI * 2) / speed
-    const keys = [
-      { frame: 0, value: delay },
-      { frame: 30 * duration, value: delay + Math.PI * 2 },
-    ]
-
-    animation.setKeys(keys)
-    mesh.animations.push(animation)
-    this.scene?.beginAnimation(mesh, 0, 30 * duration, true)
   }
 
   update(deltaTime: number): void {
@@ -511,23 +297,6 @@ export class DemoScene implements GameScene {
     
     // Update camera controller if using FPS camera
     this.cameraController?.update(deltaTime)
-
-    // Update vehicle controller (moves the car)
-    this.vehicleController?.update(deltaTime)
-
-    // Make orbit camera follow the car (set target to car position and align behind it)
-    if (this.carMesh && this.cameraController) {
-      const carTarget = this.carMesh.position.add(new Vector3(0, 0.9, 0))
-      this.cameraController.setTarget(carTarget)
-
-      const orbit = this.cameraController.getOrbitCamera()
-      if (orbit) {
-        // Keep a stable overhead angle; do NOT rotate alpha to follow small steering input.
-        // Camera will be positioned behind the car by keeping a fixed alpha and following car position.
-        const desiredBeta = Math.PI / 3.5
-        orbit.beta = orbit.beta + (desiredBeta - orbit.beta) * Math.min(1, 4 * deltaTime)
-      }
-    }
   }
 
   dispose(): void {
@@ -537,7 +306,9 @@ export class DemoScene implements GameScene {
     this.cameraController?.dispose()
     this.inputManager?.dispose()
     this.carController?.dispose()
-    this.simpleMap?.dispose()
+    if (typeof this.simpleMap?.dispose === 'function') {
+      this.simpleMap?.dispose();
+    }
 
     this.animatedMeshes.forEach((mesh) => mesh.dispose())
     this.animatedMeshes = []

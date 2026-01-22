@@ -18,6 +18,7 @@ from app.api.routes.auth import router as auth_router
 from app.api.routes.sessions import router as sessions_router
 from app.api.routes.websocket import router as websocket_router
 from app.api.routes.eeg import router as eeg_router
+from app.api.routes.face import router as face_router
 
 # Configure logging
 logging.basicConfig(
@@ -133,6 +134,7 @@ app.include_router(auth_router, prefix=API_V1_PREFIX)
 app.include_router(sessions_router, prefix=API_V1_PREFIX)
 app.include_router(websocket_router, prefix=API_V1_PREFIX)
 app.include_router(eeg_router, prefix=API_V1_PREFIX)
+app.include_router(face_router, prefix=API_V1_PREFIX)
 
 # ============================================
 # HEALTH CHECK ENDPOINTS
