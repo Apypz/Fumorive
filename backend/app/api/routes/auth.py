@@ -97,8 +97,14 @@ async def login(
             detail="Inactive user account"
         )
     
-    # Create tokens
-    token_data = {"sub": str(user.id), "email": user.email}
+    # Create tokens with user info
+    token_data = {
+        "sub": str(user.email),  # JWT standard: sub = unique identifier (email)
+        "user_id": str(user.id),  # Include user_id for reference
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role
+    }
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
     
@@ -147,8 +153,14 @@ async def login_json(
             detail="Inactive user account"
         )
     
-    # Create tokens
-    token_data = {"sub": str(user.id), "email": user.email}
+    # Create tokens with user info
+    token_data = {
+        "sub": str(user.email),  # JWT standard: sub = unique identifier (email)
+        "user_id": str(user.id),  # Include user_id for reference
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role
+    }
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
     
@@ -190,8 +202,8 @@ async def refresh_token_endpoint(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    user_id_str = payload.get("sub")
-    email = payload.get("email")
+    email = payload.get("sub")  # sub now contains email
+    user_id = payload.get("user_id")  # get user_id if available
     
     # Verify user still exists and is active
     user = db.query(User).filter(User.email == email).first()
@@ -204,8 +216,14 @@ async def refresh_token_endpoint(
     # Blacklist old refresh token (prevent reuse)
     blacklist_refresh_token(refresh_data.refresh_token)
     
-    # Create new tokens
-    token_data = {"sub": user_id_str, "email": email}
+    # Create new tokens with user info
+    token_data = {
+        "sub": str(user.email),  # JWT standard: sub = unique identifier (email)
+        "user_id": str(user.id),  # Include user_id for reference
+        "email": user.email,
+        "full_name": user.full_name,
+        "role": user.role
+    }
     new_access_token = create_access_token(token_data)
     new_refresh_token = create_refresh_token(token_data)
     

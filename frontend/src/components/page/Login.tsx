@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Chrome, Instagram, Youtube, Twitter } from 'lucide-react';
+import { Eye, EyeOff, Chrome, Instagram, Youtube, Twitter, Loader2 } from 'lucide-react';
 import { useUserStore } from '../../stores/userStore';
 import './Login.css';
 
@@ -164,7 +164,12 @@ const Login = () => {
                         )}
 
                         <button type="submit" className="login-btn-primary" disabled={isLoading}>
-                            {isLoading ? 'Loading...' : (isLogin ? 'Log In' : 'Sign Up')}
+                            {isLoading ? (
+                                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                    <Loader2 size={18} className="spinner-icon" />
+                                    Loading...
+                                </span>
+                            ) : (isLogin ? 'Log In' : 'Sign Up')}
                         </button>
 
                         <div className="toggle-text">

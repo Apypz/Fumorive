@@ -3,7 +3,7 @@ Application Configuration
 Environment variables and settings for ERGODRIVE Backend
 """
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 
 
@@ -19,8 +19,8 @@ class Settings(BaseSettings):
     RELOAD: bool = True
     
     # Database - PostgreSQL + TimescaleDB
-    DATABASE_URL: str = "postgresql://postgres:password@localhost:5432/ergodrive"
-    DATABASE_URL_ASYNC: str = "postgresql+asyncpg://postgres:password@localhost:5432/ergodrive"
+    DATABASE_URL: str = "postgresql://postgres:12345@127.0.0.1:5432/fumorive"
+    DATABASE_URL_ASYNC: str = "postgresql+asyncpg://postgres:12345@127.0.0.1:5432/fumorive"
     
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -48,9 +48,11 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = "INFO"
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore"  # Ignore extra fields dari .env
+    )
 
 
 # Create settings instance

@@ -353,3 +353,29 @@
         max-width: 500px;
     }
 }
+
+/* Loading Spinner Animation */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner-icon {
+    animation: spin 1s linear infinite;
+}
+
+.login-btn-primary:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.login-btn-primary:disabled:hover {
+    background: #9ca3af;
+    transform: none;
+    box-shadow: none;
+}

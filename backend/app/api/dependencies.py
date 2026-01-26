@@ -47,16 +47,22 @@ async def get_current_user(
     )
     
     # Check if token is blacklisted (logout)
-    if is_token_blacklisted(token):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has been revoked",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    try:
+        if is_token_blacklisted(token):
+            print(f"⚠️  Token is blacklisted")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has been revoked",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except Exception as e:
+        # If blacklist check fails (Redis down), allow the token through
+        print(f"⚠️  Blacklist check failed, allowing token: {e}")
     
     # Verify token
     payload = verify_token(token, token_type="access")
     if payload is None:
+        print(f"⚠️  Token verification failed")
         raise credentials_exception
     
     # Extract user ID

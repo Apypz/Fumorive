@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authService, type LoginData, type RegisterData, type UserResponse } from '../api/auth';
+import { parseJWT, getAccessToken, clearTokens } from '../utils/auth';
 
 interface UserState {
     user: UserResponse | null;
@@ -26,17 +27,26 @@ export const useUserStore = create<UserState>()(
             login: async (credentials) => {
                 set({ isLoading: true, error: null });
                 try {
-                    // Login only returns tokens (access_token, refresh_token) in auth.ts
+                    // Login returns tokens (access_token, refresh_token)
                     await authService.login(credentials);
 
-                    // Since we don't have a /me endpoint configured yet to get the full profile,
-                    // we will create a temporary user object state so the UI updates.
-                    // In a real app, you would fetch user details here: const user = await authService.getProfile();
-                    const tempUser: UserResponse = {
-                        id: 'temp-id',
-                        email: credentials.email,
-                        full_name: 'User', // Placeholder until we have profile fetch
-                        role: 'student',
+                    // Parse JWT token to get user info
+                    const accessToken = getAccessToken();
+                    if (!accessToken) {
+                        throw new Error('Failed to get access token');
+                    }
+
+                    const decodedToken = parseJWT(accessToken);
+                    if (!decodedToken) {
+                        throw new Error('Failed to decode access token');
+                    }
+
+                    // Extract user info from JWT payload
+                    const user: UserResponse = {
+                        id: decodedToken.user_id || 'unknown',  // user_id from JWT
+                        email: decodedToken.email || credentials.email,
+                        full_name: decodedToken.full_name || 'User',
+                        role: decodedToken.role || 'student',
                         is_active: true,
                         created_at: new Date().toISOString()
                     };
@@ -44,7 +54,7 @@ export const useUserStore = create<UserState>()(
                     set({
                         isAuthenticated: true,
                         isLoading: false,
-                        user: tempUser
+                        user
                     });
                 } catch (error: any) {
                     set({
@@ -71,13 +81,11 @@ export const useUserStore = create<UserState>()(
             },
 
             logout: async () => {
-                try {
-                    await authService.logout();
-                } catch (error) {
-                    console.error(error);
-                } finally {
-                    set({ user: null, isAuthenticated: false });
-                }
+                // No need to hit backend - just clear local state
+                // Backend will invalidate token automatically when it expires
+                clearTokens();
+                set({ user: null, isAuthenticated: false });
+                console.log('✅ Logged out successfully');
             },
 
             updateProfile: (data) => set((state) => ({

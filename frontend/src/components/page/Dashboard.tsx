@@ -28,8 +28,10 @@ import {
     Bell,
     Shield,
     Database,
-    Info
+    Info,
+    Camera
 } from 'lucide-react';
+import { useUserStore } from '../../stores/userStore';
 import './Dashboard.css';
 
 type TabView = 'overview' | 'history' | 'settings';
@@ -38,6 +40,7 @@ const Dashboard = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [activeTab, setActiveTab] = useState<TabView>('overview');
     const navigate = useNavigate();
+    const { user, logout } = useUserStore();
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
@@ -45,6 +48,7 @@ const Dashboard = () => {
         { icon: <LayoutDashboard size={20} />, label: 'Overview', tab: 'overview' as TabView },
         { icon: <History size={20} />, label: 'History', tab: 'history' as TabView },
         { icon: <Settings size={20} />, label: 'Settings', tab: 'settings' as TabView },
+        { icon: <Camera size={20} />, label: 'Face Recognition', action: () => navigate('/face-recognition') },
         { icon: <Gamepad2 size={20} />, label: 'Live Session', action: () => navigate('/session') },
     ];
 
@@ -79,7 +83,10 @@ const Dashboard = () => {
 
                     <div style={{ flex: 1 }}></div>
 
-                    <div className="nav-item" onClick={() => navigate('/')} style={{ color: '#ef4444' }}>
+                    <div className="nav-item" onClick={async () => {
+                        await logout();
+                        navigate('/login');
+                    }} style={{ color: '#ef4444' }}>
                         <span className="nav-icon"><LogOut size={20} /></span>
                         <span className="nav-label">Logout</span>
                     </div>
@@ -91,7 +98,7 @@ const Dashboard = () => {
                 <header className="dashboard-header">
                     <div className="header-title">
                         <h1>
-                            {activeTab === 'overview' && 'Welcome Back, Driver'}
+                            {activeTab === 'overview' && `Welcome Back, ${user?.full_name || 'Driver'}`}
                             {activeTab === 'history' && 'Session History'}
                             {activeTab === 'settings' && 'Settings'}
                         </h1>
@@ -101,7 +108,7 @@ const Dashboard = () => {
                     <div className="header-actions">
                         <div className="user-profile">
                             <div className="user-avatar"><User size={18} /></div>
-                            <span className="user-name">Guest User</span>
+                            <span className="user-name">{user?.full_name || 'Guest User'}</span>
                         </div>
                     </div>
                 </header>
