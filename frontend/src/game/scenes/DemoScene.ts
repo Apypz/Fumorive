@@ -124,9 +124,9 @@ export class DemoScene implements GameScene {
     console.log('[DemoScene] Loading car model...')
 
     try {
-      // Load the GLB model
-      const modelPath = '/assets/low_poly_small_car/'
-      const modelFile = 'low_poly_small_car.glb'
+      // Load the GLB model - Chevrolet C10 Pickup 1963 (resized in Blender)
+      const modelPath = '/assets/Chevrolet_C10_Pickup_1963/'
+      const modelFile = 'quit.glb'
       
       console.log(`[DemoScene] Attempting to load: ${modelPath}${modelFile}`)
       
@@ -148,8 +148,8 @@ export class DemoScene implements GameScene {
         // Position the car on road_center_v (vertical road at x:50)
         rootMesh.position = new Vector3(50, 0, 50)
         
-        // Scale the car (adjust as needed based on the model)
-        rootMesh.scaling = new Vector3(0.5, 0.5, 0.5)
+        // Scale - model sudah di-resize di Blender, gunakan skala 1.0
+        rootMesh.scaling = new Vector3(1.0, 1.0, 1.0)
         
         // Rotate car to face North (+Z direction) - adjust based on model's default orientation
         rootMesh.rotation.y = Math.PI / 2
@@ -175,21 +175,22 @@ export class DemoScene implements GameScene {
 
         // Setup car controller for WASD movement with dual camera system
         // Camera position config - EASILY ADJUSTABLE VALUES
+        // Disesuaikan untuk Chevrolet C10 Pickup (pickup truck lebih besar)
         const cameraConfig: Partial<CameraPositionConfig> = {
           thirdPerson: {
-            distance: 8,              // Distance from car
-            heightOffset: 1.0,        // Height above car
-            targetHeightOffset: 0.8,  // Look at point height
+            distance: 10,             // Distance from car (lebih jauh untuk pickup)
+            heightOffset: 3.0,        // Height above car (pickup lebih tinggi)
+            targetHeightOffset: 1.5,  // Look at point height
             alpha: -Math.PI / 4,      // Horizontal angle
             beta: Math.PI / 3.5,      // Vertical angle
-            lowerRadiusLimit: 4,
-            upperRadiusLimit: 20,
+            lowerRadiusLimit: 5,
+            upperRadiusLimit: 25,
           },
           firstPerson: {
-            forwardOffset: 0,       // Forward from car center (driver position)
-            heightOffset: 2.0,        // Eye level height
-            sideOffset: 0.25,         // Slight right offset (driver seat)
-            fov: 1.3,                 // Field of view (~75 degrees)
+            forwardOffset: 0.5,       // Forward from car center (driver position)
+            heightOffset: 2.5,        // Eye level height (pickup cab lebih tinggi)
+            sideOffset: 0.4,          // Right offset (driver seat)
+            fov: 1.2,                 // Field of view
             lookAheadDistance: 50,    // How far to look ahead
           },
         }
