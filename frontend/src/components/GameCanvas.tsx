@@ -9,10 +9,13 @@ export function GameCanvas() {
 
   const {
     graphicsConfig,
+    selectedMap,
     setLoading,
     setFps,
     setGameState,
     setCameraMode,
+    setControlMode,
+    setSteeringAngle,
     showInspector,
   } = useGameStore()
 
@@ -35,8 +38,8 @@ export function GameCanvas() {
       // Create scene
       engine.createScene()
 
-      // Create and initialize demo scene
-      const demoScene = new DemoScene(graphicsConfig)
+      // Create and initialize demo scene with selected map
+      const demoScene = new DemoScene(graphicsConfig, selectedMap)
       sceneRef.current = demoScene
 
       // Set camera mode change callback to update UI
@@ -44,11 +47,19 @@ export function GameCanvas() {
         setCameraMode(mode)
       })
 
+      // Set control mode change callback to update UI
+      demoScene.setOnControlModeChange((mode) => {
+        setControlMode(mode)
+      })
+
       await demoScene.init(engine.getContext())
 
       // Start render loop
       engine.start((deltaTime) => {
         demoScene.update(deltaTime)
+
+        // Update steering angle for HUD (every frame for smooth animation)
+        setSteeringAngle(demoScene.getSteeringAngle())
 
         // Update FPS counter every 0.5 seconds
         if (Math.random() < 0.05) {
@@ -67,7 +78,7 @@ export function GameCanvas() {
       console.error('[GameCanvas] Failed to initialize game:', error)
       setLoading(false)
     }
-  }, [graphicsConfig, setLoading, setFps, setGameState, setCameraMode])
+  }, [graphicsConfig, selectedMap, setLoading, setFps, setGameState, setCameraMode, setControlMode, setSteeringAngle])
 
   // Handle inspector toggle
   useEffect(() => {

@@ -1,9 +1,10 @@
 import { create } from 'zustand'
 import type { GraphicsConfig, AssetLoadProgress } from '../game/types'
 import { GRAPHICS_PRESETS, DEFAULT_GRAPHICS_CONFIG } from '../game/types'
-import type { CameraMode } from '../game/components/CarController'
+import type { CameraMode, ControlMode } from '../game/components/CarController'
 
-export type GameState = 'loading' | 'menu' | 'playing' | 'paused'
+export type GameState = 'loading' | 'menu' | 'map-select' | 'playing' | 'paused'
+export type MapType = 'bahlil-city' | 'iclik-park'
 
 interface GameStoreState {
   // Game state
@@ -21,9 +22,21 @@ interface GameStoreState {
   setGraphicsConfig: (config: Partial<GraphicsConfig>) => void
   setGraphicsPreset: (preset: 'low' | 'medium' | 'high' | 'ultra') => void
 
+  // Map
+  selectedMap: MapType
+  setSelectedMap: (map: MapType) => void
+
   // Camera
   cameraMode: CameraMode
   setCameraMode: (mode: CameraMode) => void
+
+  // Control Mode
+  controlMode: ControlMode
+  setControlMode: (mode: ControlMode) => void
+
+  // Steering
+  steeringAngle: number  // -1 to 1, normalized steering input
+  setSteeringAngle: (angle: number) => void
 
   // Performance
   fps: number
@@ -58,9 +71,21 @@ export const useGameStore = create<GameStoreState>((set) => ({
       graphicsConfig: GRAPHICS_PRESETS[preset],
     }),
 
+  // Map
+  selectedMap: 'bahlil-city',
+  setSelectedMap: (selectedMap) => set({ selectedMap }),
+
   // Camera
   cameraMode: 'third-person',
   setCameraMode: (cameraMode) => set({ cameraMode }),
+
+  // Control Mode
+  controlMode: 'keyboard',
+  setControlMode: (controlMode) => set({ controlMode }),
+
+  // Steering
+  steeringAngle: 0,
+  setSteeringAngle: (steeringAngle) => set({ steeringAngle }),
 
   // Performance
   fps: 0,

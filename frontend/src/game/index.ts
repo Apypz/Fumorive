@@ -12,8 +12,9 @@ export { CameraController } from './components/CameraController'
 export { LightingSetup } from './components/LightingSetup'
 export { EnvironmentSetup } from './components/EnvironmentSetup'
 export { CarController, DEFAULT_CAMERA_CONFIG } from './components/CarController'
-export type { CameraMode, CameraPositionConfig } from './components/CarController'
+export type { CameraMode, ControlMode, CameraPositionConfig } from './components/CarController'
 export { SimpleMap } from './components/SimpleMap'
 
 // Scenes
 export { DemoScene } from './scenes/DemoScene'
+export type { MapType } from './scenes/DemoScene'

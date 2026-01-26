@@ -3,16 +3,24 @@ import {
   Vector3,
   AbstractMesh,
   KeyboardEventTypes,
+  PointerEventTypes,
   ArcRotateCamera,
   UniversalCamera,
   Camera,
+  Observer,
+  PointerInfo,
 } from '@babylonjs/core'
 import { SimpleMap } from './SimpleMap'
 
 /**
  * Camera Mode Types
  */
-export type CameraMode = 'third-person' | 'first-person'
+export type CameraMode = 'third-person' | 'first-person' | 'free'
+
+/**
+ * Control Mode Types
+ */
+export type ControlMode = 'keyboard' | 'mouse'
 
 /**
  * Camera Position Configuration
@@ -150,8 +158,17 @@ export class CarController {
   // === CAMERA SYSTEM ===
   private thirdPersonCamera: ArcRotateCamera | null = null
   private firstPersonCamera: UniversalCamera | null = null
+  private freeCamera: ArcRotateCamera | null = null
   private currentCameraMode: CameraMode = 'third-person'
   private onCameraModeChange: ((mode: CameraMode) => void) | null = null
+
+  // === CONTROL MODE ===
+  private currentControlMode: ControlMode = 'keyboard'
+  private onControlModeChange: ((mode: ControlMode) => void) | null = null
+  private mouseSteeringTarget: number = 0  // Target steering value from mouse (-1 to 1)
+  private mouseSteeringValue: number = 0   // Smoothed steering value
+  private canvas: HTMLCanvasElement | null = null
+  private pointerObserver: Observer<PointerInfo> | null = null
 
   // === PHYSICS STATE ===
   // Position and velocity in world space
@@ -220,8 +237,9 @@ export class CarController {
    * Setup cameras - call after constructor with canvas
    */
   setupCameras(canvas: HTMLCanvasElement): void {
-    // Create Third Person Camera (ArcRotate)
     const tpConfig = this.cameraConfig.thirdPerson
+
+    // Create Third Person Camera (ArcRotate) - LOCKED, follows car from behind
     this.thirdPersonCamera = new ArcRotateCamera(
       'thirdPersonCamera',
       tpConfig.alpha,
@@ -230,19 +248,23 @@ export class CarController {
       this.carMesh.position.add(new Vector3(0, tpConfig.targetHeightOffset, 0)),
       this.scene
     )
-    this.thirdPersonCamera.lowerRadiusLimit = tpConfig.lowerRadiusLimit
-    this.thirdPersonCamera.upperRadiusLimit = tpConfig.upperRadiusLimit
-    this.thirdPersonCamera.lowerBetaLimit = 0.1
-    this.thirdPersonCamera.upperBetaLimit = Math.PI / 2 - 0.1
+    // Lock the camera - disable all user input
+    this.thirdPersonCamera.lowerRadiusLimit = tpConfig.distance
+    this.thirdPersonCamera.upperRadiusLimit = tpConfig.distance
+    this.thirdPersonCamera.lowerBetaLimit = tpConfig.beta
+    this.thirdPersonCamera.upperBetaLimit = tpConfig.beta
+    this.thirdPersonCamera.lowerAlphaLimit = tpConfig.alpha
+    this.thirdPersonCamera.upperAlphaLimit = tpConfig.alpha
     this.thirdPersonCamera.inertia = 0.9
     this.thirdPersonCamera.panningSensibility = 0 // Disable panning
     this.thirdPersonCamera.keysUp = []
     this.thirdPersonCamera.keysDown = []
     this.thirdPersonCamera.keysLeft = []
     this.thirdPersonCamera.keysRight = []
-    this.thirdPersonCamera.attachControl(canvas, true)
+    // Don't attach control - this camera is fully controlled by code
+    // this.thirdPersonCamera.attachControl(canvas, true)
 
-    // Create First Person Camera (Universal)
+    // Create First Person Camera (Universal) - Cockpit view
     const fpConfig = this.cameraConfig.firstPerson
     this.firstPersonCamera = new UniversalCamera(
       'firstPersonCamera',
@@ -254,9 +276,73 @@ export class CarController {
     this.firstPersonCamera.maxZ = 1000
     this.firstPersonCamera.inputs.clear() // We control it manually
 
+    // Create Free Camera (ArcRotate) - User can rotate freely around car
+    this.freeCamera = new ArcRotateCamera(
+      'freeCamera',
+      -Math.PI / 2,  // Start from behind
+      Math.PI / 3,   // Angle from top
+      tpConfig.distance,
+      this.carMesh.position.add(new Vector3(0, tpConfig.targetHeightOffset, 0)),
+      this.scene
+    )
+    this.freeCamera.lowerRadiusLimit = tpConfig.lowerRadiusLimit
+    this.freeCamera.upperRadiusLimit = tpConfig.upperRadiusLimit
+    this.freeCamera.lowerBetaLimit = 0.1
+    this.freeCamera.upperBetaLimit = Math.PI / 2 - 0.1
+    this.freeCamera.inertia = 0.9
+    this.freeCamera.panningSensibility = 0 // Disable panning
+    this.freeCamera.keysUp = []
+    this.freeCamera.keysDown = []
+    this.freeCamera.keysLeft = []
+    this.freeCamera.keysRight = []
+    this.freeCamera.attachControl(canvas, true)
+    // Detach initially since we start in third-person
+    this.freeCamera.detachControl()
+
     // Start with third person
     this.scene.activeCamera = this.thirdPersonCamera
     console.log('[CarController] Cameras initialized - Mode: third-person')
+
+    // Setup mouse control
+    this.setupMouseControl(canvas)
+  }
+
+  /**
+   * Setup mouse control for steering using relative mouse movement
+   * Works with both pointer lock ON and OFF
+   */
+  private setupMouseControl(canvas: HTMLCanvasElement): void {
+    this.canvas = canvas
+
+    // Store bound function reference for cleanup
+    const handleMouseMove = (event: MouseEvent) => {
+      // Don't process mouse steering if not in mouse control mode
+      if (this.currentControlMode !== 'mouse') return
+      
+      // Don't process mouse steering if free camera is active (mouse is for camera rotation)
+      if (this.currentCameraMode === 'free') return
+
+      // Use movementX for relative mouse movement (works with pointer lock)
+      const movementX = event.movementX || 0
+      
+      // Sensitivity - how much mouse movement affects steering
+      // Lower value = more sensitive, higher value = less sensitive
+      const sensitivity = 150
+      
+      // Add movement to target (accumulative)
+      this.mouseSteeringTarget += movementX / sensitivity
+      
+      // Clamp to -1 to 1
+      this.mouseSteeringTarget = Math.max(-1, Math.min(1, this.mouseSteeringTarget))
+    }
+
+    // Use window event listener for mouse tracking
+    window.addEventListener('mousemove', handleMouseMove)
+    
+    // Store reference for cleanup
+    ;(this as any)._mouseHandler = handleMouseMove
+
+    console.log('[CarController] Mouse control initialized with relative movement')
   }
 
   /**
@@ -267,11 +353,57 @@ export class CarController {
   }
 
   /**
-   * Toggle between camera modes
+   * Set callback for control mode changes
+   */
+  onControlModeChanged(callback: (mode: ControlMode) => void): void {
+    this.onControlModeChange = callback
+  }
+
+  /**
+   * Toggle between control modes (keyboard/mouse)
+   */
+  toggleControlMode(): void {
+    if (this.currentControlMode === 'keyboard') {
+      this.setControlMode('mouse')
+    } else {
+      this.setControlMode('keyboard')
+    }
+  }
+
+  /**
+   * Set specific control mode
+   */
+  setControlMode(mode: ControlMode): void {
+    this.currentControlMode = mode
+    
+    // Reset steering when switching modes
+    this.mouseSteeringTarget = 0
+    this.mouseSteeringValue = 0
+    this.input.steering = 0
+    
+    console.log(`[CarController] Switched to ${mode} control`)
+
+    // Notify listeners
+    if (this.onControlModeChange) {
+      this.onControlModeChange(mode)
+    }
+  }
+
+  /**
+   * Get current control mode
+   */
+  getControlMode(): ControlMode {
+    return this.currentControlMode
+  }
+
+  /**
+   * Toggle between camera modes (third-person -> first-person -> free -> third-person)
    */
   toggleCameraMode(): void {
     if (this.currentCameraMode === 'third-person') {
       this.setCameraMode('first-person')
+    } else if (this.currentCameraMode === 'first-person') {
+      this.setCameraMode('free')
     } else {
       this.setCameraMode('third-person')
     }
@@ -281,14 +413,24 @@ export class CarController {
    * Set specific camera mode
    */
   setCameraMode(mode: CameraMode): void {
+    // Detach free camera control when switching away from it
+    if (this.currentCameraMode === 'free' && this.freeCamera && this.canvas) {
+      this.freeCamera.detachControl()
+    }
+
     this.currentCameraMode = mode
     
     if (mode === 'third-person' && this.thirdPersonCamera) {
       this.scene.activeCamera = this.thirdPersonCamera
-      console.log('[CarController] Switched to Third Person camera')
+      console.log('[CarController] Switched to Third Person camera (locked)')
     } else if (mode === 'first-person' && this.firstPersonCamera) {
       this.scene.activeCamera = this.firstPersonCamera
       console.log('[CarController] Switched to First Person camera')
+    } else if (mode === 'free' && this.freeCamera && this.canvas) {
+      // Attach control for free camera
+      this.freeCamera.attachControl(this.canvas, true)
+      this.scene.activeCamera = this.freeCamera
+      console.log('[CarController] Switched to Free camera')
     }
 
     // Notify listeners
@@ -308,9 +450,16 @@ export class CarController {
    * Get active camera
    */
   getActiveCamera(): Camera | null {
-    return this.currentCameraMode === 'third-person' 
-      ? this.thirdPersonCamera 
-      : this.firstPersonCamera
+    switch (this.currentCameraMode) {
+      case 'third-person':
+        return this.thirdPersonCamera
+      case 'first-person':
+        return this.firstPersonCamera
+      case 'free':
+        return this.freeCamera
+      default:
+        return this.thirdPersonCamera
+    }
   }
 
   /**
@@ -353,11 +502,17 @@ export class CarController {
           break
         case 'a':
         case 'arrowleft':
-          this.input.steering = pressed ? -1 : (this.input.steering < 0 ? 0 : this.input.steering)
+          // Only handle keyboard steering when in keyboard mode
+          if (this.currentControlMode === 'keyboard') {
+            this.input.steering = pressed ? -1 : (this.input.steering < 0 ? 0 : this.input.steering)
+          }
           break
         case 'd':
         case 'arrowright':
-          this.input.steering = pressed ? 1 : (this.input.steering > 0 ? 0 : this.input.steering)
+          // Only handle keyboard steering when in keyboard mode
+          if (this.currentControlMode === 'keyboard') {
+            this.input.steering = pressed ? 1 : (this.input.steering > 0 ? 0 : this.input.steering)
+          }
           break
         case ' ':
           this.input.handbrake = pressed
@@ -369,6 +524,12 @@ export class CarController {
           // Toggle camera on key down only
           if (pressed) {
             this.toggleCameraMode()
+          }
+          break
+        case 'c':
+          // Toggle control mode (keyboard/mouse) on key down only
+          if (pressed) {
+            this.toggleControlMode()
           }
           break
       }
@@ -383,6 +544,29 @@ export class CarController {
     
     // Clamp deltaTime for stability
     const dt = Math.min(deltaTime, 0.05)
+
+    // Apply mouse steering if in mouse mode (but not when free camera is active)
+    if (this.currentControlMode === 'mouse' && this.currentCameraMode !== 'free') {
+      // Gradually return steering target to center when no mouse input
+      // This creates a natural "spring back" effect
+      const returnSpeed = 2.0 // How fast steering returns to center
+      this.mouseSteeringTarget *= (1 - returnSpeed * dt)
+      
+      // Apply dead zone - if very close to center, snap to zero
+      if (Math.abs(this.mouseSteeringTarget) < 0.02) {
+        this.mouseSteeringTarget = 0
+      }
+      
+      // Smooth interpolation for actual steering value
+      const steeringSmoothness = 12.0 // Higher = faster response
+      this.mouseSteeringValue += (this.mouseSteeringTarget - this.mouseSteeringValue) * Math.min(1, steeringSmoothness * dt)
+      this.input.steering = this.mouseSteeringValue
+    } else if (this.currentControlMode === 'mouse' && this.currentCameraMode === 'free') {
+      // In free camera mode, gradually return steering to center
+      this.mouseSteeringTarget = 0
+      this.mouseSteeringValue *= 0.95
+      this.input.steering = this.mouseSteeringValue
+    }
     
     // Get direction vectors
     const forward = this.getForwardVector()
@@ -612,22 +796,50 @@ export class CarController {
    * Update camera based on current mode
    */
   private updateCamera(): void {
-    if (this.currentCameraMode === 'third-person') {
-      this.updateThirdPersonCamera()
-    } else {
-      this.updateFirstPersonCamera()
+    switch (this.currentCameraMode) {
+      case 'third-person':
+        this.updateThirdPersonCamera()
+        break
+      case 'first-person':
+        this.updateFirstPersonCamera()
+        break
+      case 'free':
+        this.updateFreeCamera()
+        break
     }
   }
 
   /**
-   * Update Third Person (Orbit) camera - smooth follow
+   * Update Third Person camera - LOCKED behind car, follows car rotation
    */
   private updateThirdPersonCamera(): void {
     if (!this.thirdPersonCamera) return
     
     const tpConfig = this.cameraConfig.thirdPerson
     const targetPosition = this.carMesh.position.add(new Vector3(0, tpConfig.targetHeightOffset, 0))
+    
+    // Smooth follow target
     this.thirdPersonCamera.target = Vector3.Lerp(this.thirdPersonCamera.target, targetPosition, 0.15)
+    
+    // Lock alpha to follow car heading (camera stays behind car)
+    // Car heading is in radians, alpha should be offset to be behind the car
+    const targetAlpha = -this.heading - Math.PI / 2
+    this.thirdPersonCamera.alpha = targetAlpha
+    this.thirdPersonCamera.lowerAlphaLimit = targetAlpha
+    this.thirdPersonCamera.upperAlphaLimit = targetAlpha
+  }
+
+  /**
+   * Update Free camera - follows car but user can rotate freely
+   */
+  private updateFreeCamera(): void {
+    if (!this.freeCamera) return
+    
+    const tpConfig = this.cameraConfig.thirdPerson
+    const targetPosition = this.carMesh.position.add(new Vector3(0, tpConfig.targetHeightOffset, 0))
+    
+    // Smooth follow target only, let user control rotation
+    this.freeCamera.target = Vector3.Lerp(this.freeCamera.target, targetPosition, 0.15)
   }
 
   /**
@@ -697,7 +909,23 @@ export class CarController {
     return this.steerAngle * (180 / Math.PI)
   }
 
+  getSteeringInput(): number {
+    return this.input.steering
+  }
+
   dispose(): void {
+    // Remove pointer observer
+    if (this.pointerObserver) {
+      this.scene.onPointerObservable.remove(this.pointerObserver)
+      this.pointerObserver = null
+    }
+    
+    // Remove window mouse handler
+    if ((this as any)._mouseHandler) {
+      window.removeEventListener('mousemove', (this as any)._mouseHandler)
+      ;(this as any)._mouseHandler = null
+    }
+    
     if (this.thirdPersonCamera) {
       this.thirdPersonCamera.dispose()
       this.thirdPersonCamera = null
@@ -706,7 +934,13 @@ export class CarController {
       this.firstPersonCamera.dispose()
       this.firstPersonCamera = null
     }
+    if (this.freeCamera) {
+      this.freeCamera.dispose()
+      this.freeCamera = null
+    }
     this.onCameraModeChange = null
+    this.onControlModeChange = null
+    this.canvas = null
     console.log('[CarController] Disposed')
   }
 }

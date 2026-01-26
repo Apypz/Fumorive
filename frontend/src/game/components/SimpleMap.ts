@@ -104,7 +104,10 @@ export class SimpleMap {
     return { collided: false, normal: Vector3.Zero(), penetration: 0 }
   }
 
-  createRaceTrack(): void {
+  /**
+   * Create Bahlil City map - urban environment with buildings, roads, and obstacles
+   */
+  createBahlilCity(): void {
     this.createGround()
     this.createRoads()
     this.createRoadBarriers()
@@ -114,12 +117,351 @@ export class SimpleMap {
     this.createBushes()
     this.createMapBoundaryWalls()
     
-    console.log('[SimpleMap] Town map created with', this.colliders.length, 'colliders')
+    console.log('[SimpleMap] Bahlil City map created with', this.colliders.length, 'colliders')
+  }
+
+  /**
+   * Create Iclik Park map - open park environment with minimal obstacles
+   * Perfect for testing and free driving
+   */
+  createIclikPark(): void {
+    this.createParkGround()
+    this.createParkPaths()
+    this.createParkTrees()
+    this.createParkBenches()
+    this.createParkFountain()
+    this.createParkLamps()
+    this.createMapBoundaryWalls()
+    
+    console.log('[SimpleMap] Iclik Park map created with', this.colliders.length, 'colliders')
+  }
+
+  // Legacy method - creates Bahlil City
+  createRaceTrack(): void {
+    this.createBahlilCity()
   }
 
   createCityMap(): void {
-    this.createRaceTrack()
+    this.createBahlilCity()
   }
+
+  // ============================================
+  // ICLIK PARK SPECIFIC CREATION METHODS
+  // ============================================
+
+  private createParkGround(): void {
+    // Lush green grass for park
+    const ground = MeshBuilder.CreateGround('parkGround', {
+      width: 400,
+      height: 500,
+      subdivisions: 32,
+    }, this.scene)
+
+    const groundMaterial = new PBRMaterial('parkGroundMaterial', this.scene)
+    groundMaterial.albedoColor = new Color3(0.35, 0.55, 0.25) // Bright green grass
+    groundMaterial.metallic = 0
+    groundMaterial.roughness = 0.95
+    ground.material = groundMaterial
+    ground.receiveShadows = true
+    ground.position.y = -0.02
+    ground.position.z = -50
+
+    this.meshes.push(ground)
+  }
+
+  private createParkPaths(): void {
+    // Stone/gravel path material
+    const pathMaterial = new PBRMaterial('pathMaterial', this.scene)
+    pathMaterial.albedoColor = new Color3(0.65, 0.6, 0.55) // Light stone color
+    pathMaterial.metallic = 0
+    pathMaterial.roughness = 0.9
+
+    const pathWidth = 12
+
+    // Main circular path around the park
+    const mainPaths = [
+      // Horizontal main path
+      { x: 0, z: 0, width: 300, depth: pathWidth, rotation: 0 },
+      // Vertical main path
+      { x: 0, z: -50, width: 200, depth: pathWidth, rotation: Math.PI / 2 },
+      // Diagonal paths for variety
+      { x: -80, z: 50, width: 100, depth: pathWidth * 0.8, rotation: Math.PI / 6 },
+      { x: 80, z: 50, width: 100, depth: pathWidth * 0.8, rotation: -Math.PI / 6 },
+      // Wide open area in center (plaza)
+      { x: 0, z: 0, width: 60, depth: 60, rotation: 0 },
+    ]
+
+    mainPaths.forEach((path, i) => {
+      const pathMesh = MeshBuilder.CreateGround(`parkPath_${i}`, {
+        width: path.width,
+        height: path.depth,
+      }, this.scene)
+      pathMesh.position = new Vector3(path.x, 0.01, path.z)
+      pathMesh.rotation.y = path.rotation
+      pathMesh.material = pathMaterial
+      pathMesh.receiveShadows = true
+      this.meshes.push(pathMesh)
+    })
+  }
+
+  private createParkTrees(): void {
+    // Scattered trees around the edges - not blocking paths
+    const treePositions = [
+      // Left side trees
+      { x: -150, z: 100 }, { x: -160, z: 50 }, { x: -140, z: -20 },
+      { x: -155, z: -80 }, { x: -145, z: -150 },
+      // Right side trees
+      { x: 150, z: 100 }, { x: 160, z: 50 }, { x: 140, z: -20 },
+      { x: 155, z: -80 }, { x: 145, z: -150 },
+      // Back trees
+      { x: -80, z: 150 }, { x: 0, z: 160 }, { x: 80, z: 150 },
+      // Front scattered trees
+      { x: -100, z: -200 }, { x: 100, z: -200 },
+      // Some middle area trees (away from paths)
+      { x: -100, z: -50 }, { x: 100, z: -50 },
+      { x: -60, z: 100 }, { x: 60, z: 100 },
+    ]
+
+    treePositions.forEach((pos, i) => {
+      this.createParkTree(pos.x, pos.z, i)
+    })
+  }
+
+  private createParkTree(x: number, z: number, index: number): void {
+    // Tree trunk
+    const trunkHeight = 3 + Math.random() * 2
+    const trunk = MeshBuilder.CreateCylinder(`parkTreeTrunk_${index}`, {
+      diameter: 0.8,
+      height: trunkHeight,
+      tessellation: 12,
+    }, this.scene)
+    trunk.position = new Vector3(x, trunkHeight / 2, z)
+
+    const trunkMaterial = new PBRMaterial(`parkTrunkMat_${index}`, this.scene)
+    trunkMaterial.albedoColor = new Color3(0.4, 0.28, 0.18)
+    trunkMaterial.metallic = 0
+    trunkMaterial.roughness = 0.95
+    trunk.material = trunkMaterial
+    trunk.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(trunk)
+    this.meshes.push(trunk)
+
+    // Tree foliage (bigger, rounder for park aesthetic)
+    const foliageSize = 4 + Math.random() * 2
+    const foliage = MeshBuilder.CreateSphere(`parkTreeFoliage_${index}`, {
+      diameter: foliageSize,
+      segments: 8,
+    }, this.scene)
+    foliage.position = new Vector3(x, trunkHeight + foliageSize / 3, z)
+
+    const foliageMaterial = new PBRMaterial(`parkFoliageMat_${index}`, this.scene)
+    foliageMaterial.albedoColor = new Color3(0.2 + Math.random() * 0.15, 0.5 + Math.random() * 0.2, 0.15)
+    foliageMaterial.metallic = 0
+    foliageMaterial.roughness = 0.9
+    foliage.material = foliageMaterial
+    foliage.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(foliage)
+    this.meshes.push(foliage)
+
+    // Add collider for trunk only (small, won't block much)
+    this.addBoxCollider(trunk)
+  }
+
+  private createParkBenches(): void {
+    // Park benches scattered around paths
+    const benchPositions = [
+      { x: -30, z: 15, rotation: 0 },
+      { x: 30, z: 15, rotation: 0 },
+      { x: -30, z: -15, rotation: Math.PI },
+      { x: 30, z: -15, rotation: Math.PI },
+      { x: 15, z: -80, rotation: Math.PI / 2 },
+      { x: -15, z: -80, rotation: -Math.PI / 2 },
+    ]
+
+    const benchMaterial = new PBRMaterial('benchMaterial', this.scene)
+    benchMaterial.albedoColor = new Color3(0.45, 0.35, 0.25) // Wood color
+    benchMaterial.metallic = 0.1
+    benchMaterial.roughness = 0.8
+
+    const metalMaterial = new PBRMaterial('benchMetalMaterial', this.scene)
+    metalMaterial.albedoColor = new Color3(0.2, 0.2, 0.2)
+    metalMaterial.metallic = 0.8
+    metalMaterial.roughness = 0.3
+
+    benchPositions.forEach((pos, i) => {
+      // Bench seat
+      const seat = MeshBuilder.CreateBox(`benchSeat_${i}`, {
+        width: 2.5,
+        height: 0.15,
+        depth: 0.6,
+      }, this.scene)
+      seat.position = new Vector3(pos.x, 0.5, pos.z)
+      seat.rotation.y = pos.rotation
+      seat.material = benchMaterial
+      seat.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(seat)
+      this.meshes.push(seat)
+
+      // Bench back
+      const back = MeshBuilder.CreateBox(`benchBack_${i}`, {
+        width: 2.5,
+        height: 0.6,
+        depth: 0.1,
+      }, this.scene)
+      back.position = new Vector3(
+        pos.x - Math.sin(pos.rotation) * 0.25,
+        0.8,
+        pos.z - Math.cos(pos.rotation) * 0.25
+      )
+      back.rotation.y = pos.rotation
+      back.material = benchMaterial
+      back.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(back)
+      this.meshes.push(back)
+
+      // Bench legs (metal)
+      const legPositions = [-1, 1]
+      legPositions.forEach((offset, j) => {
+        const leg = MeshBuilder.CreateBox(`benchLeg_${i}_${j}`, {
+          width: 0.1,
+          height: 0.5,
+          depth: 0.5,
+        }, this.scene)
+        const legX = pos.x + Math.cos(pos.rotation) * offset
+        const legZ = pos.z - Math.sin(pos.rotation) * offset
+        leg.position = new Vector3(legX, 0.25, legZ)
+        leg.rotation.y = pos.rotation
+        leg.material = metalMaterial
+        leg.receiveShadows = true
+        this.meshes.push(leg)
+      })
+
+      // Add small collider for bench
+      this.colliders.push({
+        min: new Vector3(pos.x - 1.5, 0, pos.z - 0.5),
+        max: new Vector3(pos.x + 1.5, 1, pos.z + 0.5),
+      })
+    })
+  }
+
+  private createParkFountain(): void {
+    // Central fountain in the plaza
+    const fountainMaterial = new PBRMaterial('fountainMaterial', this.scene)
+    fountainMaterial.albedoColor = new Color3(0.7, 0.7, 0.75) // Light stone
+    fountainMaterial.metallic = 0.2
+    fountainMaterial.roughness = 0.6
+
+    const waterMaterial = new PBRMaterial('waterMaterial', this.scene)
+    waterMaterial.albedoColor = new Color3(0.3, 0.5, 0.7)
+    waterMaterial.metallic = 0.1
+    waterMaterial.roughness = 0.2
+    waterMaterial.alpha = 0.8
+
+    // Fountain base (outer ring)
+    const base = MeshBuilder.CreateCylinder('fountainBase', {
+      diameter: 10,
+      height: 0.8,
+      tessellation: 32,
+    }, this.scene)
+    base.position = new Vector3(0, 0.4, 0)
+    base.material = fountainMaterial
+    base.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(base)
+    this.meshes.push(base)
+
+    // Water pool
+    const pool = MeshBuilder.CreateCylinder('fountainPool', {
+      diameter: 8,
+      height: 0.6,
+      tessellation: 32,
+    }, this.scene)
+    pool.position = new Vector3(0, 0.5, 0)
+    pool.material = waterMaterial
+    this.meshes.push(pool)
+
+    // Center pillar
+    const pillar = MeshBuilder.CreateCylinder('fountainPillar', {
+      diameter: 1.5,
+      height: 3,
+      tessellation: 16,
+    }, this.scene)
+    pillar.position = new Vector3(0, 1.5, 0)
+    pillar.material = fountainMaterial
+    pillar.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(pillar)
+    this.meshes.push(pillar)
+
+    // Top bowl
+    const bowl = MeshBuilder.CreateTorus('fountainBowl', {
+      diameter: 3,
+      thickness: 0.5,
+      tessellation: 32,
+    }, this.scene)
+    bowl.position = new Vector3(0, 3, 0)
+    bowl.material = fountainMaterial
+    bowl.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(bowl)
+    this.meshes.push(bowl)
+
+    // Add collider for fountain
+    this.colliders.push({
+      min: new Vector3(-5, 0, -5),
+      max: new Vector3(5, 3.5, 5),
+    })
+  }
+
+  private createParkLamps(): void {
+    // Street lamps along paths
+    const lampPositions = [
+      { x: -50, z: 0 }, { x: 50, z: 0 },
+      { x: 0, z: 50 }, { x: 0, z: -100 },
+      { x: -100, z: 80 }, { x: 100, z: 80 },
+      { x: -100, z: -120 }, { x: 100, z: -120 },
+    ]
+
+    const poleMaterial = new PBRMaterial('lampPoleMaterial', this.scene)
+    poleMaterial.albedoColor = new Color3(0.15, 0.15, 0.15)
+    poleMaterial.metallic = 0.9
+    poleMaterial.roughness = 0.3
+
+    const lampMaterial = new PBRMaterial('lampLightMaterial', this.scene)
+    lampMaterial.albedoColor = new Color3(1, 0.95, 0.8)
+    lampMaterial.emissiveColor = new Color3(1, 0.9, 0.7)
+    lampMaterial.emissiveIntensity = 0.3
+
+    lampPositions.forEach((pos, i) => {
+      // Lamp pole
+      const pole = MeshBuilder.CreateCylinder(`lampPole_${i}`, {
+        diameter: 0.2,
+        height: 4,
+        tessellation: 8,
+      }, this.scene)
+      pole.position = new Vector3(pos.x, 2, pos.z)
+      pole.material = poleMaterial
+      pole.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(pole)
+      this.meshes.push(pole)
+
+      // Lamp head
+      const head = MeshBuilder.CreateSphere(`lampHead_${i}`, {
+        diameter: 0.6,
+        segments: 8,
+      }, this.scene)
+      head.position = new Vector3(pos.x, 4.2, pos.z)
+      head.material = lampMaterial
+      this.meshes.push(head)
+
+      // Small collider for lamp pole
+      this.colliders.push({
+        min: new Vector3(pos.x - 0.3, 0, pos.z - 0.3),
+        max: new Vector3(pos.x + 0.3, 4.5, pos.z + 0.3),
+      })
+    })
+  }
+
+  // ============================================
+  // BAHLIL CITY SPECIFIC METHODS (Original)
+  // ============================================
 
   private createGround(): void {
     // Green grass ground

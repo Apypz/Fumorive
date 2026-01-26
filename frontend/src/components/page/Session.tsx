@@ -4,33 +4,51 @@ import { GameCanvas } from '../GameCanvas'
 import { LoadingScreen } from '../LoadingScreen'
 import { DebugOverlay } from '../DebugOverlay'
 import { GraphicsSettings } from '../GraphicsSettings'
+import { ControlsHUD } from '../ControlsHUD'
+import { SteeringWheelHUD } from '../SteeringWheelHUD'
+import { MapSelection } from '../MapSelection'
 import { useGameStore } from '../../stores/gameStore'
 import '../../App.css'
 
 export default function Session() {
-  const { gameState, cameraMode } = useGameStore()
+  const { gameState, setGameState } = useGameStore()
   const [showSettings, setShowSettings] = useState(false)
+  const [showMapSelection, setShowMapSelection] = useState(true)
+  const [gameStarted, setGameStarted] = useState(false)
 
-  // Format camera mode for display
-  const cameraModeDisplay = cameraMode === 'first-person' 
-    ? '🎯 First Person (Cockpit)' 
-    : '🚗 Third Person'
+  const handleStartGame = () => {
+    setShowMapSelection(false)
+    setGameStarted(true)
+  }
+
+  const handleBackToMapSelect = () => {
+    setShowMapSelection(true)
+    setGameStarted(false)
+    setGameState('loading')
+  }
 
   return (
     <div className="app">
-      <GameCanvas />
-      <LoadingScreen />
+      {/* Map Selection Screen - shown before game starts */}
+      {showMapSelection && (
+        <MapSelection onStartGame={handleStartGame} />
+      )}
+
+      {/* Game Canvas - only render when game started */}
+      {gameStarted && <GameCanvas />}
+      
+      {/* Loading Screen - only show after map selection, during game load */}
+      {gameStarted && <LoadingScreen />}
+      
       <DebugOverlay />
 
-      {gameState === 'paused' && (
+      {gameState === 'paused' && gameStarted && (
         <div className="pause-menu">
           <div className="pause-content">
             <h2>PAUSED</h2>
             <button
               className="menu-button"
-              onClick={() =>
-                useGameStore.getState().setGameState('playing')
-              }
+              onClick={() => setGameState('playing')}
             >
               Resume
             </button>
@@ -40,6 +58,13 @@ export default function Session() {
             >
               Settings
             </button>
+            <button
+              className="menu-button"
+              onClick={handleBackToMapSelect}
+              style={{ marginTop: '1rem', backgroundColor: '#6b7280' }}
+            >
+              Ganti Map
+            </button>
           </div>
         </div>
       )}
@@ -48,42 +73,13 @@ export default function Session() {
         <GraphicsSettings onClose={() => setShowSettings(false)} />
       )}
 
-      {gameState === 'playing' && (
+      {gameState === 'playing' && gameStarted && (
         <>
-          {/* Camera Mode Indicator */}
-          <div className="camera-mode-indicator">
-            {cameraModeDisplay}
-          </div>
-
-          {/* Controls Hint */}
-          <div className="controls-hint">
-            <div className="controls-grid">
-              <div className="control-group">
-                <span className="control-label">Movement</span>
-                <span className="control-keys">W A S D / Arrow Keys</span>
-              </div>
-              <div className="control-group">
-                <span className="control-label">Brake</span>
-                <span className="control-keys">Shift</span>
-              </div>
-              <div className="control-group">
-                <span className="control-label">Handbrake</span>
-                <span className="control-keys">Space</span>
-              </div>
-              <div className="control-group">
-                <span className="control-label">Camera</span>
-                <span className="control-keys">V</span>
-              </div>
-              <div className="control-group">
-                <span className="control-label">Debug</span>
-                <span className="control-keys">F3</span>
-              </div>
-              <div className="control-group">
-                <span className="control-label">Pause</span>
-                <span className="control-keys">ESC</span>
-              </div>
-            </div>
-          </div>
+          {/* Controls HUD - shows current control mode and key bindings */}
+          <ControlsHUD />
+          
+          {/* Steering Wheel visualization */}
+          <SteeringWheelHUD />
         </>
       )}
     </div>

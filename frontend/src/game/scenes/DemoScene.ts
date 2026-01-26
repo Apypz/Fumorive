@@ -17,9 +17,12 @@ import { EnvironmentSetup } from '../components/EnvironmentSetup'
 import { PostProcessingPipeline } from '../engine/PostProcessingPipeline'
 import { InputManager } from '../engine/InputManager'
 import { CarController } from '../components/CarController'
-import type { CameraMode, CameraPositionConfig } from '../components/CarController'
+import type { CameraMode, ControlMode, CameraPositionConfig } from '../components/CarController'
 import { SimpleMap } from '../components/SimpleMap'
 import { DEFAULT_GRAPHICS_CONFIG } from '../types'
+import type { MapType } from '../../stores/gameStore'
+
+export type { MapType }
 
 export class DemoScene implements GameScene {
   name = 'DemoScene'
@@ -36,12 +39,16 @@ export class DemoScene implements GameScene {
   private animatedMeshes: AbstractMesh[] = []
   private carMesh: AbstractMesh | null = null
   private graphicsConfig: GraphicsConfig
+  private mapType: MapType
 
   // Camera mode change callback
   private onCameraModeChange: ((mode: CameraMode) => void) | null = null
+  // Control mode change callback
+  private onControlModeChange: ((mode: ControlMode) => void) | null = null
 
-  constructor(graphicsConfig?: GraphicsConfig) {
+  constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'bahlil-city') {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
+    this.mapType = mapType
   }
 
   /**
@@ -56,6 +63,24 @@ export class DemoScene implements GameScene {
   }
 
   /**
+   * Set callback for control mode changes (to update UI)
+   */
+  setOnControlModeChange(callback: (mode: ControlMode) => void): void {
+    this.onControlModeChange = callback
+    // Also set on car controller if already initialized
+    if (this.carController) {
+      this.carController.onControlModeChanged(callback)
+    }
+  }
+
+  /**
+   * Get current control mode
+   */
+  getControlMode(): ControlMode {
+    return this.carController?.getControlMode() ?? 'keyboard'
+  }
+
+  /**
    * Get current camera mode
    */
   getCameraMode(): CameraMode {
@@ -67,6 +92,13 @@ export class DemoScene implements GameScene {
    */
   getCameraConfig(): CameraPositionConfig | null {
     return this.carController ? null : null // Can be extended to expose config
+  }
+
+  /**
+   * Get current steering angle (-1 to 1)
+   */
+  getSteeringAngle(): number {
+    return this.carController?.getSteeringInput() ?? 0
   }
 
   async init(context: SceneContext): Promise<void> {
@@ -85,9 +117,15 @@ export class DemoScene implements GameScene {
       ambientIntensity: 1.5,
     })
 
-    // Create simple map/track (replaces old environment ground)
+    // Create map based on selected mapType
     this.simpleMap = new SimpleMap(this.scene, this.lightingSetup)
-    this.simpleMap.createRaceTrack()
+    if (this.mapType === 'iclik-park') {
+      this.simpleMap.createIclikPark()
+      console.log('[DemoScene] Loading Iclik Park map')
+    } else {
+      this.simpleMap.createBahlilCity()
+      console.log('[DemoScene] Loading Bahlil City map')
+    }
 
     // Setup environment (skybox only, ground is from map)
     this.environmentSetup = new EnvironmentSetup(this.scene, this.graphicsConfig)
@@ -180,16 +218,16 @@ export class DemoScene implements GameScene {
           thirdPerson: {
             distance: 10,             // Distance from car (lebih jauh untuk pickup)
             heightOffset: 3.0,        // Height above car (pickup lebih tinggi)
-            targetHeightOffset: 1.5,  // Look at point height
+            targetHeightOffset: 2.5,  // Look at point height
             alpha: -Math.PI / 4,      // Horizontal angle
-            beta: Math.PI / 3.5,      // Vertical angle
+            beta: Math.PI / 2.2,      // Vertical angle
             lowerRadiusLimit: 5,
             upperRadiusLimit: 25,
           },
           firstPerson: {
-            forwardOffset: 0.5,       // Forward from car center (driver position)
-            heightOffset: 2.5,        // Eye level height (pickup cab lebih tinggi)
-            sideOffset: 0.4,          // Right offset (driver seat)
+            forwardOffset: 0.1,       // Forward from car center (driver position)
+            heightOffset: 2.25,        // Eye level height (pickup cab lebih tinggi)
+            sideOffset: -0.05,          // Right offset (driver seat)
             fov: 1.2,                 // Field of view
             lookAheadDistance: 50,    // How far to look ahead
           },
@@ -210,6 +248,11 @@ export class DemoScene implements GameScene {
         // Set camera mode change callback
         if (this.onCameraModeChange) {
           this.carController.onCameraModeChanged(this.onCameraModeChange)
+        }
+
+        // Set control mode change callback
+        if (this.onControlModeChange) {
+          this.carController.onControlModeChanged(this.onControlModeChange)
         }
 
         // Set map reference for collision detection
@@ -360,6 +403,7 @@ export class DemoScene implements GameScene {
     }
 
     this.onCameraModeChange = null
+    this.onControlModeChange = null
     this.canvas = null
 
     console.log('[DemoScene] Disposed')
