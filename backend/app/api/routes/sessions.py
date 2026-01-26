@@ -194,6 +194,48 @@ async def complete_session(
     return session
 
 
+@router.patch("/{session_id}/end", response_model=SessionResponse)
+async def end_session(
+    session_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    End a session (alias for complete)
+    
+    Sets status to 'completed' and ended_at to current time
+    Calculates duration_seconds automatically
+    """
+    session = db.query(DBSession).filter(DBSession.id == session_id).first()
+    
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found"
+        )
+    
+    # Check authorization
+    if session.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to end this session"
+        )
+    
+    # Update session
+    session.session_status = "completed"
+    session.ended_at = datetime.utcnow()
+    
+    # Calculate duration if not already set
+    if session.started_at and session.ended_at:
+        duration = (session.ended_at - session.started_at).total_seconds()
+        session.duration_seconds = int(duration)
+    
+    db.commit()
+    db.refresh(session)
+    
+    return session
+
+
 @router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_session(
     session_id: UUID,

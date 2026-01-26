@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-    Camera, 
-    CameraOff, 
-    Activity, 
-    Eye, 
-    Smile, 
+import {
+    Camera,
+    CameraOff,
+    Activity,
+    Eye,
+    Smile,
     Brain,
     ArrowLeft,
     AlertCircle,
@@ -40,7 +40,7 @@ const FaceRecognition = () => {
     const [error, setError] = useState<string | null>(null);
     const [showAlert, setShowAlert] = useState(false);
     const [alertMessage, setAlertMessage] = useState('');
-    
+
     // Real-time metrics
     const [ear, setEar] = useState<number>(0);
     const [mar, setMar] = useState<number>(0);
@@ -50,7 +50,7 @@ const FaceRecognition = () => {
     const [fatigueScore, setFatigueScore] = useState(0);
     const [blinkCount, setBlinkCount] = useState(0);
     const [blinkRate, setBlinkRate] = useState(0);
-    
+
     // Alert tracking
     const lastAlertTime = useRef<number>(0);
     const alertCooldown = 10000; // 10 seconds cooldown between alerts
@@ -59,16 +59,8 @@ const FaceRecognition = () => {
     const perclosCalc = useRef(new PERCLOSCalculator());
     const blinkDetector = useRef(new BlinkDetector());
 
-    // Generate proper UUID for session
-    const generateUUID = () => {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-            const r = Math.random() * 16 | 0;
-            const v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    };
-    
-    const sessionId = useRef(generateUUID());
+    // Session ID - will be set when session is created
+    const sessionId = useRef<string | null>(null);
 
     useEffect(() => {
         return () => {
@@ -79,13 +71,21 @@ const FaceRecognition = () => {
     const startCamera = async () => {
         try {
             setError(null);
-            
-            // TEMPORARY: Skip session creation for testing
-            // Use a dummy UUID for now
-            console.log('⚠️  TESTING MODE: Using dummy session (face events will fail to save)');
-            console.log('⚠️  This is temporary until authentication is fixed');
-            // sessionId already has UUID from useRef initialization
-            
+
+            // Create a new session
+            try {
+                const session = await sessionApi.create({
+                    session_name: `Face Recognition - ${new Date().toLocaleString()}`,
+                    device_type: 'MediaPipe Face Mesh'
+                });
+                sessionId.current = session.id;
+                console.log('✅ Session created:', session.id);
+            } catch (sessionError: any) {
+                console.error('Failed to create session:', sessionError);
+                setError('Failed to create session. Please make sure you are logged in.');
+                return; // Don't start camera if session creation fails
+            }
+
             // Initialize MediaPipe Face Mesh
             faceMeshRef.current = new FaceMesh({
                 locateFile: (file) => {
@@ -107,7 +107,7 @@ const FaceRecognition = () => {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { width: 640, height: 480 }
                 });
-                
+
                 videoRef.current.srcObject = stream;
                 await videoRef.current.play();
 
@@ -148,7 +148,7 @@ const FaceRecognition = () => {
         }
 
         setIsActive(false);
-        
+
         // End session if exists
         if (sessionId.current) {
             try {
@@ -158,7 +158,7 @@ const FaceRecognition = () => {
                 console.error('Failed to end session:', err);
             }
         }
-        
+
         // Reset detectors
         perclosCalc.current.reset();
         blinkDetector.current.reset();
@@ -219,23 +219,26 @@ const FaceRecognition = () => {
 
             // Send to backend (throttled - every 1 second)
             if (Math.random() < 0.033) { // ~1/30 = 3.3% at 30 FPS = once per second
-                try {
-                    await faceApi.logEvent({
-                        session_id: sessionId.current,
-                        timestamp: new Date().toISOString(),
-                        eye_aspect_ratio: currentEAR,
-                        mouth_aspect_ratio: currentMAR,
-                        eyes_closed: currentEyesClosed,
-                        yawning: currentYawning,
-                        blink_count: currentBlinkCount,
-                        blink_rate: currentBlinkRate,
-                        head_yaw: headPose.yaw,
-                        head_pitch: headPose.pitch,
-                        head_roll: headPose.roll,
-                        face_fatigue_score: currentFatigue
-                    });
-                } catch (err) {
-                    console.error('Failed to send face data:', err);
+                // Only log if session exists
+                if (sessionId.current) {
+                    try {
+                        await faceApi.logEvent({
+                            session_id: sessionId.current,
+                            timestamp: new Date().toISOString(),
+                            eye_aspect_ratio: currentEAR,
+                            mouth_aspect_ratio: currentMAR,
+                            eyes_closed: currentEyesClosed,
+                            yawning: currentYawning,
+                            blink_count: currentBlinkCount,
+                            blink_rate: currentBlinkRate,
+                            head_yaw: headPose.yaw,
+                            head_pitch: headPose.pitch,
+                            head_roll: headPose.roll,
+                            face_fatigue_score: currentFatigue
+                        });
+                    } catch (err) {
+                        console.error('Failed to send face data:', err);
+                    }
                 }
             }
         }
@@ -245,12 +248,12 @@ const FaceRecognition = () => {
         // Draw face contour
         ctx.strokeStyle = '#3b82f6';
         ctx.lineWidth = 1;
-        
+
         // Draw landmarks
         landmarks.forEach((landmark: any) => {
             const x = landmark.x * ctx.canvas.width;
             const y = landmark.y * ctx.canvas.height;
-            
+
             ctx.fillStyle = '#10b981';
             ctx.beginPath();
             ctx.arc(x, y, 1, 0, 2 * Math.PI);
@@ -286,7 +289,7 @@ const FaceRecognition = () => {
 
     const checkDrowsinessAlert = (fatigue: number, perclosValue: number, earValue: number) => {
         const now = Date.now();
-        
+
         // Only show alert if cooldown has passed
         if (now - lastAlertTime.current < alertCooldown) return;
 
@@ -311,12 +314,12 @@ const FaceRecognition = () => {
             setAlertMessage(message);
             setShowAlert(true);
             lastAlertTime.current = now;
-            
+
             // Play alert sound (optional)
             try {
                 const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBjiR1/LMeSwFJHfH8N2QQAo=');
                 audio.volume = 0.3;
-                audio.play().catch(() => {}); // Ignore if audio fails
+                audio.play().catch(() => { }); // Ignore if audio fails
             } catch (e) {
                 // Ignore audio errors
             }
@@ -340,17 +343,17 @@ const FaceRecognition = () => {
                 {/* Camera View */}
                 <div className="camera-section">
                     <div className="camera-container">
-                        <video 
-                            ref={videoRef} 
+                        <video
+                            ref={videoRef}
                             className="video-feed"
                         />
-                        <canvas 
+                        <canvas
                             ref={canvasRef}
                             width={640}
                             height={480}
                             className="canvas-overlay"
                         />
-                        
+
                         {!isActive && (
                             <div className="camera-placeholder">
                                 <CameraOff size={64} />
@@ -447,8 +450,10 @@ const FaceRecognition = () => {
                     <div className="info-box">
                         <AlertCircle size={16} />
                         <p>
-                            <strong>Testing Mode:</strong> Data sedang dikirim ke backend untuk logging.
-                            Session ID: <code>{sessionId.current}</code>
+                            <strong>Session Status:</strong> {sessionId.current ?
+                                `Active - ID: ${sessionId.current}` :
+                                'No active session - Click Start Camera to begin'
+                            }
                         </p>
                     </div>
                 </div>

@@ -40,6 +40,9 @@ async def get_current_user(
     Raises:
         HTTPException: If token is invalid, blacklisted, or user not found
     """
+    print("\n" + "="*50)
+    print("🔐 Starting get_current_user...")
+    
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -48,36 +51,47 @@ async def get_current_user(
     
     # Check if token is blacklisted (logout)
     try:
+        print("📝 Checking if token is blacklisted...")
         if is_token_blacklisted(token):
-            print(f"⚠️  Token is blacklisted")
+            print(f"❌ Token is blacklisted")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token has been revoked",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+        print("✅ Token is not blacklisted")
     except Exception as e:
         # If blacklist check fails (Redis down), allow the token through
         print(f"⚠️  Blacklist check failed, allowing token: {e}")
     
     # Verify token
+    print("📝 Calling verify_token...")
     payload = verify_token(token, token_type="access")
     if payload is None:
-        print(f"⚠️  Token verification failed")
+        print(f"❌ Token verification failed")
         raise credentials_exception
+    print(f"✅ Token payload received: {payload}")
     
-    # Extract user ID
-    user_id_str: Optional[str] = payload.get("sub")
+    # Extract user ID - try 'user_id' first, then fall back to 'sub'
+    # Note: Token was created with user_id as UUID and sub as email
+    user_id_str: Optional[str] = payload.get("user_id") or payload.get("sub")
+    print(f"📝 User ID from token: {user_id_str}")
     if user_id_str is None:
+        print("❌ No 'user_id' or 'sub' field in token payload")
         raise credentials_exception
     
     try:
         user_id = UUID(user_id_str)
-    except ValueError:
+        print(f"✅ User UUID: {user_id}")
+    except ValueError as e:
+        print(f"❌ Invalid UUID format: {e}")
         raise credentials_exception
     
     # Try to get user from Redis cache first
+    print(f"📝 Checking cache for user {user_id}...")
     cached_user_data = get_cached_user(user_id)
     if cached_user_data:
+        print(f"✅ User found in cache")
         # Reconstruct User object from cached data
         user = User(
             id=UUID(cached_user_data["id"]),
@@ -89,19 +103,28 @@ async def get_current_user(
         )
         # Note: This is a detached instance, won't track changes
         # For read-only operations (most auth checks), this is fine
+        print(f"✅ get_current_user completed successfully (from cache)")
+        print("="*50 + "\n")
         return user
     
     # Cache miss - get user from database
+    print(f"📝 Cache miss, querying database for user {user_id}...")
     user = db.query(User).filter(User.id == user_id).first()
     if user is None:
+        print(f"❌ User {user_id} not found in database!")
         raise credentials_exception
+    print(f"✅ User found in database: {user.email}")
     
     if not user.is_active:
+        print(f"❌ User {user.email} is not active")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Inactive user"
         )
+    print(f"✅ User {user.email} is active")
     
+    print(f"✅ get_current_user completed successfully")
+    print("="*50 + "\n")
     return user
 
 
