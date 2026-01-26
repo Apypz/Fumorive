@@ -32,12 +32,31 @@ export const sessionApi = {
      */
     create: async (data: SessionCreate): Promise<SessionResponse> => {
         const token = getAccessToken();
-        const response = await axios.post(`${API_BASE_URL}/sessions`, data, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        return response.data;
+        if (!token) {
+            console.error('❌ No access token found in localStorage');
+            throw new Error('Not authenticated. Please log in first.');
+        }
+
+        // Debug: Show token info
+        console.log('✅ Access token found, creating session...');
+        console.log('📝 Token (first 50 chars):', token.substring(0, 50) + '...');
+        console.log('📝 Session data:', data);
+
+        try {
+            const response = await axios.post(`${API_BASE_URL}/sessions`, data, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            console.log('✅ Session created successfully:', response.data);
+            return response.data;
+        } catch (error: any) {
+            console.error('❌ Session creation failed');
+            console.error('Error status:', error.response?.status);
+            console.error('Error data:', error.response?.data);
+            console.error('Error message:', error.message);
+            throw error;
+        }
     },
 
     /**
@@ -45,6 +64,9 @@ export const sessionApi = {
      */
     get: async (sessionId: string): Promise<SessionResponse> => {
         const token = getAccessToken();
+        if (!token) {
+            throw new Error('Not authenticated. Please log in first.');
+        }
         const response = await axios.get(`${API_BASE_URL}/sessions/${sessionId}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
@@ -58,6 +80,9 @@ export const sessionApi = {
      */
     end: async (sessionId: string): Promise<SessionResponse> => {
         const token = getAccessToken();
+        if (!token) {
+            throw new Error('Not authenticated. Please log in first.');
+        }
         const response = await axios.patch(
             `${API_BASE_URL}/sessions/${sessionId}/end`,
             {},
