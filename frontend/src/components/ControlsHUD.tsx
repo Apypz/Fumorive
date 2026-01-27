@@ -83,11 +83,7 @@ export function ControlsHUD() {
         {/* Actions */}
         <div style={styles.controlGroup}>
           <div style={styles.controlRow}>
-            <span style={styles.keyBadge}>SPACE</span>
-            <span style={styles.controlDesc}>Handbrake</span>
-          </div>
-          <div style={styles.controlRow}>
-            <span style={styles.keyBadge}>SHIFT</span>
+            <span style={styles.keyBadge}>SPACE/SHIFT</span>
             <span style={styles.controlDesc}>Rem</span>
           </div>
         </div>

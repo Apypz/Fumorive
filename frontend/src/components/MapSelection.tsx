@@ -72,7 +72,7 @@ export function MapSelection({ onStartGame }: MapSelectionProps) {
         </button>
 
         <div style={styles.controlsHint}>
-          <p>Kontrol: WASD untuk bergerak | SPACE untuk handbrake | V untuk ganti kamera | C untuk mode steering</p>
+          <p>Kontrol: WASD untuk bergerak | SPACE/SHIFT untuk rem | V untuk ganti kamera | C untuk mode steering</p>
         </div>
       </div>
     </div>

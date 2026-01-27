@@ -6,6 +6,7 @@ import { DebugOverlay } from '../DebugOverlay'
 import { GraphicsSettings } from '../GraphicsSettings'
 import { ControlsHUD } from '../ControlsHUD'
 import { SteeringWheelHUD } from '../SteeringWheelHUD'
+import { SpeedometerHUD } from '../SpeedometerHUD'
 import { MapSelection } from '../MapSelection'
 import { useGameStore } from '../../stores/gameStore'
 import '../../App.css'
@@ -77,6 +78,9 @@ export default function Session() {
         <>
           {/* Controls HUD - shows current control mode and key bindings */}
           <ControlsHUD />
+          
+          {/* Speedometer visualization */}
+          <SpeedometerHUD />
           
           {/* Steering Wheel visualization */}
           <SteeringWheelHUD />

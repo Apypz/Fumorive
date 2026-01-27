@@ -11,16 +11,14 @@ import {
 import '@babylonjs/loaders/OBJ'
 import '@babylonjs/loaders/glTF'
 import '@babylonjs/loaders'
-import type { GameScene, SceneContext, GraphicsConfig } from '../types'
+import type { GameScene, SceneContext, GraphicsConfig, MapType, CameraMode, ControlMode, CameraPositionConfig } from '../types'
+import { DEFAULT_GRAPHICS_CONFIG } from '../types'
 import { LightingSetup } from '../components/LightingSetup'
 import { EnvironmentSetup } from '../components/EnvironmentSetup'
 import { PostProcessingPipeline } from '../engine/PostProcessingPipeline'
 import { InputManager } from '../engine/InputManager'
-import { CarController } from '../components/CarController'
-import type { CameraMode, ControlMode, CameraPositionConfig } from '../components/CarController'
+import { CarController } from '../components/car'
 import { SimpleMap } from '../components/SimpleMap'
-import { DEFAULT_GRAPHICS_CONFIG } from '../types'
-import type { MapType } from '../../stores/gameStore'
 
 export type { MapType }
 
@@ -99,6 +97,20 @@ export class DemoScene implements GameScene {
    */
   getSteeringAngle(): number {
     return this.carController?.getSteeringInput() ?? 0
+  }
+
+  /**
+   * Get current speed in km/h
+   */
+  getSpeedKmh(): number {
+    return this.carController?.getSpeedKmh() ?? 0
+  }
+
+  /**
+   * Get whether car is currently drifting
+   */
+  getIsDrifting(): boolean {
+    return this.carController?.getIsDrifting() ?? false
   }
 
   async init(context: SceneContext): Promise<void> {
