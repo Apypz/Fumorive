@@ -18,6 +18,7 @@ export function GameCanvas() {
     setSteeringAngle,
     setCurrentSpeed,
     setIsDrifting,
+    setEngineRunning,
     showInspector,
   } = useGameStore()
 
@@ -54,6 +55,11 @@ export function GameCanvas() {
         setControlMode(mode)
       })
 
+      // Set engine state change callback to update UI
+      demoScene.setOnEngineStateChange((running) => {
+        setEngineRunning(running)
+      })
+
       await demoScene.init(engine.getContext())
 
       // Start render loop
@@ -84,7 +90,7 @@ export function GameCanvas() {
       console.error('[GameCanvas] Failed to initialize game:', error)
       setLoading(false)
     }
-  }, [graphicsConfig, selectedMap, setLoading, setFps, setGameState, setCameraMode, setControlMode, setSteeringAngle, setCurrentSpeed, setIsDrifting])
+  }, [graphicsConfig, selectedMap, setLoading, setFps, setGameState, setCameraMode, setControlMode, setSteeringAngle, setCurrentSpeed, setIsDrifting, setEngineRunning])
 
   // Handle inspector toggle
   useEffect(() => {

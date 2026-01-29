@@ -15,10 +15,20 @@ function getCameraModeDisplay(mode: string): string {
 }
 
 export function ControlsHUD() {
-  const { controlMode, cameraMode } = useGameStore()
+  const { controlMode, cameraMode, engineRunning } = useGameStore()
 
   return (
     <div style={styles.container}>
+      {/* Engine Status Indicator */}
+      <div style={styles.modeSection}>
+        <div style={styles.modeLabel}>ENGINE</div>
+        <div style={styles.modeValue}>
+          <span style={engineRunning ? styles.engineOn : styles.engineOff}>
+            {engineRunning ? 'ON' : 'OFF'}
+          </span>
+        </div>
+      </div>
+
       {/* Control Mode Indicator */}
       <div style={styles.modeSection}>
         <div style={styles.modeLabel}>STEERING</div>
@@ -95,6 +105,10 @@ export function ControlsHUD() {
       <div style={styles.toggleSection}>
         <div style={styles.sectionTitle}>TOGGLE</div>
         <div style={styles.controlRow}>
+          <span style={styles.keyBadgeEngine}>K</span>
+          <span style={styles.controlDesc}>Start/Stop Engine</span>
+        </div>
+        <div style={styles.controlRow}>
           <span style={styles.keyBadgeHighlight}>C</span>
           <span style={styles.controlDesc}>Ganti Mode Steering</span>
         </div>
@@ -119,6 +133,15 @@ export function ControlsHUD() {
           <div style={styles.divider} />
           <div style={styles.hint}>
             Mouse untuk kamera. Steering otomatis kembali ke tengah.
+          </div>
+        </>
+      )}
+
+      {!engineRunning && (
+        <>
+          <div style={styles.divider} />
+          <div style={styles.hintWarning}>
+            Tekan K untuk menyalakan mesin!
           </div>
         </>
       )}
@@ -168,6 +191,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
   freeMode: {
     color: '#fbbf24', // Yellow/Orange
+  },
+  engineOn: {
+    color: '#34d399', // Green
+  },
+  engineOff: {
+    color: '#ef4444', // Red
   },
   divider: {
     height: '1px',
@@ -220,6 +249,21 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'monospace',
     color: '#34d399',
   },
+  keyBadgeEngine: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '24px',
+    height: '20px',
+    padding: '0 6px',
+    backgroundColor: 'rgba(239, 68, 68, 0.3)', // Red highlight
+    border: '1px solid rgba(239, 68, 68, 0.5)',
+    borderRadius: '4px',
+    fontSize: '0.65rem',
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+    color: '#ef4444',
+  },
   mouseBadge: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -245,5 +289,12 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.4,
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  hintWarning: {
+    fontSize: '0.7rem',
+    color: '#ef4444',
+    lineHeight: 1.4,
+    textAlign: 'center',
+    fontWeight: 'bold',
   },
 }

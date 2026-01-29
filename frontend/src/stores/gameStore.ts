@@ -45,6 +45,10 @@ interface GameStoreState {
   isDrifting: boolean
   setIsDrifting: (drifting: boolean) => void
 
+  // Engine
+  engineRunning: boolean
+  setEngineRunning: (running: boolean) => void
+
   // Performance
   fps: number
   setFps: (fps: number) => void
@@ -99,6 +103,10 @@ export const useGameStore = create<GameStoreState>((set) => ({
   setCurrentSpeed: (currentSpeed) => set({ currentSpeed }),
   isDrifting: false,
   setIsDrifting: (isDrifting) => set({ isDrifting }),
+
+  // Engine
+  engineRunning: false,
+  setEngineRunning: (engineRunning) => set({ engineRunning }),
 
   // Performance
   fps: 0,

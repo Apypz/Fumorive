@@ -108,6 +108,7 @@ export interface KeyBindings {
   brake: string[]
   toggleCamera: string[]
   toggleControlMode: string[]
+  toggleEngine: string[]
   horn?: string[]
   resetCar?: string[]
   pause?: string[]

@@ -43,6 +43,8 @@ export class DemoScene implements GameScene {
   private onCameraModeChange: ((mode: CameraMode) => void) | null = null
   // Control mode change callback
   private onControlModeChange: ((mode: ControlMode) => void) | null = null
+  // Engine state change callback
+  private onEngineStateChange: ((running: boolean) => void) | null = null
 
   constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'bahlil-city') {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
@@ -68,6 +70,17 @@ export class DemoScene implements GameScene {
     // Also set on car controller if already initialized
     if (this.carController) {
       this.carController.onControlModeChanged(callback)
+    }
+  }
+
+  /**
+   * Set callback for engine state changes (to update UI)
+   */
+  setOnEngineStateChange(callback: (running: boolean) => void): void {
+    this.onEngineStateChange = callback
+    // Also set on car controller if already initialized
+    if (this.carController) {
+      this.carController.onEngineStateChanged(callback)
     }
   }
 
@@ -111,6 +124,13 @@ export class DemoScene implements GameScene {
    */
   getIsDrifting(): boolean {
     return this.carController?.getIsDrifting() ?? false
+  }
+
+  /**
+   * Get whether engine is running
+   */
+  isEngineRunning(): boolean {
+    return this.carController?.isEngineRunning() ?? false
   }
 
   async init(context: SceneContext): Promise<void> {
@@ -265,6 +285,11 @@ export class DemoScene implements GameScene {
         // Set control mode change callback
         if (this.onControlModeChange) {
           this.carController.onControlModeChanged(this.onControlModeChange)
+        }
+
+        // Set engine state change callback
+        if (this.onEngineStateChange) {
+          this.carController.onEngineStateChanged(this.onEngineStateChange)
         }
 
         // Set map reference for collision detection

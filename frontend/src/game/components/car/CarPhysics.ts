@@ -45,8 +45,19 @@ export class CarPhysics {
   private bodyRoll: number = 0
   private bodyPitch: number = 0
 
+  // Collision callback
+  private onCollisionCallback: ((impactVelocity: number) => void) | null = null
+
   constructor(config?: Partial<CarPhysicsConfig>) {
     this.config = { ...DEFAULT_PHYSICS_CONFIG, ...config }
+  }
+
+  /**
+   * Set callback for collision events
+   * @param callback Function called with impact velocity when collision occurs
+   */
+  onCollision(callback: (impactVelocity: number) => void): void {
+    this.onCollisionCallback = callback
   }
 
   /**
@@ -332,6 +343,14 @@ export class CarPhysics {
         
         const velocityDot = Vector3.Dot(this.velocity, collision.normal)
         if (velocityDot < 0) {
+          // Calculate impact velocity (negative velocityDot = approaching collision)
+          const impactVelocity = Math.abs(velocityDot)
+          
+          // Trigger collision callback for crash sound
+          if (this.onCollisionCallback) {
+            this.onCollisionCallback(impactVelocity)
+          }
+          
           const reflection = collision.normal.scale(velocityDot * this.config.collisionBounciness)
           this.velocity = this.velocity.subtract(reflection)
           this.velocity = this.velocity.scale(this.config.collisionDamping)
