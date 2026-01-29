@@ -1,6 +1,6 @@
 /**
  * API Configuration
- * Base URL and endpoints for ERGODRIVE Backend
+ * Base URL and endpoints for Fumorive Backend
  */
 
 // Base URLs

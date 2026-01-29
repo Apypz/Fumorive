@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, Chrome, Instagram, Youtube, Twitter, Loader2 } from 'lucide-react';
 import { useUserStore } from '../../stores/userStore';
+import { signInWithGoogle } from '../../utils/auth';
 import './Login.css';
 
 const Login = () => {
@@ -37,6 +38,16 @@ const Login = () => {
         } catch (err) {
             console.error("Auth error:", err);
             // Error is already set in the store
+        }
+    };
+
+    const handleGoogleSignIn = async () => {
+        try {
+            await signInWithGoogle();
+            navigate('/dashboard');
+        } catch (err: any) {
+            console.error("Google sign-in error:", err);
+            alert(err.message || 'Failed to sign in with Google');
         }
     };
 
@@ -184,7 +195,13 @@ const Login = () => {
                         </div>
 
                         <div className="social-row">
-                            <button type="button" className="social-btn-box" style={{ width: '100%' }}>
+                            <button
+                                type="button"
+                                className="social-btn-box"
+                                style={{ width: '100%' }}
+                                onClick={handleGoogleSignIn}
+                                disabled={isLoading}
+                            >
                                 <Chrome size={20} className="social-icon" />
                                 <span>Login with Google</span>
                             </button>

@@ -4,8 +4,8 @@
  */
 
 // Token storage keys
-const ACCESS_TOKEN_KEY = 'ergodrive_access_token';
-const REFRESH_TOKEN_KEY = 'ergodrive_refresh_token';
+const ACCESS_TOKEN_KEY = 'fumorive_access_token';
+const REFRESH_TOKEN_KEY = 'fumorive_refresh_token';
 
 /**
  * Save tokens to localStorage
@@ -86,3 +86,79 @@ export const getUserFromToken = (): any | null => {
 
     return parseJWT(token);
 };
+
+/**
+ * Sign in with Google OAuth
+ * Returns JWT tokens from backend after Firebase authentication
+ */
+export const signInWithGoogle = async (): Promise<{
+    access_token: string;
+    refresh_token: string;
+    token_type: string;
+} | null> => {
+    try {
+        // Dynamically import Firebase auth functions
+        const { signInWithPopup } = await import('firebase/auth');
+        const { auth, googleProvider } = await import('../config/firebase');
+
+        // Trigger Google Sign-In popup
+        const result = await signInWithPopup(auth, googleProvider);
+
+        // Get Firebase ID token
+        const firebaseToken = await result.user.getIdToken();
+
+        // Send Firebase token to backend for verification
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+        const response = await fetch(`${API_URL}/api/v1/auth/google`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                firebase_token: firebaseToken,
+            }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'Google authentication failed');
+        }
+
+        const data = await response.json();
+
+        // Save tokens to localStorage
+        saveTokens(data.access_token, data.refresh_token);
+
+        return data;
+    } catch (error: any) {
+        console.error('Google sign-in error:', error);
+
+        // Handle specific Firebase errors
+        if (error.code === 'auth/popup-closed-by-user') {
+            throw new Error('Sign-in cancelled');
+        } else if (error.code === 'auth/popup-blocked') {
+            throw new Error('Popup blocked. Please allow popups for this site.');
+        }
+
+        throw error;
+    }
+};
+
+/**
+ * Sign out from Google (if applicable)
+ * Also clears local tokens
+ */
+export const signOutGoogle = async (): Promise<void> => {
+    try {
+        const { signOut } = await import('firebase/auth');
+        const { auth } = await import('../config/firebase');
+
+        await signOut(auth);
+        clearTokens();
+    } catch (error) {
+        console.error('Sign out error:', error);
+        // Clear tokens anyway
+        clearTokens();
+    }
+};
+

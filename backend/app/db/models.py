@@ -1,5 +1,5 @@
 """
-Database Models for ERGODRIVE
+Database Models for Fumorive
 SQLAlchemy ORM models based on ERD diagram
 Week 2, Day 1 - Database Schema Design
 """
@@ -25,10 +25,16 @@ class User(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String(255), unique=True, nullable=False, index=True)
-    hashed_password = Column(String(255), nullable=False)
+    hashed_password = Column(String(255), nullable=True)  # Nullable for OAuth users
     full_name = Column(String(255), nullable=False)
     role = Column(String(50), default="student")  # student, researcher, admin
     is_active = Column(Boolean, default=True)
+    
+    # OAuth fields
+    oauth_provider = Column(String(50), nullable=True)  # 'google', 'github', etc.
+    google_id = Column(String(255), nullable=True, unique=True, index=True)  # Google UID
+    profile_picture = Column(String(500), nullable=True)  # Avatar URL from OAuth
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

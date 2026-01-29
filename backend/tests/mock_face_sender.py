@@ -169,7 +169,7 @@ def check_face_stats():
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("😊 ERGODRIVE Mock Face Detection Sender")
+    print("😊 Fumorive Mock Face Detection Sender")
     print("=" * 60)
     print()
     

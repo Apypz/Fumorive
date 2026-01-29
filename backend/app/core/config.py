@@ -1,6 +1,6 @@
 """
 Application Configuration
-Environment variables and settings for ERGODRIVE Backend
+Environment variables and settings for Fumorive Backend
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
     
     # Application
-    APP_NAME: str = "ERGODRIVE Backend"
+    APP_NAME: str = "Fumorive Backend"
     VERSION: str = "1.0.0"
     ENVIRONMENT: str = "development"  # development, staging, production
     HOST: str = "0.0.0.0"
@@ -31,12 +31,18 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     
+    # Firebase Admin SDK (for OAuth)
+    FIREBASE_SERVICE_ACCOUNT_PATH: str = "fumorive-db-firebase-adminsdk-fbsvc-0353bb0508.json"
+    FIREBASE_PROJECT_ID: str = ""  # Set in .env or will be loaded from service account
+    
     # CORS
     CORS_ORIGINS: List[str] = [
         "http://localhost:5173",  # Vite default port
         "http://localhost:3000",  # React common port
+        "http://localhost:3001",  # Vite alternate port (when 3000 is busy)
         "http://127.0.0.1:5173",
         "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
     ]
     
     # TimescaleDB Settings

@@ -165,7 +165,7 @@ def check_eeg_status():
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("🧠 ERGODRIVE Mock EEG Data Sender")
+    print("🧠 Fumorive Mock EEG Data Sender")
     print("=" * 60)
     print()
     

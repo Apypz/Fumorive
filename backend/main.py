@@ -1,7 +1,6 @@
 ﻿"""
-ERGODRIVE FastAPI Backend Application
+FastAPI Backend Application
 Main application entry point with all routes and middleware
-Week 2, Thursday/Friday - Enhanced API Structure & Documentation
 """
 
 import time
@@ -13,6 +12,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 
 from app.core.config import settings
 from app.core.redis import init_redis, close_redis, redis_health_check
+from app.core.firebase import init_firebase
 from app.core.cache import get_cache_stats
 from app.api.routes.auth import router as auth_router
 from app.api.routes.sessions import router as sessions_router
@@ -29,10 +29,10 @@ logger = logging.getLogger(__name__)
 
 # Create FastAPI app instance with enhanced metadata
 app = FastAPI(
-    title="ERGODRIVE API",
+    title="Fumorive API",
     version="1.0.0",
     description="""
-## ERGODRIVE - Driving Simulator with EEG & Face Recognition
+## Fumorive - Driving Simulator with EEG & Face Recognition
 
 Real-time fatigue detection system using:
 - **EEG signals** (Muse 2 headband)
@@ -53,8 +53,8 @@ Real-time fatigue detection system using:
     docs_url="/api/docs",
     redoc_url="/api/redoc",
     contact={
-        "name": "ERGODRIVE Team",
-        "email": "support@ergodrive.com",
+        "name": "Fumorive Team",
+        "email": "[EMAIL_ADDRESS]",
     },
     license_info={
         "name": "MIT License",
@@ -82,17 +82,10 @@ Real-time fatigue detection system using:
 # ============================================
 # MIDDLEWARE CONFIGURATION
 # ============================================
+# Note: FastAPI processes middleware in REVERSE order of registration
+# So we add CORS LAST to ensure it's processed FIRST
 
-# 1. CORS Middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# 2. GZip Compression Middleware
+# 1. GZip Compression Middleware (processed third)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
@@ -127,6 +120,27 @@ async def log_requests(request: Request, call_next):
     return response
 
 
+# 3. CORS Middleware (added LAST = processed FIRST!)
+# This must come after all @app.middleware decorators
+# Note: Cannot use ["*"] with allow_credentials=True
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:5173",
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["*"],
+    expose_headers=["X-Request-ID", "X-Process-Time"],
+)
+
+
 # Include API routers
 API_V1_PREFIX = "/api/v1"
 
@@ -144,7 +158,7 @@ app.include_router(face_router, prefix=API_V1_PREFIX)
 async def root():
     """Root endpoint - API status"""
     return {
-        "name": "ERGODRIVE Backend API",
+        "name": "Fumorive Backend API",
         "version": "1.0.0",
         "status": "running",
         "docs": "/api/docs"
@@ -159,7 +173,7 @@ async def health_check():
     
     return {
         "status": "healthy",
-        "service": "ergodrive-backend",
+        "service": "fumorive-backend",
         "redis": redis_health,
         "cache": cache_stats
     }
@@ -169,7 +183,7 @@ async def health_check():
 async def api_info():
     """API information endpoint"""
     return {
-        "name": "ERGODRIVE API",
+        "name": "Fumorive API",
         "version": "1.0.0",
         "endpoints": {
             "auth": f"{API_V1_PREFIX}/auth",
@@ -188,13 +202,17 @@ async def api_info():
 async def startup_event():
     """Execute on application startup"""
     print("=" * 60)
-    print("🚀 ERGODRIVE Backend API Starting...")
+    print("🚀 Fumorive Backend API Starting...")
     print(f"📝 Environment: {settings.ENVIRONMENT}")
     print(f"🌐 CORS Origins: {settings.CORS_ORIGINS}")
     
     # Initialize Redis
     print("\n🔧 Initializing Redis...")
     init_redis()
+    
+    # Initialize Firebase (OAuth)
+    print("\n🔥 Initializing Firebase...")
+    init_firebase()
     
     print(f"\n📚 Documentation: /api/docs")
     print(f"🔌 WebSocket: /api/v1/ws/session/{{session_id}}")
@@ -206,7 +224,7 @@ async def startup_event():
 async def shutdown_event():
     """Execute on application shutdown"""
     print("=" * 60)
-    print("🛑 ERGODRIVE Backend API Shutting Down...")
+    print("🛑 Fumorive Backend API Shutting Down...")
     
     # Close Redis connection
     print("\n🔧 Closing Redis connection...")

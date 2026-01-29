@@ -19,7 +19,7 @@ def init_db():
     """
     
     print("=" * 60)
-    print("ERGODRIVE - Database Initialization")
+    print("Fumorive - Database Initialization")
     print("=" * 60)
     
     print("\n📦 Creating database tables...")

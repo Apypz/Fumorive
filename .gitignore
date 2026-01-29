@@ -19,3 +19,8 @@ env/
 
 # --- Logs ---
 *.log
+
+# --- Firebase ---
+# Firebase service account credentials (keep this secret!)
+fumorive-db-firebase-adminsdk-fbsvc-0353bb0508.json
+*-firebase-adminsdk-*.json

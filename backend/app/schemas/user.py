@@ -33,8 +33,11 @@ class UserUpdate(BaseModel):
 class UserInDB(UserBase):
     """Schema for user in database (includes hashed password)"""
     id: UUID
-    hashed_password: str
+    hashed_password: Optional[str] = None  # Nullable for OAuth users
     is_active: bool
+    oauth_provider: Optional[str] = None
+    google_id: Optional[str] = None
+    profile_picture: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     
@@ -48,6 +51,9 @@ class UserResponse(BaseModel):
     full_name: str
     role: str
     is_active: bool
+    oauth_provider: Optional[str] = None  # OAuth provider if applicable
+    google_id: Optional[str] = None  # Google user ID
+    profile_picture: Optional[str] = None  # Profile picture URL
     created_at: datetime
     updated_at: Optional[datetime] = None
     

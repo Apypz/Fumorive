@@ -63,3 +63,19 @@ class RegisterRequest(BaseModel):
 class RefreshTokenRequest(BaseModel):
     """Refresh token request"""
     refresh_token: str = Field(..., description="Refresh token to get new access token")
+
+
+class GoogleAuthRequest(BaseModel):
+    """Google OAuth authentication request"""
+    firebase_token: str = Field(..., description="Firebase ID token from Google Sign-In")
+    
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "firebase_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjFlOWdkazcifQ..."
+                }
+            ]
+        }
+    }
+

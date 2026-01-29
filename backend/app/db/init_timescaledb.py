@@ -83,6 +83,6 @@ def create_hypertables():
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("ERGODRIVE - TimescaleDB Setup")
+    print("Fumorive - TimescaleDB Setup")
     print("=" * 60)
     create_hypertables()
