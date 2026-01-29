@@ -16,6 +16,10 @@ export function GameCanvas() {
     setCameraMode,
     setControlMode,
     setSteeringAngle,
+    setCurrentSpeed,
+    setIsDrifting,
+    setSlipAngle,
+    setEngineRunning,
     showInspector,
   } = useGameStore()
 
@@ -52,6 +56,11 @@ export function GameCanvas() {
         setControlMode(mode)
       })
 
+      // Set engine state change callback to update UI
+      demoScene.setOnEngineStateChange((running) => {
+        setEngineRunning(running)
+      })
+
       await demoScene.init(engine.getContext())
 
       // Start render loop
@@ -60,6 +69,11 @@ export function GameCanvas() {
 
         // Update steering angle for HUD (every frame for smooth animation)
         setSteeringAngle(demoScene.getSteeringAngle())
+        
+        // Update speed and drift status for speedometer
+        setCurrentSpeed(demoScene.getSpeedKmh())
+        setIsDrifting(demoScene.getIsDrifting())
+        setSlipAngle(demoScene.getSlipAngle())
 
         // Update FPS counter every 0.5 seconds
         if (Math.random() < 0.05) {
@@ -78,7 +92,7 @@ export function GameCanvas() {
       console.error('[GameCanvas] Failed to initialize game:', error)
       setLoading(false)
     }
-  }, [graphicsConfig, selectedMap, setLoading, setFps, setGameState, setCameraMode, setControlMode, setSteeringAngle])
+  }, [graphicsConfig, selectedMap, setLoading, setFps, setGameState, setCameraMode, setControlMode, setSteeringAngle, setCurrentSpeed, setIsDrifting, setSlipAngle, setEngineRunning])
 
   // Handle inspector toggle
   useEffect(() => {

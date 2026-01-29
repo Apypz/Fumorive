@@ -11,16 +11,14 @@ import {
 import '@babylonjs/loaders/OBJ'
 import '@babylonjs/loaders/glTF'
 import '@babylonjs/loaders'
-import type { GameScene, SceneContext, GraphicsConfig } from '../types'
+import type { GameScene, SceneContext, GraphicsConfig, MapType, CameraMode, ControlMode, CameraPositionConfig } from '../types'
+import { DEFAULT_GRAPHICS_CONFIG } from '../types'
 import { LightingSetup } from '../components/LightingSetup'
 import { EnvironmentSetup } from '../components/EnvironmentSetup'
 import { PostProcessingPipeline } from '../engine/PostProcessingPipeline'
 import { InputManager } from '../engine/InputManager'
-import { CarController } from '../components/CarController'
-import type { CameraMode, ControlMode, CameraPositionConfig } from '../components/CarController'
+import { CarController } from '../components/car'
 import { SimpleMap } from '../components/SimpleMap'
-import { DEFAULT_GRAPHICS_CONFIG } from '../types'
-import type { MapType } from '../../stores/gameStore'
 
 export type { MapType }
 
@@ -45,6 +43,8 @@ export class DemoScene implements GameScene {
   private onCameraModeChange: ((mode: CameraMode) => void) | null = null
   // Control mode change callback
   private onControlModeChange: ((mode: ControlMode) => void) | null = null
+  // Engine state change callback
+  private onEngineStateChange: ((running: boolean) => void) | null = null
 
   constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'bahlil-city') {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
@@ -74,6 +74,17 @@ export class DemoScene implements GameScene {
   }
 
   /**
+   * Set callback for engine state changes (to update UI)
+   */
+  setOnEngineStateChange(callback: (running: boolean) => void): void {
+    this.onEngineStateChange = callback
+    // Also set on car controller if already initialized
+    if (this.carController) {
+      this.carController.onEngineStateChanged(callback)
+    }
+  }
+
+  /**
    * Get current control mode
    */
   getControlMode(): ControlMode {
@@ -99,6 +110,34 @@ export class DemoScene implements GameScene {
    */
   getSteeringAngle(): number {
     return this.carController?.getSteeringInput() ?? 0
+  }
+
+  /**
+   * Get current speed in km/h
+   */
+  getSpeedKmh(): number {
+    return this.carController?.getSpeedKmh() ?? 0
+  }
+
+  /**
+   * Get whether car is currently drifting
+   */
+  getIsDrifting(): boolean {
+    return this.carController?.getIsDrifting() ?? false
+  }
+
+  /**
+   * Get slip angle in degrees for drift visualization
+   */
+  getSlipAngle(): number {
+    return this.carController?.getSlipAngle() ?? 0
+  }
+
+  /**
+   * Get whether engine is running
+   */
+  isEngineRunning(): boolean {
+    return this.carController?.isEngineRunning() ?? false
   }
 
   async init(context: SceneContext): Promise<void> {
@@ -253,6 +292,11 @@ export class DemoScene implements GameScene {
         // Set control mode change callback
         if (this.onControlModeChange) {
           this.carController.onControlModeChanged(this.onControlModeChange)
+        }
+
+        // Set engine state change callback
+        if (this.onEngineStateChange) {
+          this.carController.onEngineStateChanged(this.onEngineStateChange)
         }
 
         // Set map reference for collision detection

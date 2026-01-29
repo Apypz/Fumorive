@@ -1,10 +1,11 @@
 import { create } from 'zustand'
-import type { GraphicsConfig, AssetLoadProgress } from '../game/types'
+import type { GraphicsConfig, AssetLoadProgress, CameraMode, ControlMode, MapType } from '../game/types'
 import { GRAPHICS_PRESETS, DEFAULT_GRAPHICS_CONFIG } from '../game/types'
-import type { CameraMode, ControlMode } from '../game/components/CarController'
 
 export type GameState = 'loading' | 'menu' | 'map-select' | 'playing' | 'paused'
-export type MapType = 'bahlil-city' | 'iclik-park'
+
+// Re-export MapType for components that import from this file
+export type { MapType }
 
 interface GameStoreState {
   // Game state
@@ -37,6 +38,18 @@ interface GameStoreState {
   // Steering
   steeringAngle: number  // -1 to 1, normalized steering input
   setSteeringAngle: (angle: number) => void
+
+  // Speed & Drift
+  currentSpeed: number  // km/h
+  setCurrentSpeed: (speed: number) => void
+  isDrifting: boolean
+  setIsDrifting: (drifting: boolean) => void
+  slipAngle: number  // degrees, for drift visualization
+  setSlipAngle: (angle: number) => void
+
+  // Engine
+  engineRunning: boolean
+  setEngineRunning: (running: boolean) => void
 
   // Performance
   fps: number
@@ -86,6 +99,18 @@ export const useGameStore = create<GameStoreState>((set) => ({
   // Steering
   steeringAngle: 0,
   setSteeringAngle: (steeringAngle) => set({ steeringAngle }),
+
+  // Speed & Drift
+  currentSpeed: 0,
+  setCurrentSpeed: (currentSpeed) => set({ currentSpeed }),
+  isDrifting: false,
+  setIsDrifting: (isDrifting) => set({ isDrifting }),
+  slipAngle: 0,
+  setSlipAngle: (slipAngle) => set({ slipAngle }),
+
+  // Engine
+  engineRunning: false,
+  setEngineRunning: (engineRunning) => set({ engineRunning }),
 
   // Performance
   fps: 0,
