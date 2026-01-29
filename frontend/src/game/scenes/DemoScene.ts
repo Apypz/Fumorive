@@ -127,6 +127,13 @@ export class DemoScene implements GameScene {
   }
 
   /**
+   * Get slip angle in degrees for drift visualization
+   */
+  getSlipAngle(): number {
+    return this.carController?.getSlipAngle() ?? 0
+  }
+
+  /**
    * Get whether engine is running
    */
   isEngineRunning(): boolean {

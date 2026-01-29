@@ -12,8 +12,6 @@
 // Physics Configuration
 export {
   DEFAULT_PHYSICS_CONFIG,
-  REALISTIC_PHYSICS_CONFIG,
-  ARCADE_PHYSICS_CONFIG,
   PHYSICS_PRESETS,
   type PhysicsPreset,
 } from './physics.config'

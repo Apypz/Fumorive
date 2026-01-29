@@ -140,15 +140,16 @@ export class CarPhysics {
 
   /**
    * Update drift detection state
-   * Drift terjadi secara natural berdasarkan:
-   * - Slip angle yang tinggi
-   * - Kecepatan di atas threshold
+   * This is ONLY for visual feedback (body roll, effects, UI)
+   * NOT used to change physics behavior - physics is purely grip-based
    */
   private updateDriftState(speed: number): void {
     if (speed > 0.5) {
-      this.slipAngle = Math.atan2(this.lateralVelocity, Math.abs(this.forwardVelocity))
-      // Drift terjadi jika slip angle cukup besar dan kecepatan di atas minimum
-      this.isDrifting = Math.abs(this.slipAngle) > 0.15 && speed > this.config.driftMinSpeed
+      // Slip angle = angle between velocity direction and car heading
+      this.slipAngle = Math.atan2(this.lateralVelocity, Math.abs(this.forwardVelocity) + 0.1)
+      
+      // Simple detection: significant lateral velocity = drifting (for visual purposes)
+      this.isDrifting = Math.abs(this.lateralVelocity) > 3 && speed > this.config.driftMinSpeed
     } else {
       this.slipAngle = 0
       this.isDrifting = false
@@ -204,6 +205,7 @@ export class CarPhysics {
 
   /**
    * Calculate turn rate based on steering input
+   * Simple and always responsive - no drift mode dependency
    */
   private calculateTurnRate(input: CarInputState, dt: number): number {
     // Update steering angle with smooth response
@@ -214,15 +216,23 @@ export class CarPhysics {
     // Calculate turn rate based on bicycle model
     let turnRate = 0
     const minSpeedForTurn = 0.5
+    const speed = this.velocity.length()
     
     if (Math.abs(this.forwardVelocity) > minSpeedForTurn) {
-      const effectiveRadius = this.config.turnRadius + Math.abs(this.forwardVelocity) * 0.3
+      const effectiveRadius = this.config.turnRadius + Math.abs(this.forwardVelocity) * 0.15
       turnRate = (this.forwardVelocity / effectiveRadius) * Math.tan(this.steerAngle)
-      
-      // Counter-steer effect when drifting
-      if (this.isDrifting) {
-        turnRate *= 1.3
-      }
+    }
+    
+    // Slight reduction at very high speed
+    if (speed > 40) {
+      turnRate *= Math.max(0.7, 1 - (speed - 40) / 150)
+    }
+    
+    // Add slip angle influence - creates natural drift rotation
+    // This is proportional to how much the car is sliding
+    if (Math.abs(this.lateralVelocity) > 1) {
+      const slipInfluence = this.slipAngle * 0.8 * Math.sign(this.forwardVelocity)
+      turnRate += slipInfluence
     }
     
     return turnRate
@@ -230,56 +240,59 @@ export class CarPhysics {
 
   /**
    * Calculate lateral (sideways) force based on grip
-   * Drift terjadi secara natural berdasarkan:
-   * - Kecepatan tinggi + belok tajam
-   * - Rem saat belok
-   * - Slip angle yang tinggi
+   * NATURAL TIRE PHYSICS - no drift mode, just grip levels
+   * Lower grip = more slide, higher grip = less slide
    */
   private calculateLateralForce(input: CarInputState): number {
     const speed = this.velocity.length()
     const steerRatio = Math.abs(this.steerAngle) / this.config.maxSteerAngle
     
-    let frontGrip = this.config.gripFront
-    let rearGrip = this.config.gripRear
+    // Base grip - this is the tire's natural grip level
+    let grip = this.config.gripRear // Use rear grip as base (RWD feel)
     
-    // === NATURAL DRIFT CONDITIONS ===
+    // === NATURAL GRIP REDUCTION ===
+    // These conditions reduce grip naturally, creating slide
     
-    // 1. High speed + sharp turn = reduced rear grip
-    if (speed > this.config.driftSpeedThreshold && steerRatio > this.config.driftSteerThreshold) {
-      // Semakin cepat dan semakin tajam beloknya, semakin berkurang grip
-      const speedFactor = Math.min(1, (speed - this.config.driftSpeedThreshold) / 15)
-      const steerFactor = (steerRatio - this.config.driftSteerThreshold) / (1 - this.config.driftSteerThreshold)
-      const gripReduction = speedFactor * steerFactor * (1 - this.config.driftGripMultiplier)
-      
-      rearGrip *= (1 - gripReduction)
+    // 1. Speed reduces grip gradually (tires have limits)
+    if (speed > 10) {
+      const speedFactor = Math.min(0.5, (speed - 10) / 80)
+      grip *= (1 - speedFactor)
     }
     
-    // 2. Braking while turning = weight transfer reduces rear grip
-    if (input.brake && steerRatio > 0.2 && speed > this.config.driftMinSpeed) {
-      // Rem saat belok menyebabkan weight transfer ke depan
-      const brakeTurnFactor = steerRatio * this.config.brakeTurnGripLoss
-      rearGrip *= (1 - brakeTurnFactor)
-      // Front grip slightly increases due to weight transfer
-      frontGrip *= (1 + brakeTurnFactor * 0.2)
+    // 2. Sharp steering at speed = centrifugal force exceeds grip
+    if (steerRatio > 0.2 && speed > 8) {
+      const turnForce = steerRatio * speed * 0.008
+      grip *= Math.max(0.2, 1 - turnForce)
     }
     
-    // 3. Already drifting = maintain reduced grip
-    if (this.isDrifting) {
-      // Saat sudah drift, grip tetap rendah untuk menjaga slide
-      rearGrip = Math.min(rearGrip, this.config.gripRear * this.config.driftGripMultiplier * 1.2)
+    // 3. Braking while turning = weight transfer, rear gets light
+    if (input.brake && steerRatio > 0.1 && speed > 5) {
+      grip *= Math.max(0.15, 1 - this.config.brakeTurnGripLoss * steerRatio)
     }
     
-    // Clamp grip values
-    frontGrip = Math.max(0.1, Math.min(1, frontGrip))
-    rearGrip = Math.max(0.1, Math.min(1, rearGrip))
+    // 4. Throttle while turning = power oversteer
+    if (input.throttle > 0.5 && steerRatio > 0.2 && speed > 5) {
+      const powerLoss = input.throttle * steerRatio * 0.4
+      grip *= Math.max(0.25, 1 - powerLoss)
+    }
     
-    const frontGripForce = this.lateralVelocity * frontGrip * 10
-    const rearGripForce = this.lateralVelocity * rearGrip * 10
-    return (frontGripForce + rearGripForce) / 2
+    // Clamp grip
+    grip = Math.max(0.1, Math.min(1, grip))
+    
+    // === LATERAL FORCE ===
+    // This force pulls the car back to its heading direction
+    // Higher grip = stronger pull = less slide
+    // Lower grip = weaker pull = more slide
+    
+    const lateralForce = this.lateralVelocity * grip * 6
+    
+    return lateralForce
   }
 
   /**
    * Apply calculated forces to velocity
+   * KEY INSIGHT: Velocity exists in WORLD space and has inertia!
+   * When the car turns, velocity doesn't instantly follow - grip must redirect it.
    */
   private applyForces(
     dt: number, 
@@ -288,20 +301,42 @@ export class CarPhysics {
     turnRate: number,
     speed: number
   ): void {
-    // Update velocities
-    this.forwardVelocity += longitudinalForce * dt
-    this.lateralVelocity -= lateralForce * dt
-    
-    // Clamp lateral velocity
-    const maxLateralVelocity = Math.abs(this.forwardVelocity) * 0.8
-    this.lateralVelocity = Math.max(-maxLateralVelocity, Math.min(maxLateralVelocity, this.lateralVelocity))
-    
-    // Update heading
+    // Update heading (car body rotation)
     this.heading += turnRate * dt
     
-    // Reconstruct world velocity
+    // Get new direction vectors AFTER heading change
     const newForward = this.getForwardVector()
     const newRight = this.getRightVector()
+    
+    // === CRITICAL PHYSICS: Momentum-based velocity handling ===
+    // The velocity exists in WORLD space. When the car rotates,
+    // the velocity doesn't magically follow - tires must redirect it.
+    
+    // Decompose current world velocity into the NEW car frame
+    // This is where the magic happens - if car turned but velocity didn't,
+    // we now have lateral velocity (sliding!)
+    const newForwardVel = Vector3.Dot(this.velocity, newForward)
+    const newLateralVel = Vector3.Dot(this.velocity, newRight)
+    
+    // Apply longitudinal force (acceleration/braking) in forward direction
+    this.forwardVelocity = newForwardVel + longitudinalForce * dt
+    
+    // Lateral velocity handling - THIS IS WHERE DRIFT HAPPENS
+    // lateralForce tries to eliminate lateral velocity (grip)
+    // Low grip = can't eliminate lateral velocity = SLIDING
+    this.lateralVelocity = newLateralVel - lateralForce * dt
+    
+    // === LATERAL FRICTION ===
+    // Natural tire friction - always the same, no mode switching
+    // This gradually reduces lateral velocity (sliding stops naturally)
+    const lateralFriction = 0.92 // Consistent friction
+    this.lateralVelocity *= lateralFriction
+    
+    // Clamp lateral velocity based on speed
+    const maxLateralVelocity = Math.max(5, Math.abs(this.forwardVelocity) * 0.8)
+    this.lateralVelocity = Math.max(-maxLateralVelocity, Math.min(maxLateralVelocity, this.lateralVelocity))
+    
+    // Reconstruct world velocity from local components
     this.velocity = newForward.scale(this.forwardVelocity).add(newRight.scale(this.lateralVelocity))
     
     // Come to complete stop when very slow

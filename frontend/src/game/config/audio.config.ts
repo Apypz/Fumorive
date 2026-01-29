@@ -243,7 +243,7 @@ export const CRASH_AUDIO_CONFIG = {
    * Gain multiplier for crash sound
    * 1.0 = normal, 2.0 = 2x louder
    */
-  gainMultiplier: 1.5,
+  gainMultiplier: 1.0,
   
   /**
    * Minimum impact velocity to trigger crash sound (m/s)

@@ -80,6 +80,8 @@ export class CarController {
   private mouseSteeringTarget: number = 0
   private mouseSteeringValue: number = 0
   private canvas: HTMLCanvasElement | null = null
+  private mouseLastMoveTime: number = 0
+  private mouseIdleThreshold: number = 150 // ms before steering starts returning to center
   
   // Input state
   private input: CarInputState = {
@@ -108,7 +110,7 @@ export class CarController {
     }
     
     // Convert legacy camera config to new format
-    const fullCameraConfig: Partial<CameraConfig> = cameraConfig ? {
+    const fullCameraConfig: Partial<CameraConfig> | undefined = cameraConfig ? {
       thirdPerson: {
         ...DEFAULT_CAMERA_CONFIG.thirdPerson,
         ...cameraConfig.thirdPerson,
@@ -158,6 +160,9 @@ export class CarController {
       const movementX = event.movementX || 0
       this.mouseSteeringTarget += movementX / this.mouseConfig.sensitivity
       this.mouseSteeringTarget = Math.max(-1, Math.min(1, this.mouseSteeringTarget))
+      
+      // Track when mouse last moved
+      this.mouseLastMoveTime = performance.now()
     }
 
     window.addEventListener('mousemove', handleMouseMove)
@@ -417,15 +422,15 @@ export class CarController {
     const cameraMode = this.cameraManager.getMode()
     
     if (cameraMode !== 'free') {
-      // Return to center gradually
-      this.mouseSteeringTarget *= (1 - this.mouseConfig.returnSpeed * dt)
+      // NO automatic return to center - steering stays where user puts it
+      // User must move mouse in opposite direction to straighten
       
-      // Dead zone
+      // Dead zone only at very center
       if (Math.abs(this.mouseSteeringTarget) < this.mouseConfig.deadZone) {
         this.mouseSteeringTarget = 0
       }
       
-      // Smooth interpolation
+      // Smooth interpolation for responsive but not jerky steering
       this.mouseSteeringValue += (this.mouseSteeringTarget - this.mouseSteeringValue) * 
         Math.min(1, this.mouseConfig.steeringSmoothness * dt)
       this.input.steering = this.mouseSteeringValue
