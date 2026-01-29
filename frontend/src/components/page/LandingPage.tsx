@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Activity, Shield, Zap, Layers, Play, CheckCircle, ArrowRight, Mail, Github, Linkedin, Database, Wifi, ChevronDown } from 'lucide-react';
+import { Brain, Activity, Shield, Zap, Gamepad2, Play, CheckCircle, TriangleAlert, ArrowRight, Mail, Github, Linkedin, Database, Wifi, ChevronDown, Eye } from 'lucide-react';
 import './LandingPage.css';
-import heroBg from '../../assets/hero_bg.png';
+import fumoLogo from '../../assets/fumo.png';
+import heroBg from '../../assets/hero.jpg';
+import card3 from '../../assets/card3.jpg';
+import card2 from '../../assets/card2.jpg';
+import card1 from '../../assets/card.jpg';
 import { useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
@@ -11,6 +15,7 @@ const LandingPage = () => {
             <Navbar />
             <HeroSection />
             <ProblemSection />
+            <FeaturesShowcaseSection />
             <SolutionSection />
             <DemoSection />
             <FeaturesSection />
@@ -50,8 +55,17 @@ const Navbar = () => {
                 <div
                     className="navbar-logo"
                     onClick={() => window.scrollTo(0, 0)}
+                    style={{ cursor: 'pointer' }}
                 >
-                    Fumorive
+                    <img
+                        src={fumoLogo}
+                        alt="Fumorive Logo"
+                        style={{
+                            height: '20px',
+                            width: 'auto',
+                            objectFit: 'contain'
+                        }}
+                    />
                 </div>
 
                 <div className="navbar-links">
@@ -116,9 +130,9 @@ const HeroSection = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                 >
-                    <h1>Driving Simulation that<br />Reads Your <span style={{ color: 'var(--color-accent-blue)' }}>Mind</span></h1>
-                    <p>
-                        Integrated EEG and telemetry for next-generation driver training, UX research, and cognitive analysis.
+                    <h2>Simulasi Berkendara yang<br />Menghadirkan Analisa <br /> Tingkat <span style={{ color: 'var(--color-accent-blue)' }}>Kelelahan</span></h2>
+                    <p style={{ fontSize: '17px' }}>
+                        Teknologi ergonomis untuk mendeteksi kelelahan dini bagi pengemudi<br />ketika berkendara dalam waktu lama.
                     </p>
                     <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
                         <motion.a
@@ -127,7 +141,7 @@ const HeroSection = () => {
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
-                            Try Live Demo
+                            Demo Simulasi
                         </motion.a>
                         <motion.a
                             href="#"
@@ -135,7 +149,7 @@ const HeroSection = () => {
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
-                            Watch Video
+                            Lihat Dokumentasi
                         </motion.a>
                     </div>
                 </motion.div>
@@ -145,42 +159,192 @@ const HeroSection = () => {
 };
 
 const ProblemSection = () => {
+    const [activeCard, setActiveCard] = useState(0);
+
+    const features = [
+        {
+            icon: <Eye size={60} color="#ffffff" />,
+            title: "Mendeteksi Kelelahan Lebih Awal",
+            description: "Dilengkapi dengan notifikasi popup dan suara yang memberikan informasi terkait kelelahan yang dialami",
+            image: card1,
+        },
+        {
+            icon: <Gamepad2 size={60} color="#ffffff" />,
+            title: "Simulasi Berkendara dengan Game",
+            description: "Simulasi bermain game untuk mengukur tingkat kelelahan pengemudi",
+            image: card2,
+        },
+        {
+            icon: <TriangleAlert size={60} color="#ffffff" />,
+            title: "Mengurangi Risiko Kecelakaan",
+            description: "Mengurangi risiko kecelakaan dengan mencegah pengendara yang lelah untuk berkendara",
+            image: card3,
+        },
+    ];
+
     return (
-        <section className="section">
+        <section className="section problem-section">
             <div className="container">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
+                    style={{ marginBottom: '3rem' }}
                 >
-                    <h2 className="section-title">Why Legacy Training Fails</h2>
-                    <p className="section-subtitle">Conventional simulators miss the most important variable: the driver's cognitive state.</p>
+                    <h2 className="section-title">Kenapa Fumorive?</h2>
+                    <p className="section-subtitle">Fumorive hadir dalam mendeteksi kelelahan dini khususnya bagi pengendara jarak jauh dan dengan intensitas berat</p>
                 </motion.div>
 
-                <div className="grid-3">
-                    <FeatureCard
-                        icon={<Activity size={40} color="var(--color-accent-blue)" />}
-                        title="Lack of Cognitive Data"
-                        description="Traditional simulators track the car, not the driver. We track focus, stress, and fatigue in real-time."
-                        delay={0.1}
-                    />
-                    <FeatureCard
-                        icon={<Shield size={40} color="var(--color-accent-blue)" />}
-                        title="Safety Risks"
-                        description="Training for dangerous scenarios on real roads is reckless. Simulate extreme conditions safely."
-                        delay={0.2}
-                    />
-                    <FeatureCard
-                        icon={<Layers size={40} color="var(--color-accent-blue)" />}
-                        title="Subjective Feedback"
-                        description="Eliminate guesswork. Get objective, neurological metrics on driver performance."
-                        delay={0.3}
-                    />
+                <div className="expandable-cards-container">
+                    {features.map((feature, index) => (
+                        <motion.div
+                            key={index}
+                            className={`expandable-card ${activeCard === index ? 'active' : ''}`}
+                            onClick={() => setActiveCard(index)}
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.5, delay: index * 0.1 }}
+                            style={{
+                                backgroundImage: `url(${feature.image})`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                position: 'relative'
+                            }}
+                        >
+                            {/* Dark overlay */}
+                            <div style={{
+                                position: 'absolute',
+                                inset: 0,
+                                background: 'rgba(0, 0, 0, 0.6)',
+                                borderRadius: '24px',
+                                zIndex: 1
+                            }}></div>
+
+                            {/* Content */}
+                            <div style={{ position: 'relative', zIndex: 2, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {activeCard === index ? (
+                                    <motion.div
+                                        className="card-content-expanded"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ duration: 0.3, delay: 0.2 }}
+                                    >
+                                        <div className="card-expanded-text">
+                                            <h3>{feature.title}</h3>
+                                            <p>{feature.description}</p>
+                                        </div>
+                                    </motion.div>
+                                ) : (
+                                    <div className="card-content-collapsed">
+                                        <div className="card-icon">
+                                            {feature.icon}
+                                        </div>
+                                        <h4>{feature.title}</h4>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    ))}
                 </div>
             </div>
         </section>
-    )
+    );
+};
+
+const FeaturesShowcaseSection = () => {
+    const features = [
+        {
+            title: "Real-Time EEG Monitoring",
+            subtitle: "Brain Wave Analysis",
+            description: "Muse2 headband captures your brain activity in real-time. Monitor Alpha, Beta, Theta, and Delta waves to detect drowsiness before it becomes dangerous.",
+            icon: <Brain size={80} color="#2563eb" />,
+            gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            highlights: ["4 Brain Wave Types", "Sub-second Latency", "Clinical Accuracy"]
+        },
+        {
+            title: "Computer Vision Detection",
+            subtitle: "Face & Eye Tracking",
+            description: "Advanced AI tracks eye closure (PERCLOS), blink rate, yawning, and head pose. Multimodal fusion combines visual and EEG data for 98% accuracy.",
+            icon: <Activity size={80} color="#06b6d4" />,
+            gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+            highlights: ["Eye Aspect Ratio", "Head Pose Analysis", "Yawn Detection"]
+        },
+        {
+            title: "Intelligent Alert System",
+            subtitle: "Proactive Safety",
+            description: "Multi-level warning system triggers audio and visual alerts based on fatigue severity. Get notified before microsleep occurs, not after.",
+            icon: <Shield size={80} color="#8b5cf6" />,
+            gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+            highlights: ["3-Tier Alert Levels", "Audio Warnings", "Dashboard Metrics"]
+        }
+    ];
+
+    return (
+        <section className="section features-showcase-section">
+            <div className="container">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                    style={{ textAlign: 'center', marginBottom: '4rem' }}
+                >
+                    <h2 className="section-title">Powerful Features</h2>
+                    <p className="section-subtitle">
+                        Combining cutting-edge technology to keep drivers safe on the road
+                    </p>
+                </motion.div>
+
+                {features.map((feature, index) => (
+                    <motion.div
+                        key={index}
+                        className={`feature-showcase-item ${index % 2 === 0 ? 'layout-left' : 'layout-right'}`}
+                        initial={{ opacity: 0, y: 40 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.7, delay: index * 0.2 }}
+                    >
+                        <div className="feature-image-card" style={{ background: feature.gradient }}>
+                            <div className="feature-icon-wrapper">
+                                {feature.icon}
+                            </div>
+                            <div className="feature-decoration">
+                                <div className="decoration-circle circle-1"></div>
+                                <div className="decoration-circle circle-2"></div>
+                                <div className="decoration-circle circle-3"></div>
+                            </div>
+                        </div>
+
+                        <div className="feature-content-card">
+                            <div className="feature-badge">{feature.subtitle}</div>
+                            <h3 className="feature-title">{feature.title}</h3>
+                            <p className="feature-description">{feature.description}</p>
+
+                            <div className="feature-highlights">
+                                {feature.highlights.map((highlight, idx) => (
+                                    <div key={idx} className="highlight-item">
+                                        <CheckCircle size={18} color="#10b981" />
+                                        <span>{highlight}</span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <motion.button
+                                className="btn btn-primary"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                Learn More
+                                <ArrowRight size={18} />
+                            </motion.button>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+        </section>
+    );
 }
 
 const SolutionSection = () => {
@@ -401,7 +565,16 @@ const FooterSection = () => {
             <div className="container">
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '3rem', marginBottom: '3rem' }}>
                     <div>
-                        <h2 style={{ fontSize: '1.35rem', background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-neon))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', marginBottom: '1rem', fontWeight: 800, letterSpacing: '-0.5px' }}>Fumorive</h2>
+                        <img
+                            src={fumoLogo}
+                            alt="Fumorive Logo"
+                            style={{
+                                height: '20px',
+                                width: 'auto',
+                                objectFit: 'contain',
+                                marginBottom: '1rem'
+                            }}
+                        />
                         <p style={{ color: 'var(--color-text-secondary)', maxWidth: '300px', lineHeight: 1.7, fontSize: '0.95rem' }}>
                             Future of Mobility & Driver Research
                         </p>
@@ -439,20 +612,6 @@ const FooterSection = () => {
 }
 
 // Helpers
-const FeatureCard = ({ icon, title, description, delay = 0 }: any) => (
-    <motion.div
-        className="card"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay, duration: 0.5 }}
-    >
-        <div style={{ marginBottom: '1rem' }}>{icon}</div>
-        <h3 style={{ marginBottom: '0.75rem', fontSize: '1.15rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>{title}</h3>
-        <p style={{ color: 'var(--color-text-secondary)', lineHeight: 1.7, fontSize: '0.95rem' }}>{description}</p>
-    </motion.div>
-)
-
 const Step = ({ number, title, desc, delay = 0 }: any) => (
     <motion.div
         style={{ textAlign: 'center', maxWidth: '250px', padding: '1rem' }}
