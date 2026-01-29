@@ -44,6 +44,12 @@ interface GameStoreState {
   setCurrentSpeed: (speed: number) => void
   isDrifting: boolean
   setIsDrifting: (drifting: boolean) => void
+  slipAngle: number  // degrees, for drift visualization
+  setSlipAngle: (angle: number) => void
+
+  // Engine
+  engineRunning: boolean
+  setEngineRunning: (running: boolean) => void
 
   // Performance
   fps: number
@@ -99,6 +105,12 @@ export const useGameStore = create<GameStoreState>((set) => ({
   setCurrentSpeed: (currentSpeed) => set({ currentSpeed }),
   isDrifting: false,
   setIsDrifting: (isDrifting) => set({ isDrifting }),
+  slipAngle: 0,
+  setSlipAngle: (slipAngle) => set({ slipAngle }),
+
+  // Engine
+  engineRunning: false,
+  setEngineRunning: (engineRunning) => set({ engineRunning }),
 
   // Performance
   fps: 0,

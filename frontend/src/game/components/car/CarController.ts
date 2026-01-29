@@ -27,6 +27,7 @@ import {
 } from '../../config'
 import { CarPhysics } from './CarPhysics'
 import { CarCameraManager } from './CarCameraManager'
+import { EngineAudio } from '../../engine/EngineAudio'
 import type { SimpleMap } from '../SimpleMap'
 
 // Re-export types for backward compatibility
@@ -66,6 +67,11 @@ export class CarController {
   // Sub-systems
   private physics: CarPhysics
   private cameraManager: CarCameraManager
+  private engineAudio: EngineAudio
+  
+  // Engine state
+  private engineRunning: boolean = false
+  private onEngineStateChange: ((running: boolean) => void) | null = null
   
   // Control state
   private currentControlMode: ControlMode = 'keyboard'
@@ -74,6 +80,8 @@ export class CarController {
   private mouseSteeringTarget: number = 0
   private mouseSteeringValue: number = 0
   private canvas: HTMLCanvasElement | null = null
+  private mouseLastMoveTime: number = 0
+  private mouseIdleThreshold: number = 150 // ms before steering starts returning to center
   
   // Input state
   private input: CarInputState = {
@@ -102,7 +110,7 @@ export class CarController {
     }
     
     // Convert legacy camera config to new format
-    const fullCameraConfig: Partial<CameraConfig> = cameraConfig ? {
+    const fullCameraConfig: Partial<CameraConfig> | undefined = cameraConfig ? {
       thirdPerson: {
         ...DEFAULT_CAMERA_CONFIG.thirdPerson,
         ...cameraConfig.thirdPerson,
@@ -116,6 +124,14 @@ export class CarController {
     
     // Initialize camera manager
     this.cameraManager = new CarCameraManager(scene, carMesh, fullCameraConfig)
+    
+    // Initialize engine audio
+    this.engineAudio = new EngineAudio()
+    
+    // Setup collision callback for crash sound
+    this.physics.onCollision((impactVelocity) => {
+      this.engineAudio.playCrashSound(impactVelocity)
+    })
     
     // Setup input handling
     this.setupInput()
@@ -144,6 +160,9 @@ export class CarController {
       const movementX = event.movementX || 0
       this.mouseSteeringTarget += movementX / this.mouseConfig.sensitivity
       this.mouseSteeringTarget = Math.max(-1, Math.min(1, this.mouseSteeringTarget))
+      
+      // Track when mouse last moved
+      this.mouseLastMoveTime = performance.now()
     }
 
     window.addEventListener('mousemove', handleMouseMove)
@@ -194,6 +213,64 @@ export class CarController {
    */
   getControlMode(): ControlMode {
     return this.currentControlMode
+  }
+
+  // === ENGINE CONTROL ===
+
+  /**
+   * Set callback for engine state changes
+   */
+  onEngineStateChanged(callback: (running: boolean) => void): void {
+    this.onEngineStateChange = callback
+  }
+
+  /**
+   * Toggle engine on/off
+   */
+  async toggleEngine(): Promise<void> {
+    this.engineRunning = await this.engineAudio.toggleEngine()
+    console.log(`[CarController] Engine ${this.engineRunning ? 'started' : 'stopped'}`)
+    
+    if (this.onEngineStateChange) {
+      this.onEngineStateChange(this.engineRunning)
+    }
+  }
+
+  /**
+   * Start the engine
+   */
+  async startEngine(): Promise<void> {
+    if (this.engineRunning) return
+    
+    await this.engineAudio.startEngine()
+    this.engineRunning = true
+    console.log('[CarController] Engine started')
+    
+    if (this.onEngineStateChange) {
+      this.onEngineStateChange(true)
+    }
+  }
+
+  /**
+   * Stop the engine
+   */
+  stopEngine(): void {
+    if (!this.engineRunning) return
+    
+    this.engineAudio.stopEngine()
+    this.engineRunning = false
+    console.log('[CarController] Engine stopped')
+    
+    if (this.onEngineStateChange) {
+      this.onEngineStateChange(false)
+    }
+  }
+
+  /**
+   * Check if engine is running
+   */
+  isEngineRunning(): boolean {
+    return this.engineRunning
   }
 
   /**
@@ -279,15 +356,26 @@ export class CarController {
           }
           break
         case ' ':
-        case 'shift':
-          // Brake - space or shift
+          // Brake - space only
           this.input.brake = pressed
+          break
+        case 'shift':
+          // Horn - shift key
+          if (pressed) {
+            this.engineAudio.playHorn()
+          } else {
+            this.engineAudio.stopHorn()
+          }
           break
         case 'v':
           if (pressed) this.toggleCameraMode()
           break
         case 'c':
           if (pressed) this.toggleControlMode()
+          break
+        case 'k':
+          // Toggle engine on/off
+          if (pressed) this.toggleEngine()
           break
       }
     })
@@ -304,8 +392,22 @@ export class CarController {
     // Handle mouse steering
     this.updateMouseSteering(dt)
     
-    // Update physics
-    const turnRate = this.physics.update(dt, this.input, this.carMesh)
+    // Create effective input - block throttle if engine is off
+    const effectiveInput: CarInputState = {
+      ...this.input,
+      throttle: this.engineRunning ? this.input.throttle : 0,
+    }
+    
+    // Update physics with effective input
+    const turnRate = this.physics.update(dt, effectiveInput, this.carMesh)
+    
+    // Update engine audio based on speed and throttle
+    if (this.engineRunning) {
+      this.engineAudio.updateEngineSound(
+        this.physics.getSpeedKmh(),
+        effectiveInput.throttle
+      )
+    }
     
     // Update camera
     this.cameraManager.update(this.physics.getHeading())
@@ -320,15 +422,15 @@ export class CarController {
     const cameraMode = this.cameraManager.getMode()
     
     if (cameraMode !== 'free') {
-      // Return to center gradually
-      this.mouseSteeringTarget *= (1 - this.mouseConfig.returnSpeed * dt)
+      // NO automatic return to center - steering stays where user puts it
+      // User must move mouse in opposite direction to straighten
       
-      // Dead zone
+      // Dead zone only at very center
       if (Math.abs(this.mouseSteeringTarget) < this.mouseConfig.deadZone) {
         this.mouseSteeringTarget = 0
       }
       
-      // Smooth interpolation
+      // Smooth interpolation for responsive but not jerky steering
       this.mouseSteeringValue += (this.mouseSteeringTarget - this.mouseSteeringValue) * 
         Math.min(1, this.mouseConfig.steeringSmoothness * dt)
       this.input.steering = this.mouseSteeringValue
@@ -394,10 +496,14 @@ export class CarController {
       ;(this as any)._mouseHandler = null
     }
     
+    // Dispose engine audio
+    this.engineAudio.dispose()
+    
     // Dispose camera manager
     this.cameraManager.dispose()
     
     this.onControlModeChange = null
+    this.onEngineStateChange = null
     this.canvas = null
     
     console.log('[CarController] Disposed')

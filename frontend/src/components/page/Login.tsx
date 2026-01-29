@@ -9,6 +9,7 @@ import './Login.css';
 const Login = () => {
     const [isLogin, setIsLogin] = useState(true); // Default to True (Login)
     const [showPassword, setShowPassword] = useState(false);
+    const [showLoginLoading, setShowLoginLoading] = useState(false);
 
     // Form States
     const [email, setEmail] = useState('');
@@ -23,8 +24,12 @@ const Login = () => {
 
         try {
             if (isLogin) {
+                setShowLoginLoading(true);
                 await login({ email, password });
-                navigate('/dashboard');
+                // Loading akan hilang otomatis saat navigate
+                setTimeout(() => {
+                    navigate('/dashboard');
+                }, 500); // Small delay untuk smooth transition
             } else {
                 await register({
                     email,
@@ -37,6 +42,7 @@ const Login = () => {
             }
         } catch (err) {
             console.error("Auth error:", err);
+            setShowLoginLoading(false);
             // Error is already set in the store
         }
     };
@@ -94,7 +100,7 @@ const Login = () => {
                 {/* Right Side: Form (White) */}
                 <div className="login-form-container">
                     <div className="form-header">
-                        <h2 className="form-title">{isLogin ? 'Welcome Back' : 'Get Started Now'}</h2>
+                        <h2 className="form-title">{isLogin ? 'Hello Driver!' : 'Get Started Now'}</h2>
                         <p className="form-subtitle">
                             {isLogin ? 'Please log in to your account to continue.' : 'Please enter your details to create account.'}
                         </p>
@@ -150,7 +156,7 @@ const Login = () => {
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     placeholder="............"
-                                    className="custom-input"
+                                    className="custom-input password-input"
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
@@ -209,6 +215,25 @@ const Login = () => {
                     </form>
                 </div>
             </motion.div>
+
+            {/* Login Loading Overlay */}
+            <AnimatePresence>
+                {showLoginLoading && (
+                    <motion.div
+                        className="login-loading-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <div className="login-loading-content">
+                            <Loader2 size={48} className="login-spinner" />
+                            <h3 className="login-loading-text">Logging in...</h3>
+                            <p className="login-loading-subtext">Mohon tunggu sebentar</p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

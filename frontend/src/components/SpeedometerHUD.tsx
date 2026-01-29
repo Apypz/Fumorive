@@ -218,13 +218,6 @@ export function SpeedometerHUD() {
         <span style={styles.speedValue}>{Math.round(currentSpeed)}</span>
         <span style={styles.speedUnit}>km/h</span>
       </div>
-
-      {/* Drift indicator */}
-      {isDrifting && (
-        <div style={styles.driftIndicator}>
-          DRIFT
-        </div>
-      )}
     </div>
   )
 }
@@ -264,17 +257,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.7rem',
     fontFamily: 'system-ui, sans-serif',
     opacity: 0.7,
-  },
-  driftIndicator: {
-    backgroundColor: 'rgba(239, 68, 68, 0.9)',
-    color: '#fff',
-    padding: '0.3rem 0.8rem',
-    borderRadius: '4px',
-    fontSize: '0.8rem',
-    fontWeight: 'bold',
-    letterSpacing: '0.1em',
-    animation: 'pulse 0.5s ease-in-out infinite alternate',
-    boxShadow: '0 0 10px rgba(239, 68, 68, 0.5)',
   },
 }
 

@@ -10,7 +10,6 @@ import {
     ChevronRight,
     User,
     Activity,
-    Zap,
     Brain,
     Eye,
     Timer,
@@ -98,7 +97,7 @@ const Dashboard = () => {
                 <header className="dashboard-header">
                     <div className="header-title">
                         <h1>
-                            {activeTab === 'overview' && `Welcome Back, ${user?.full_name || 'Driver'}`}
+                            {activeTab === 'overview' && `Halo, ${user?.full_name || 'Driver'}`}
                             {activeTab === 'history' && 'Session History'}
                             {activeTab === 'settings' && 'Settings'}
                         </h1>
@@ -116,64 +115,222 @@ const Dashboard = () => {
                 {/* OVERVIEW TAB */}
                 {activeTab === 'overview' && (
                 <div className="dashboard-grid">
-                    {/* Driver Status Card */}
-                    <div className="widget-card" style={{ gridColumn: 'span 2' }}>
-                        <div className="widget-title">
-                            <span>Driver Status</span>
-                            <span style={{ fontSize: '0.8rem', padding: '4px 10px', background: '#dcfce7', color: '#166534', borderRadius: '20px' }}>Active</span>
-                        </div>
-                        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-                            <div style={{
-                                width: '120px', height: '120px',
-                                borderRadius: '50%',
-                                border: '8px solid #cbd5e1',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                flexDirection: 'column'
-                            }}>
-                                <span style={{ fontSize: '2rem', fontWeight: 700 , color:'#64748b'}}>--</span>
-                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Fatigue</span>
+                    {/* Welcome Banner with Quick Actions */}
+                    <div className="widget-card" style={{ gridColumn: 'span 3', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', border: 'none' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
+                            <div style={{ flex: 1 }}>
+                                <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.75rem' }}>Selamat Datang, di Fumorive 👋</h2>
+                                <p style={{ margin: '0 0 1rem 0', opacity: 0.9, fontSize: '1rem' }}>
+                                    Sistem monitoring kelelahan mengemudi berbasis EEG dan Computer Vision
+                                </p>
+                                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                                    <button
+                                        onClick={() => navigate('/session')}
+                                        style={{ 
+                                            padding: '12px 24px', 
+                                            background: 'white', 
+                                            color: '#667eea', 
+                                            border: 'none', 
+                                            borderRadius: '8px', 
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}
+                                    >
+                                        <Gamepad2 size={18} />
+                                        Mulai Sesi Baru
+                                    </button>
+                                    <button
+                                        onClick={() => navigate('/face-recognition')}
+                                        style={{ 
+                                            padding: '12px 24px', 
+                                            background: 'rgba(255,255,255,0.2)', 
+                                            color: 'white', 
+                                            border: '1px solid rgba(255,255,255,0.3)', 
+                                            borderRadius: '8px', 
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px'
+                                        }}
+                                    >
+                                        <Camera size={18} />
+                                        Test Kamera
+                                    </button>
+                                </div>
                             </div>
-                            <div>
-                                <h3 style={{ margin: '0 0 0.5rem 0', color:'#000000'}}>Ready to Start</h3>
-                                <p style={{ margin: 0, color: '#64748b' }}>Connect your headset to begin monitoring.</p>
-                                <button
-                                    className="btn-primary"
-                                    style={{ marginTop: '1rem', padding: '10px 20px', fontSize: '0.9rem' }}
-                                    onClick={() => navigate('/session')}
-                                >
-                                    Start New Session
-                                </button>
+                            <div style={{ 
+                                width: '140px', 
+                                height: '140px',
+                                borderRadius: '50%',
+                                border: '8px solid rgba(255,255,255,0.3)',
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                flexDirection: 'column',
+                                background: 'rgba(255,255,255,0.1)',
+                                backdropFilter: 'blur(10px)'
+                            }}>
+                                <span style={{ fontSize: '2.5rem', fontWeight: 700 }}>--</span>
+                                <span style={{ fontSize: '0.9rem', opacity: 0.8 }}>Fatigue Score</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Quick Stats */}
+                    {/* System Status Cards */}
                     <div className="widget-card">
-                        <div className="widget-title">System Check</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                    <Activity size={18} color="#64748b" />
-                                    <span style={{ color:'#000000'}}>EEG Headset</span>
-                                </div>
-                                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#cbd5e1'  }}></span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                            <div style={{ 
+                                width: '50px', 
+                                height: '50px', 
+                                borderRadius: '12px', 
+                                background: '#dbeafe', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center' 
+                            }}>
+                                <Activity size={24} color="#3b82f6" />
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                    <Zap size={18} color="#64748b" />
-                                    <span style={{ color:'#000000'}}>Connection</span>
+                            <div>
+                                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>EEG Headset</div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1e293b' }}>Muse 2</div>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: '#fef2f2', borderRadius: '8px', border: '1px solid #fecaca' }}>
+                            <span style={{ fontSize: '0.9rem', color: '#991b1b' }}>Status: Disconnected</span>
+                            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ef4444' }}></span>
+                        </div>
+                        <button
+                            onClick={() => setActiveTab('settings')}
+                            style={{ 
+                                marginTop: '1rem', 
+                                width: '100%', 
+                                padding: '10px', 
+                                background: '#3b82f6', 
+                                color: 'white', 
+                                border: 'none', 
+                                borderRadius: '8px', 
+                                cursor: 'pointer',
+                                fontWeight: 500
+                            }}
+                        >
+                            Konfigurasi Device
+                        </button>
+                    </div>
+
+                    <div className="widget-card">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                            <div style={{ 
+                                width: '50px', 
+                                height: '50px', 
+                                borderRadius: '12px', 
+                                background: '#fef3c7', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center' 
+                            }}>
+                                <Camera size={24} color="#f59e0b" />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Camera System</div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1e293b' }}>Face Mesh</div>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                            <span style={{ fontSize: '0.9rem', color: '#166534' }}>Status: Ready</span>
+                            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981' }}></span>
+                        </div>
+                        <button
+                            onClick={() => navigate('/face-recognition')}
+                            style={{ 
+                                marginTop: '1rem', 
+                                width: '100%', 
+                                padding: '10px', 
+                                background: '#f59e0b', 
+                                color: 'white', 
+                                border: 'none', 
+                                borderRadius: '8px', 
+                                cursor: 'pointer',
+                                fontWeight: 500
+                            }}
+                        >
+                            Test Face Detection
+                        </button>
+                    </div>
+
+                    <div className="widget-card">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                            <div style={{ 
+                                width: '50px', 
+                                height: '50px', 
+                                borderRadius: '12px', 
+                                background: '#dcfce7', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center' 
+                            }}>
+                                <Database size={24} color="#10b981" />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Backend API</div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1e293b' }}>PostgreSQL</div>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: '#f0fdf4', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
+                            <span style={{ fontSize: '0.9rem', color: '#166534' }}>Status: Connected</span>
+                            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981' }}></span>
+                        </div>
+                        <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#64748b', textAlign: 'center' }}>
+                            <span>✓ Auth </span>
+                            <span>✓ Sessions </span>
+                            <span>✓ Face API</span>
+                        </div>
+                    </div>
+
+                    {/* Informasi & Tips */}
+                    <div className="widget-card" style={{ gridColumn: 'span 3', background: '#f8fafc', border: '2px dashed #cbd5e1' }}>
+                        <div style={{ display: 'flex', alignItems: 'start', gap: '1rem' }}>
+                            <div style={{ 
+                                width: '50px', 
+                                height: '50px', 
+                                borderRadius: '12px', 
+                                background: '#dbeafe', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                flexShrink: 0
+                            }}>
+                                <Info size={24} color="#3b82f6" />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', fontSize: '1.1rem' }}>Cara Menggunakan Sistem</h3>
+                                <div style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: '1.6' }}>
+                                    <ol style={{ margin: '0.5rem 0 0 1.25rem', padding: 0 }}>
+                                        <li>Hubungkan <strong>Muse 2 EEG Headset</strong> melalui LSL (Lab Streaming Layer)</li>
+                                        <li>Pastikan <strong>kamera</strong> terdeteksi untuk face detection</li>
+                                        <li>Klik <strong>"Mulai Sesi Baru"</strong> untuk memulai monitoring real-time</li>
+                                        <li>Sistem akan menganalisis <strong>brain waves</strong> (EEG) dan <strong>visual cues</strong> (mata, yawn, head pose)</li>
+                                        <li>Dapatkan <strong>alert otomatis</strong> jika terdeteksi tanda-tanda kelelahan</li>
+                                    </ol>
                                 </div>
-                                <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Offline</span>
                             </div>
                         </div>
                     </div>
 
                     {/* EEG Brain Waves Statistics */}
-                    <div className="widget-card" style={{ gridColumn: 'span 2' }}>
+                    <div className="widget-card" style={{ gridColumn: 'span 3' }}>
                         <div className="widget-title">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <Brain size={20} color="#3b82f6" />
-                                <span>Brain Wave Activity (Muse2)</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <Brain size={20} color="#3b82f6" />
+                                    <span>Brain Wave Activity (Muse2 EEG)</span>
+                                </div>
+                                <span style={{ fontSize: '0.8rem', padding: '4px 10px', background: '#fef2f2', color: '#991b1b', borderRadius: '6px', fontWeight: 500 }}>
+                                    No Data
+                                </span>
                             </div>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', color:'#64748b'}}>
@@ -219,12 +376,22 @@ const Dashboard = () => {
                     </div>
 
                     {/* Fatigue Analysis */}
-                    <div className="widget-card">
+                    <div className="widget-card" style={{ gridColumn: 'span 2' }}>
                         <div className="widget-title">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px'}}>
-                                <Eye size={20} color="#f59e0b" />
-                                <span>Fatigue Analysis</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <Eye size={20} color="#f59e0b" />
+                                    <span>Analisis Kelelahan (Multimodal)</span>
+                                </div>
+                                <span style={{ fontSize: '0.8rem', padding: '4px 10px', background: '#fef2f2', color: '#991b1b', borderRadius: '6px', fontWeight: 500 }}>
+                                    Standby
+                                </span>
                             </div>
+                        </div>
+                        <div style={{ marginBottom: '1rem', padding: '12px', background: '#fffbeb', borderRadius: '8px', border: '1px solid #fef3c7' }}>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: '#92400e', lineHeight: '1.5' }}>
+                                <strong>💡 Fusion System:</strong> Menggabungkan data EEG (brain waves) dan Computer Vision (face detection) untuk deteksi kelelahan yang lebih akurat.
+                            </p>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <div>
@@ -263,9 +430,12 @@ const Dashboard = () => {
                         <div className="widget-title">
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <TrendingUp size={20} color="#10b981" />
-                                <span>Cognitive Status</span>
+                                <span>Status Kognitif</span>
                             </div>
                         </div>
+                        <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: '#64748b' }}>
+                            Metrik dari analisis EEG brain waves
+                        </p>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <div style={{ padding: '1rem', background: '#f0fdf4', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
                                 <div style={{ fontSize: '0.8rem', color: '#166534', marginBottom: '0.25rem' }}>Attention Level</div>
@@ -283,13 +453,21 @@ const Dashboard = () => {
                     </div>
 
                     {/* Driving Performance */}
-                    <div className="widget-card" style={{ gridColumn: 'span 2' }}>
+                    <div className="widget-card" style={{ gridColumn: 'span 3' }}>
                         <div className="widget-title">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <Gauge size={20} color="#8b5cf6" />
-                                <span>Driving Performance</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <Gauge size={20} color="#8b5cf6" />
+                                    <span>Performa Mengemudi (Simulasi)</span>
+                                </div>
+                                <span style={{ fontSize: '0.8rem', padding: '4px 10px', background: '#fef2f2', color: '#991b1b', borderRadius: '6px', fontWeight: 500 }}>
+                                    Awaiting Session
+                                </span>
                             </div>
                         </div>
+                        <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: '#64748b' }}>
+                            Data dari simulasi mengemudi: lane keeping, speed control, reaction time, dan alert events
+                        </p>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', color:'#64748b'}}>
                             {[
                                 { label: 'Lane Deviation', value: '-- cm', icon: <Target size={18} />, color: '#3b82f6' },
@@ -313,41 +491,64 @@ const Dashboard = () => {
                         </div>
                     </div>
 
+                    {/* Recommendations & Tips */}
+                    <div className="widget-card" style={{ gridColumn: 'span 2', background: '#FCDCDC', color: '#802222', border: 'none' }}>
+                        <div className="widget-title" style={{ borderBottom: '2px solid rgba(255, 255, 255, 0.8)', paddingBottom: '1rem', marginBottom: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <AlertTriangle size={20} color="#802222" />
+                                <span style={{color: '#802222'}}>Tips Keselamatan Berkendara</span>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'start', padding: '12px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', backdropFilter: 'blur(10px)' }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700 }}>1</div>
+                                <div style={{ flex: 1, fontSize: '0.9rem', lineHeight: '1.5' }}>
+                                    <strong>Istirahat Teratur:</strong> Berhenti setiap 2 jam atau 200 km untuk mencegah kelelahan ekstrem
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'start', padding: '12px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', backdropFilter: 'blur(10px)' }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700 }}>2</div>
+                                <div style={{ flex: 1, fontSize: '0.9rem', lineHeight: '1.5' }}>
+                                    <strong>Cek Signal Quality:</strong> Pastikan headset EEG terpasang dengan benar untuk data akurat
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'start', padding: '12px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', backdropFilter: 'blur(10px)' }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700 }}>3</div>
+                                <div style={{ flex: 1, fontSize: '0.9rem', lineHeight: '1.5' }}>
+                                    <strong>Respond to Alerts:</strong> Jika sistem memberikan warning, segera istirahat atau pull over
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'start', padding: '12px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', backdropFilter: 'blur(10px)' }}>
+                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700 }}>4</div>
+                                <div style={{ flex: 1, fontSize: '0.9rem', lineHeight: '1.5' }}>
+                                    <strong>Hindari Multitasking:</strong> Fokus pada mengemudi untuk hasil monitoring optimal
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Session Summary */}
                     <div className="widget-card">
                         <div className="widget-title">
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <History size={20} color="#64748b" />
-                                <span>Last Session</span>
+                                <span>Sesi Terakhir</span>
                             </div>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Date</span>
-                                <span style={{ fontSize: '0.9rem', fontWeight: 600, color:'#64748b' }}>--</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Duration</span>
-                                <span style={{ fontSize: '0.9rem', fontWeight: 600, color:'#64748b' }}>--</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Distance</span>
-                                <span style={{ fontSize: '0.9rem', fontWeight: 600, color:'#64748b' }}>-- km</span>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Avg. Fatigue</span>
-                                <span style={{ fontSize: '0.9rem', fontWeight: 600, color:'#64748b' }}>--</span>
-                            </div>
-                            <div style={{ 
-                                marginTop: '0.5rem',
-                                padding: '0.75rem',
-                                background: '#f8fafc',
-                                borderRadius: '8px',
-                                textAlign: 'center'
-                            }}>
-                                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Overall Score</div>
-                                <div style={{ fontSize: '1.75rem', fontWeight: 700, marginTop: '0.25rem', color:'#64748b' }}>--/100</div>
-                            </div>
+                        <div style={{ 
+                            padding: '2rem 1rem',
+                            textAlign: 'center',
+                            color: '#64748b'
+                        }}>
+                            <Calendar size={48} style={{ margin: '0 auto 1rem', opacity: 0.2 }} />
+                            <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem' }}>Belum ada sesi yang dijalankan</p>
+                            <button
+                                className="btn-primary"
+                                style={{ padding: '10px 20px', fontSize: '0.9rem' }}
+                                onClick={() => setActiveTab('history')}
+                            >
+                                Lihat History
+                            </button>
                         </div>
                     </div>
                 </div>

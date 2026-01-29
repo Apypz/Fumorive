@@ -12,8 +12,6 @@
 // Physics Configuration
 export {
   DEFAULT_PHYSICS_CONFIG,
-  REALISTIC_PHYSICS_CONFIG,
-  ARCADE_PHYSICS_CONFIG,
   PHYSICS_PRESETS,
   type PhysicsPreset,
 } from './physics.config'
@@ -53,3 +51,20 @@ export {
   AVAILABLE_MAPS,
   getMapConfig,
 } from './map.config'
+
+// Audio Configuration
+export {
+  AUDIO_PATHS,
+  MASTER_VOLUME,
+  VOLUME_CATEGORIES,
+  SOUND_VOLUMES,
+  ENGINE_AUDIO_CONFIG,
+  AUDIO_BEHAVIOR,
+  AUDIO_CONFIG,
+  calculateEffectiveVolume,
+  calculateEngineVolume,
+  calculateEnginePitch,
+  type AudioCategory,
+  type SoundName,
+  type AudioConfig,
+} from './audio.config'

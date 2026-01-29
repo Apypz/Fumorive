@@ -21,7 +21,7 @@ export const DEFAULT_PHYSICS_CONFIG: CarPhysicsConfig = {
   // ENGINE
   // ============================================
   /** Maximum forward speed in m/s. 35 m/s ≈ 126 km/h */
-  maxSpeed: 35,
+  maxSpeed: 100,
   
   /** Maximum reverse speed in m/s. 12 m/s ≈ 43 km/h */
   reverseMaxSpeed: 12,
@@ -57,25 +57,25 @@ export const DEFAULT_PHYSICS_CONFIG: CarPhysicsConfig = {
   // GRIP & DRIFT
   // ============================================
   /** Front tire grip (0-1). Higher = more grip, better handling */
-  gripFront: 0.9,
+  gripFront: 0.75,
   
   /** Rear tire grip (0-1). Lower = easier to drift/oversteer */
-  gripRear: 0.85,
+  gripRear: 0.45,
   
-  /** Speed threshold where grip starts reducing during turns (m/s). 15 m/s ≈ 54 km/h */
-  driftSpeedThreshold: 15,
+  /** Speed threshold where grip starts reducing during turns (m/s). 8 m/s ≈ 29 km/h */
+  driftSpeedThreshold: 6,
   
-  /** Minimum speed required for drift to occur (m/s). 8 m/s ≈ 29 km/h */
-  driftMinSpeed: 8,
+  /** Minimum speed required for drift to occur (m/s). 4 m/s ≈ 14 km/h */
+  driftMinSpeed: 3,
   
-  /** Steering threshold to trigger drift (0-1). 0.6 = 60% of max steering */
-  driftSteerThreshold: 0.6,
+  /** Steering threshold to trigger drift (0-1). 0.3 = 30% of max steering */
+  driftSteerThreshold: 0.2,
   
   /** Grip multiplier during drift conditions (0-1). Lower = more slidey */
-  driftGripMultiplier: 0.35,
+  driftGripMultiplier: 0.1,
   
   /** How much grip is lost when braking while turning (0-1). Higher = more loss */
-  brakeTurnGripLoss: 0.4,
+  brakeTurnGripLoss: 0.85,
 
   // ============================================
   // PHYSICS
@@ -120,54 +120,8 @@ export const DEFAULT_PHYSICS_CONFIG: CarPhysicsConfig = {
   collisionBounciness: 1.5,
 }
 
-/**
- * Preset: Realistic Physics
- * More simulation-like driving feel
- */
-export const REALISTIC_PHYSICS_CONFIG: CarPhysicsConfig = {
-  ...DEFAULT_PHYSICS_CONFIG,
-  maxSpeed: 45,              // ~162 km/h
-  acceleration: 12,          // Slower acceleration
-  engineBraking: 6,          // More engine braking
-  gripFront: 0.95,
-  gripRear: 0.92,
-  driftSpeedThreshold: 20,   // Need higher speed to drift
-  driftMinSpeed: 12,
-  driftSteerThreshold: 0.7,  // Need more steering to drift
-  driftGripMultiplier: 0.5,  // Harder to drift
-  brakeTurnGripLoss: 0.3,    // Less grip loss
-  mass: 1400,
-  bodyRollFactor: 0.06,
-  suspensionStiffness: 6,
-}
-
-/**
- * Preset: Arcade Physics
- * Very responsive, easy to drift
- */
-export const ARCADE_PHYSICS_CONFIG: CarPhysicsConfig = {
-  ...DEFAULT_PHYSICS_CONFIG,
-  maxSpeed: 40,
-  acceleration: 25,          // Very quick acceleration
-  engineBraking: 3,
-  gripFront: 0.85,
-  gripRear: 0.70,            // Very easy to drift
-  driftSpeedThreshold: 10,   // Easy to trigger drift
-  driftMinSpeed: 5,
-  driftSteerThreshold: 0.4,  // Easy to trigger
-  driftGripMultiplier: 0.25, // Very slidey
-  brakeTurnGripLoss: 0.5,    // More grip loss
-  bodyRollFactor: 0.08,      // Exaggerated body roll
-  suspensionStiffness: 10,
-}
-
-/**
- * Physics presets for easy switching
- */
 export const PHYSICS_PRESETS = {
   default: DEFAULT_PHYSICS_CONFIG,
-  realistic: REALISTIC_PHYSICS_CONFIG,
-  arcade: ARCADE_PHYSICS_CONFIG,
 } as const
 
 export type PhysicsPreset = keyof typeof PHYSICS_PRESETS

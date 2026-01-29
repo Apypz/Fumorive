@@ -7,6 +7,7 @@ import { GraphicsSettings } from '../GraphicsSettings'
 import { ControlsHUD } from '../ControlsHUD'
 import { SteeringWheelHUD } from '../SteeringWheelHUD'
 import { SpeedometerHUD } from '../SpeedometerHUD'
+import { DriftMeter } from '../DriftMeter'
 import { MapSelection } from '../MapSelection'
 import { useGameStore } from '../../stores/gameStore'
 import '../../App.css'
@@ -81,6 +82,9 @@ export default function Session() {
           
           {/* Speedometer visualization */}
           <SpeedometerHUD />
+          
+          {/* Drift Meter visualization */}
+          <DriftMeter />
           
           {/* Steering Wheel visualization */}
           <SteeringWheelHUD />

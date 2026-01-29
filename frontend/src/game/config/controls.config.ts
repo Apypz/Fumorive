@@ -18,14 +18,15 @@ export const DEFAULT_KEY_BINDINGS: KeyBindings = {
   right: ['d', 'arrowright'],
   
   // Actions
-  brake: [' ', 'space', 'shift', 'shiftleft', 'shiftright'],
+  brake: [' ', 'space'],
+  horn: ['shift', 'shiftleft', 'shiftright'],
   
   // Camera & Mode toggles
   toggleCamera: ['v'],
   toggleControlMode: ['c'],
+  toggleEngine: ['k'],
   
   // Additional (optional)
-  horn: ['h'],
   resetCar: ['r'],
   pause: ['escape', 'p'],
 }
