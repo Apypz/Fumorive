@@ -153,3 +153,34 @@ async def stop_eeg_session(session_id: UUID):
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"No active EEG session found for {session_id}"
         )
+
+
+@router.get("/buffer/stats")
+async def get_buffer_stats():
+    """
+    Get EEG data buffer statistics
+    
+    Returns metrics about the batch insertion buffer:
+    - Current buffer size
+    - Total items processed
+    - Total flushes
+    - Average items per flush
+    - Time since last flush
+    - Buffer status (running/stopped)
+    
+    Useful for monitoring buffer performance and debugging.
+    """
+    from app.core.eeg_relay import get_eeg_buffer_stats
+    
+    try:
+        stats = get_eeg_buffer_stats()
+        return {
+            "status": "success",
+            "buffer": stats
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "buffer": None
+        }
