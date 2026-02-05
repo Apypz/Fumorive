@@ -139,6 +139,26 @@ export const apiClient = {
     },
 
     /**
+     * PUT request
+     */
+    put: async <T>(url: string, data: any): Promise<T> => {
+        const response = await fetchWithAuth(url, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ detail: response.statusText }));
+            throw new Error(error.detail || `PUT ${url} failed`);
+        }
+
+        return response.json();
+    },
+
+    /**
      * PATCH request
      */
     patch: async <T>(url: string, data: any): Promise<T> => {

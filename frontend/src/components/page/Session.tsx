@@ -9,6 +9,7 @@ import { SteeringWheelHUD } from '../SteeringWheelHUD'
 import { SpeedometerHUD } from '../SpeedometerHUD'
 import { DriftMeter } from '../DriftMeter'
 import { MapSelection } from '../MapSelection'
+import { CameraFatigueMonitor } from '../CameraFatigueMonitor'
 import { useGameStore } from '../../stores/gameStore'
 import '../../App.css'
 
@@ -17,6 +18,7 @@ export default function Session() {
   const [showSettings, setShowSettings] = useState(false)
   const [showMapSelection, setShowMapSelection] = useState(true)
   const [gameStarted, setGameStarted] = useState(false)
+  const [cameraEnabled, setCameraEnabled] = useState(false)
 
   const handleStartGame = () => {
     setShowMapSelection(false)
@@ -88,7 +90,21 @@ export default function Session() {
           
           {/* Steering Wheel visualization */}
           <SteeringWheelHUD />
+
+          {/* Camera Fatigue Monitor - bottom right corner */}
+          <CameraFatigueMonitor 
+            isEnabled={cameraEnabled}
+            onToggle={() => setCameraEnabled(!cameraEnabled)}
+          />
         </>
+      )}
+
+      {/* Show camera toggle button when game started but not playing */}
+      {gameStarted && gameState !== 'playing' && (
+        <CameraFatigueMonitor 
+          isEnabled={cameraEnabled}
+          onToggle={() => setCameraEnabled(!cameraEnabled)}
+        />
       )}
     </div>
   )

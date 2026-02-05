@@ -28,6 +28,7 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(None, min_length=2, max_length=255)
     role: Optional[str] = Field(None, pattern="^(student|researcher|admin)$")
     is_active: Optional[bool] = None
+    profile_picture: Optional[str] = None
 
 
 class UserInDB(UserBase):
