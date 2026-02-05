@@ -27,12 +27,12 @@ export const DEFAULT_SPAWN_POINT: SpawnPoint = {
 }
 
 /**
- * Bahlil City Map Configuration
+ * Solo City Map Configuration
  * Urban environment dengan banyak obstacle
  */
-export const BAHLIL_CITY_CONFIG: MapConfig = {
-  id: 'bahlil-city',
-  name: 'Bahlil City',
+export const SOLO_CITY_CONFIG: MapConfig = {
+  id: 'solo-city',
+  name: 'Solo City',
   description: 'Kota urban dengan gedung-gedung, jalan raya, dan banyak obstacle.',
   
   bounds: DEFAULT_MAP_BOUNDS,
@@ -62,12 +62,12 @@ export const BAHLIL_CITY_CONFIG: MapConfig = {
 }
 
 /**
- * Iclik Park Map Configuration
+ * Sriwedari Park Map Configuration
  * Open park dengan sedikit obstacle
  */
-export const ICLIK_PARK_CONFIG: MapConfig = {
-  id: 'iclik-park',
-  name: 'Iclik Park',
+export const SRIWEDARI_PARK_CONFIG: MapConfig = {
+  id: 'sriwedari-park',
+  name: 'Sriwedari Park',
   description: 'Taman terbuka yang luas dengan sedikit obstacle. Sempurna untuk testing.',
   
   bounds: DEFAULT_MAP_BOUNDS,
@@ -101,8 +101,8 @@ export const ICLIK_PARK_CONFIG: MapConfig = {
  * All available maps
  */
 export const MAP_CONFIGS = {
-  'bahlil-city': BAHLIL_CITY_CONFIG,
-  'iclik-park': ICLIK_PARK_CONFIG,
+  'solo-city': SOLO_CITY_CONFIG,
+  'sriwedari-park': SRIWEDARI_PARK_CONFIG,
 } as const
 
 /**

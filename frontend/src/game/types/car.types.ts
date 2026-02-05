@@ -55,6 +55,10 @@ export interface FreeCameraConfig {
   inertia: number
   followSpeed: number
   targetHeightOffset: number
+  /** Mouse wheel zoom precision - lower value = faster zoom */
+  wheelPrecision?: number
+  /** Percentage of current radius to zoom per wheel delta */
+  wheelDeltaPercentage?: number
 }
 
 /**

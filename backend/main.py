@@ -220,6 +220,15 @@ async def startup_event():
     print("\n🔥 Initializing Firebase...")
     init_firebase()
     
+    # Start EEG data buffer
+    print("\n📊 Starting EEG data buffer...")
+    try:
+        from app.core.eeg_relay import start_eeg_buffer
+        await start_eeg_buffer()
+        print("✅ EEG buffer started successfully")
+    except Exception as e:
+        print(f"❌ Failed to start EEG buffer: {e}")
+    
     print(f"\n📚 Documentation: /api/docs")
     print(f"🔌 WebSocket: /api/v1/ws/session/{{session_id}}")
     print("=" * 60)
@@ -231,6 +240,15 @@ async def shutdown_event():
     """Execute on application shutdown"""
     print("=" * 60)
     print("🛑 Fumorive Backend API Shutting Down...")
+    
+    # Stop EEG data buffer and flush remaining data
+    print("\n📊 Stopping EEG data buffer...")
+    try:
+        from app.core.eeg_relay import stop_eeg_buffer
+        await stop_eeg_buffer()
+        print("✅ EEG buffer stopped and flushed")
+    except Exception as e:
+        print(f"❌ Failed to stop EEG buffer: {e}")
     
     # Close Redis connection
     print("\n🔧 Closing Redis connection...")

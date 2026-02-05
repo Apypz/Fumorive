@@ -136,6 +136,70 @@ async def websocket_monitor(websocket: WebSocket):
         ws_manager.disconnect(websocket)
 
 
+@router.websocket("/ping")
+async def websocket_ping(websocket: WebSocket):
+    """
+    Dedicated WebSocket endpoint for latency measurement
+    
+    Client sends: {"type": "ping", "client_timestamp": <ISO timestamp>}
+    Server responds: {
+        "type": "pong", 
+        "client_timestamp": <echoed>,
+        "server_timestamp": <ISO timestamp>
+    }
+    
+    Client can calculate round-trip time:
+    RTT = current_time - client_timestamp
+    
+    Connection URL: ws://localhost:8000/api/v1/ws/ping
+    
+    **Week 3, Tuesday - Latency Measurement**
+    """
+    await websocket.accept()
+    
+    try:
+        # Send ready message
+        await websocket.send_json({
+            "type": "ready",
+            "message": "Ping service ready",
+            "server_timestamp": datetime.utcnow().isoformat()
+        })
+        
+        ping_count = 0
+        
+        # Listen for ping messages
+        while True:
+            data = await websocket.receive_json()
+            
+            if data.get("type") == "ping":
+                ping_count += 1
+                
+                # Echo back immediately with server timestamp
+                response = {
+                    "type": "pong",
+                    "ping_number": ping_count,
+                    "client_timestamp": data.get("client_timestamp"),
+                    "server_timestamp": datetime.utcnow().isoformat()
+                }
+                
+                await websocket.send_json(response)
+                
+            elif data.get("type") == "get_stats":
+                # Return statistics
+                await websocket.send_json({
+                    "type": "stats",
+                    "total_pings": ping_count,
+                    "server_timestamp": datetime.utcnow().isoformat()
+                })
+            
+    except WebSocketDisconnect:
+        print(f"Ping client disconnected after {ping_count} pings")
+    except Exception as e:
+        print(f"Ping WebSocket error: {e}")
+    finally:
+        await websocket.close()
+
+
 # ============================================
 # DATA HANDLERS
 # ============================================

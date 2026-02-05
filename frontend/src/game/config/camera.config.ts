@@ -85,7 +85,7 @@ export const DEFAULT_FREE_CAMERA_CONFIG: FreeCameraConfig = {
   lowerRadiusLimit: 4,
   
   /** Maximum zoom distance */
-  upperRadiusLimit: 20,
+  upperRadiusLimit: 50,
   
   /** Minimum vertical angle (prevent going underground) */
   lowerBetaLimit: 0.1,
@@ -101,6 +101,12 @@ export const DEFAULT_FREE_CAMERA_CONFIG: FreeCameraConfig = {
   
   /** Height offset for target */
   targetHeightOffset: 0.8,
+  
+  /** Mouse wheel zoom precision - lower = faster zoom */
+  wheelPrecision: 20,
+  
+  /** Percentage of current radius to zoom per wheel delta */
+  wheelDeltaPercentage: 0.05,
 }
 
 /**
