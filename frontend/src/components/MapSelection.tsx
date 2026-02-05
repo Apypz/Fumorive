@@ -1,6 +1,5 @@
 import { useGameStore } from '../stores/gameStore'
-
-type MapType = 'bahlil-city' | 'iclik-park'
+import type { MapType } from '../game/types/map.types'
 
 interface MapInfo {
   id: MapType
@@ -11,14 +10,14 @@ interface MapInfo {
 
 const maps: MapInfo[] = [
   {
-    id: 'bahlil-city',
-    name: 'Bahlil City',
+    id: 'solo-city' as MapType,
+    name: 'Solo City',
     description: 'Kota urban dengan gedung-gedung, jalan raya, dan banyak obstacle. Cocok untuk pengalaman berkendara yang menantang.',
     thumbnail: '🏙️',
   },
   {
-    id: 'iclik-park',
-    name: 'Iclik Park',
+    id: 'sriwedari-park' as MapType,
+    name: 'Sriwedari Park',
     description: 'Taman terbuka yang luas dengan sedikit obstacle. Sempurna untuk berlatih dan menguji kendaraan dengan bebas.',
     thumbnail: '🌳',
   },

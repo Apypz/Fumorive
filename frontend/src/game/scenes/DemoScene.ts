@@ -46,7 +46,7 @@ export class DemoScene implements GameScene {
   // Engine state change callback
   private onEngineStateChange: ((running: boolean) => void) | null = null
 
-  constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'bahlil-city') {
+  constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'solo-city') {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
     this.mapType = mapType
   }
@@ -158,12 +158,12 @@ export class DemoScene implements GameScene {
 
     // Create map based on selected mapType
     this.simpleMap = new SimpleMap(this.scene, this.lightingSetup)
-    if (this.mapType === 'iclik-park') {
-      this.simpleMap.createIclikPark()
-      console.log('[DemoScene] Loading Iclik Park map')
+    if (this.mapType === 'sriwedari-park') {
+      this.simpleMap.createSriwedariPark()
+      console.log('[DemoScene] Loading Sriwedari Park map')
     } else {
-      this.simpleMap.createBahlilCity()
-      console.log('[DemoScene] Loading Bahlil City map')
+      this.simpleMap.createSoloCity()
+      console.log('[DemoScene] Loading Solo City map')
     }
 
     // Setup environment (skybox only, ground is from map)
