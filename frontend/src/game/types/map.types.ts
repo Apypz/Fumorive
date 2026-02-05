@@ -11,7 +11,7 @@
 /**
  * Available map identifiers
  */
-export type MapType = 'bahlil-city' | 'iclik-park'
+export type MapType = 'solo-city' | 'sriwedari-park'
 
 /**
  * 3D Vector type for positions

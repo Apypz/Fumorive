@@ -85,7 +85,7 @@ export const useGameStore = create<GameStoreState>((set) => ({
     }),
 
   // Map
-  selectedMap: 'bahlil-city',
+  selectedMap: 'solo-city',
   setSelectedMap: (selectedMap) => set({ selectedMap }),
 
   // Camera
