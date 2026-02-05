@@ -88,9 +88,22 @@ export const useUserStore = create<UserState>()(
                 console.log('✅ Logged out successfully');
             },
 
-            updateProfile: (data) => set((state) => ({
-                user: state.user ? { ...state.user, ...data } : null
-            })),
+            updateProfile: async (data) => {
+                set({ isLoading: true });
+                try {
+                    const updatedUser = await authService.updateProfile(data);
+                    set((state) => ({
+                        user: state.user ? { ...state.user, ...updatedUser } : updatedUser,
+                        isLoading: false
+                    }));
+                } catch (error: any) {
+                    set({
+                        isLoading: false,
+                        error: error.response?.data?.detail || 'Update profile failed'
+                    });
+                    throw error;
+                }
+            },
 
             setError: (error) => set({ error }),
         }),

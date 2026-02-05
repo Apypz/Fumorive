@@ -3,7 +3,7 @@
  * API calls for authentication (register, login, logout, refresh)
  */
 
-import { AUTH_ENDPOINTS } from '../config/api';
+import { AUTH_ENDPOINTS, API_URL } from '../config/api';
 import { apiClient } from './client';
 import { saveTokens, clearTokens } from '../utils/auth';
 
@@ -32,6 +32,7 @@ export interface UserResponse {
     role: string;
     is_active: boolean;
     created_at: string;
+    profile_picture?: string;
 }
 
 /**
@@ -111,4 +112,15 @@ export const authService = {
             throw error;
         }
     },
+
+    /**
+     * Update user profile
+     */
+    updateProfile: async (data: Partial<UserResponse>): Promise<UserResponse> => {
+        const response = await apiClient.put<UserResponse>(
+            `${API_URL}/users/me`,
+            data
+        );
+        return response;
+    }
 };
