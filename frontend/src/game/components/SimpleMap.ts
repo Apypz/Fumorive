@@ -535,11 +535,11 @@ export class SimpleMap {
     // Ring road segments forming a large circle/square around central district
     const ringRadius = 280
     
-    // North ring segment
-    this.createRoadSegment('ring_north', 0, 300, 560, ringRoadWidth, roadMaterial)
+    // North ring segment (extended to reach ring_east at x=284)
+    this.createRoadSegment('ring_north', 2, 300, 564, ringRoadWidth, roadMaterial)
     
-    // South ring segment
-    this.createRoadSegment('ring_south', 0, -500, 560, ringRoadWidth, roadMaterial)
+    // South ring segment (extended to reach ring_east at x=284)
+    this.createRoadSegment('ring_south', 2, -500, 564, ringRoadWidth, roadMaterial)
     
     // East ring segment
     this.createRoadSegment('ring_east', 284, -100, ringRoadWidth, 800, roadMaterial)
@@ -552,8 +552,8 @@ export class SimpleMap {
     // North radial - extends road_center_v to ring
     this.createRoadSegment('radial_north', 50, 240, roadWidth, 180, roadMaterial)
     
-    // South radial - extends road_center_v to ring
-    this.createRoadSegment('radial_south', 50, -350, roadWidth, 300, roadMaterial)
+    // South radial - extends road_center_v to ring (shifted north and extended to connect)
+    this.createRoadSegment('radial_south', 50, -340, roadWidth, 320, roadMaterial)
     
     // East radial - extends from center to ring
     this.createRoadSegment('radial_east', 225, -100, 118, roadWidth, roadMaterial)
@@ -693,8 +693,8 @@ export class SimpleMap {
       { x: 135, z: -100, length: 70 },
       { x: 110, z: -178, length: 130 },
       // Ring road
-      { x: 0, z: 300, length: 560 },
-      { x: 0, z: -500, length: 560 },
+      { x: 2, z: 300, length: 564 },
+      { x: 2, z: -500, length: 564 },
       // Radial roads (horizontal parts)
       { x: 225, z: -100, length: 118 },
       { x: -180, z: 50, length: 200 },
@@ -730,7 +730,7 @@ export class SimpleMap {
       { x: -280, z: -100, length: 800 },
       // Radial roads
       { x: 50, z: 240, length: 180 },
-      { x: 50, z: -350, length: 300 },
+      { x: 50, z: -340, length: 320 },
       // Suburban
       { x: 284, z: 100, length: 180 },
       { x: 284, z: -300, length: 180 },
@@ -766,9 +766,8 @@ export class SimpleMap {
     const ringOffset = ringRoadWidth / 2 + barrierWidth / 2
     const junctionGap = roadWidth + 2 // Gap size at intersections
 
-    // All junction positions (where barriers should have gaps)
-    const junctions = [
-      // Central district
+    // Central district junctions (normal road width offset)
+    const centralJunctions = [
       { x: -80, z: 150 },
       { x: 50, z: 150 },
       { x: -80, z: 50 },
@@ -780,17 +779,21 @@ export class SimpleMap {
       { x: 170, z: -100 },
       { x: 170, z: -178 },
       { x: 50, z: -178 },
-      // Ring road intersections
-      { x: 50, z: 300 },
-      { x: 50, z: -500 },
-      { x: 284, z: -100 },
-      { x: -280, z: 50 },
+    ]
+
+    // Ring road junctions (ring road width offset)
+    const ringJunctions = [
+      // Ring road intersections with radial
+      { x: 50, z: 300 },     // ring_north + radial_north
+      { x: 50, z: -500 },    // ring_south + radial_south
+      { x: 284, z: -100 },   // ring_east + radial_east
+      { x: -280, z: 50 },    // ring_west + radial_west
       // Ring corners
-      { x: 284, z: 300 },
-      { x: -280, z: 300 },
-      { x: 284, z: -500 },
-      { x: -280, z: -500 },
-      // Suburban
+      { x: 284, z: 300 },    // NE corner
+      { x: -280, z: 300 },   // NW corner
+      { x: 284, z: -500 },   // SE corner
+      { x: -280, z: -500 },  // SW corner
+      // Suburban on ring
       { x: -150, z: 300 },
       { x: 150, z: 300 },
       { x: -150, z: -500 },
@@ -801,6 +804,9 @@ export class SimpleMap {
       { x: -280, z: -300 },
     ]
 
+    // Combined junctions for barrier gap calculation
+    const junctions = [...centralJunctions, ...ringJunctions]
+
     // Horizontal roads with their barrier positions
     const horizontalRoads = [
       // Central district
@@ -809,17 +815,13 @@ export class SimpleMap {
       { x: -10, z: -50, length: 120, offset: offset },
       { x: 135, z: -100, length: 70, offset: offset },
       { x: 110, z: -178, length: 130, offset: offset },
-      // Ring road
-      { x: 0, z: 300, length: 560, offset: ringOffset },
-      { x: 0, z: -500, length: 560, offset: ringOffset },
+      // Ring road (covers full north and south edges)
+      { x: 2, z: 300, length: 564, offset: ringOffset },
+      { x: 2, z: -500, length: 564, offset: ringOffset },
       // Radial horizontal
       { x: 225, z: -100, length: 118, offset: offset },
       { x: -180, z: 50, length: 200, offset: offset },
-      // Suburban
-      { x: -150, z: 300, length: 200, offset: offset },
-      { x: 150, z: 300, length: 200, offset: offset },
-      { x: -150, z: -500, length: 200, offset: offset },
-      { x: 150, z: -500, length: 200, offset: offset },
+      // Note: suburban roads at z:300 and z:-500 share barriers with ring road
     ]
 
     // Create barriers for horizontal roads with gaps at junctions
@@ -869,7 +871,7 @@ export class SimpleMap {
       { x: -280, z: -100, length: 800, offset: ringOffset },
       // Radial vertical
       { x: 50, z: 240, length: 180, offset: offset },
-      { x: 50, z: -350, length: 300, offset: offset },
+      { x: 50, z: -340, length: 308, offset: offset },
       // Note: suburban roads at x:280 and x:-280 share barriers with ring road
     ]
 
@@ -1017,7 +1019,7 @@ export class SimpleMap {
     this.addBoxCollider(blockNorth1)
 
     // T-junction at road_center_v & road_top (50, 150)
-    // Block going straight (east) and turning left (north)
+    // Block going straight (east) - north is now open for radial_north access
     
     // Barrier blocking straight path (east side of junction)
     const blockEast2 = MeshBuilder.CreateBox('tjunc_50_150_block_east', {
@@ -1032,18 +1034,7 @@ export class SimpleMap {
     this.meshes.push(blockEast2)
     this.addBoxCollider(blockEast2)
 
-    // Barrier blocking left turn (north side of junction)
-    const blockNorth2 = MeshBuilder.CreateBox('tjunc_50_150_block_north', {
-      width: roadWidth,
-      height: height,
-      depth: width,
-    }, this.scene)
-    blockNorth2.position = new Vector3(50, height / 2, 150 + offset)
-    blockNorth2.material = material
-    blockNorth2.receiveShadows = true
-    this.lightingSetup?.addShadowCaster(blockNorth2)
-    this.meshes.push(blockNorth2)
-    this.addBoxCollider(blockNorth2)
+    // North side is now OPEN for radial_north access
 
     // Junction (-80, 50) is now a full 4-way intersection
     // Allows access to: road_left_v (N/S), road_mid (E), radial_west (W)
@@ -1082,7 +1073,7 @@ export class SimpleMap {
     // Mobil bisa lewat dari semua arah: utara, selatan, timur, dan barat
 
     // T-junction at road_center_v & road_south_H (50, -178)
-    // Block west and south sides
+    // Block west side - south is now open for radial_south access
     
     // Barrier blocking west side of junction
     const blockWest6 = MeshBuilder.CreateBox('tjunc_50_-178_block_west', {
@@ -1097,18 +1088,7 @@ export class SimpleMap {
     this.meshes.push(blockWest6)
     this.addBoxCollider(blockWest6)
 
-    // Barrier blocking south side of junction
-    const blockSouth6 = MeshBuilder.CreateBox('tjunc_50_-178_block_south', {
-      width: roadWidth,
-      height: height,
-      depth: width,
-    }, this.scene)
-    blockSouth6.position = new Vector3(50, height / 2, -178 - offset)
-    blockSouth6.material = material
-    blockSouth6.receiveShadows = true
-    this.lightingSetup?.addShadowCaster(blockSouth6)
-    this.meshes.push(blockSouth6)
-    this.addBoxCollider(blockSouth6)
+    // South side is now OPEN for radial_south access
 
     // T-junction at road_south_H & road_gedungH_east (170, -178)
     // Block east and south sides
@@ -1183,6 +1163,37 @@ export class SimpleMap {
     this.lightingSetup?.addShadowCaster(blockSouth9)
     this.meshes.push(blockSouth9)
     this.addBoxCollider(blockSouth9)
+
+    // Corner junction at ring_east & ring_south (284, -500)
+    // Block east and south sides to keep vehicles on ring road
+    const ringRoadWidth = 20
+    const ringOffset = ringRoadWidth / 2 + width / 2
+
+    // Barrier blocking east side of corner junction
+    const blockEastCornerSE = MeshBuilder.CreateBox('corner_284_-500_block_east', {
+      width: width,
+      height: height,
+      depth: ringRoadWidth,
+    }, this.scene)
+    blockEastCornerSE.position = new Vector3(284 + ringOffset, height / 2, -500)
+    blockEastCornerSE.material = material
+    blockEastCornerSE.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockEastCornerSE)
+    this.meshes.push(blockEastCornerSE)
+    this.addBoxCollider(blockEastCornerSE)
+
+    // Barrier blocking south side of corner junction
+    const blockSouthCornerSE = MeshBuilder.CreateBox('corner_284_-500_block_south', {
+      width: ringRoadWidth,
+      height: height,
+      depth: width,
+    }, this.scene)
+    blockSouthCornerSE.position = new Vector3(284, height / 2, -500 - ringOffset)
+    blockSouthCornerSE.material = material
+    blockSouthCornerSE.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockSouthCornerSE)
+    this.meshes.push(blockSouthCornerSE)
+    this.addBoxCollider(blockSouthCornerSE)
   }
 
   private createBarriersWithGaps(
