@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Activity, Shield, Zap, Gamepad2, Play, CheckCircle, TriangleAlert, ArrowRight, Mail, Github, Linkedin, Database, Wifi, ChevronDown, Eye } from 'lucide-react';
+import { Zap, Gamepad2, Play, CheckCircle, TriangleAlert, Mail, Github, Linkedin, Database, Wifi, ChevronDown, Eye, Brain, Activity, ArrowRight } from 'lucide-react';
 import './LandingPage.css';
 import fumoLogo from '../../assets/fumo.png';
-import heroBg from '../../assets/hero.jpg';
+import heroBg from '../../assets/tes.jpg';
+import card6 from '../../assets/card3.jpg';
+import card5 from '../../assets/face.jpg';
+import card4 from '../../assets/muse.png';
 import card3 from '../../assets/card3.jpg';
 import card2 from '../../assets/card2.jpg';
 import card1 from '../../assets/card.jpg';
@@ -18,10 +21,11 @@ const LandingPage = () => {
             <FeaturesShowcaseSection />
             <SolutionSection />
             <DemoSection />
-            <FeaturesSection />
-            <ValidationSection />
-            <PricingSection />
-            <FAQSection />
+            <PartnersSection />
+            <CTASection />
+            {/* <FeaturesSection /> */}
+            {/* <ValidationSection />
+            <FAQSection /> */}
             <FooterSection />
         </div>
     );
@@ -158,6 +162,47 @@ const HeroSection = () => {
     );
 };
 
+
+
+const PartnersSection = () => {
+    // Duplicate the list to ensure seamless scrolling
+    const partners = [
+        { name: "Tesla Autopilot", icon: <Zap size={20} /> },
+        { name: "Waymo Research", icon: <Wifi size={20} /> },
+        { name: "Uber ATG", icon: <Activity size={20} /> },
+        { name: "NVIDIA Drive", icon: <Brain size={20} /> },
+        { name: "Toyota AI", icon: <Gamepad2 size={20} /> },
+        { name: "Comma.ai", icon: <Eye size={20} /> },
+        { name: "Oxford Robotics", icon: <Database size={20} /> },
+        // Duplicates for infinite loop effect
+        { name: "Tesla Autopilot", icon: <Zap size={20} /> },
+        { name: "Waymo Research", icon: <Wifi size={20} /> },
+        { name: "Uber ATG", icon: <Activity size={20} /> },
+        { name: "NVIDIA Drive", icon: <Brain size={20} /> },
+        { name: "Toyota AI", icon: <Gamepad2 size={20} /> },
+        { name: "Comma.ai", icon: <Eye size={20} /> },
+        { name: "Oxford Robotics", icon: <Database size={20} /> },
+    ];
+
+    return (
+        <section className="partners-section">
+            <div className="container" style={{ maxWidth: '100%' }}>
+                <p style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '0.85rem', color: 'var(--color-text-tertiary)', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase' }}>Trusted By Industry Leaders</p>
+                <div className="partners-slider">
+                    <div className="partners-track">
+                        {partners.map((partner, index) => (
+                            <div key={index} className="partner-logo-item">
+                                {partner.icon}
+                                <span>{partner.name}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+};
+
 const ProblemSection = () => {
     const [activeCard, setActiveCard] = useState(0);
 
@@ -257,26 +302,20 @@ const FeaturesShowcaseSection = () => {
     const features = [
         {
             title: "Real-Time EEG Monitoring",
-            subtitle: "Brain Wave Analysis",
             description: "Muse2 headband captures your brain activity in real-time. Monitor Alpha, Beta, Theta, and Delta waves to detect drowsiness before it becomes dangerous.",
-            icon: <Brain size={80} color="#2563eb" />,
-            gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            image: card4,
             highlights: ["4 Brain Wave Types", "Sub-second Latency", "Clinical Accuracy"]
         },
         {
             title: "Computer Vision Detection",
-            subtitle: "Face & Eye Tracking",
             description: "Advanced AI tracks eye closure (PERCLOS), blink rate, yawning, and head pose. Multimodal fusion combines visual and EEG data for 98% accuracy.",
-            icon: <Activity size={80} color="#06b6d4" />,
-            gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+            image: card5,
             highlights: ["Eye Aspect Ratio", "Head Pose Analysis", "Yawn Detection"]
         },
         {
             title: "Intelligent Alert System",
-            subtitle: "Proactive Safety",
             description: "Multi-level warning system triggers audio and visual alerts based on fatigue severity. Get notified before microsleep occurs, not after.",
-            icon: <Shield size={80} color="#8b5cf6" />,
-            gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+            image: card6,
             highlights: ["3-Tier Alert Levels", "Audio Warnings", "Dashboard Metrics"]
         }
     ];
@@ -306,19 +345,14 @@ const FeaturesShowcaseSection = () => {
                         viewport={{ once: true }}
                         transition={{ duration: 0.7, delay: index * 0.2 }}
                     >
-                        <div className="feature-image-card" style={{ background: feature.gradient }}>
-                            <div className="feature-icon-wrapper">
-                                {feature.icon}
-                            </div>
-                            <div className="feature-decoration">
-                                <div className="decoration-circle circle-1"></div>
-                                <div className="decoration-circle circle-2"></div>
-                                <div className="decoration-circle circle-3"></div>
-                            </div>
+                        <div className="feature-image-card" style={{
+                            backgroundImage: `url(${feature.image})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center'
+                        }}>
                         </div>
 
                         <div className="feature-content-card">
-                            <div className="feature-badge">{feature.subtitle}</div>
                             <h3 className="feature-title">{feature.title}</h3>
                             <p className="feature-description">{feature.description}</p>
 
@@ -330,15 +364,6 @@ const FeaturesShowcaseSection = () => {
                                     </div>
                                 ))}
                             </div>
-
-                            <motion.button
-                                className="btn btn-primary"
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                Learn More
-                                <ArrowRight size={18} />
-                            </motion.button>
                         </div>
                     </motion.div>
                 ))}
@@ -349,24 +374,61 @@ const FeaturesShowcaseSection = () => {
 
 const SolutionSection = () => {
     return (
-        <section className="section" style={{ background: 'var(--color-bg-secondary)' }}>
+        <section className="section" style={{ background: 'var(--color-bg-secondary)', overflow: 'hidden' }}>
             <div className="container">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
+                    style={{ textAlign: 'center', marginBottom: '5rem' }}
                 >
-                    <h2 className="section-title">The Fumorive Solution</h2>
-                    <p className="section-subtitle">A seamless integration of brain-computer interface (BCI) and high-fidelity driving simulation.</p>
+                    <h2 className="section-title">How It Works</h2>
+                    <p className="section-subtitle">From setup to insight in three simple steps.</p>
                 </motion.div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', flexWrap: 'wrap', marginTop: '4rem' }}>
-                    <Step number="1" title="Connect EEG" desc="Wear the headset. Auto-calibration takes < 30s." delay={0.1} />
-                    <ArrowRight size={30} style={{ color: 'var(--color-text-secondary)' }} />
-                    <Step number="2" title="Drive Simulation" desc="Navigate realistic scenarios while we record telemetry." delay={0.2} />
-                    <ArrowRight size={30} style={{ color: 'var(--color-text-secondary)' }} />
-                    <Step number="3" title="Analyze Insights" desc="Review heatmaps, focus levels, and stress spikes." delay={0.3} />
+                <div style={{ position: 'relative' }}>
+                    {/* Connecting Line (Desktop) */}
+                    <div className="solution-line" style={{
+                        position: 'absolute',
+                        top: '90px',
+                        left: '10%',
+                        right: '10%',
+                        height: '2px',
+                        background: 'linear-gradient(to right, transparent, var(--color-accent-blue), transparent)',
+                        zIndex: 0,
+                        opacity: 0.3
+                    }}></div>
+
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                        gap: '3rem',
+                        position: 'relative',
+                        zIndex: 1
+                    }}>
+                        <SolutionStep
+                            number="01"
+                            title="Connect & Calibrate"
+                            desc="Sync your EEG headset via Bluetooth. Our system auto-calibrates to your baseline brain activity in under 30 seconds."
+                            icon={<Wifi size={28} color="white" />}
+                            delay={0.1}
+                        />
+                        <SolutionStep
+                            number="02"
+                            title="Simulate Driving"
+                            desc="Enter a high-fidelity simulation environment. We record millisecond-level telemetry synced with your neurological data."
+                            icon={<Gamepad2 size={28} color="white" />}
+                            delay={0.3}
+                        />
+                        <SolutionStep
+                            number="03"
+                            title="Analyze & Improve"
+                            desc="Get immediate feedback on fatigue levels. Review session replay with overlaid attention heatmaps and reaction times."
+                            icon={<Activity size={28} color="white" />}
+                            delay={0.5}
+                        />
+                    </div>
                 </div>
             </div>
         </section>
@@ -374,6 +436,12 @@ const SolutionSection = () => {
 }
 
 const DemoSection = () => {
+    const galleryItems = [
+        { title: "Real-time Metrics", img: card1 },
+        { title: "Driver Perspective", img: card2 },
+        { title: "Post-Session Analysis", img: card3 },
+    ];
+
     return (
         <section className="section">
             <div className="container" style={{ textAlign: 'center' }}>
@@ -384,8 +452,10 @@ const DemoSection = () => {
                     transition={{ duration: 0.8 }}
                 >
                     <h2 className="section-title">See It In Action</h2>
+
+                    {/* Main Video Area */}
                     <div style={{
-                        marginTop: '2rem',
+                        marginTop: '3rem',
                         width: '100%',
                         height: '500px',
                         background: '#0f172a',
@@ -401,13 +471,123 @@ const DemoSection = () => {
                         <Play size={80} fill="white" style={{ position: 'relative', cursor: 'pointer', zIndex: 10, filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.5))', transition: 'transform 0.3s ease' }} />
                         <p style={{ position: 'absolute', bottom: '20px', color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem' }}>Live EEG Overlay Preview</p>
                     </div>
-                </motion.div>
 
-                <div style={{ marginTop: '2rem' }}>
-                    <button className="btn btn-solid">Request Full Trial</button>
-                </div>
+                    {/* Gallery Thumbnails */}
+                    <div style={{
+                        marginTop: '2rem',
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                        gap: '1.5rem'
+                    }}>
+                        {galleryItems.map((item, index) => (
+                            <motion.div
+                                key={index}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ delay: 0.2 + (index * 0.1), duration: 0.5 }}
+                                whileHover={{ y: -5 }}
+                                style={{
+                                    height: '160px',
+                                    borderRadius: '16px',
+                                    backgroundImage: `url(${item.img})`,
+                                    backgroundSize: 'cover',
+                                    backgroundPosition: 'center',
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+                                }}
+                            >
+                                <div style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    background: 'rgba(0,0,0,0.4)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'background 0.3s'
+                                }}
+                                    className="gallery-overlay"
+                                >
+                                    <span style={{ color: 'white', fontWeight: 600, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{item.title}</span>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </motion.div>
             </div>
         </section>
+    )
+}
+
+const CTASection = () => {
+    return (
+        <motion.section
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            style={{
+                padding: '4rem 0',
+                background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-neon))',
+                color: 'white',
+                position: 'relative',
+                overflow: 'hidden',
+                textAlign: 'center'
+            }}
+        >
+            <div className="container" style={{ position: 'relative', zIndex: 2 }}>
+                <motion.div
+                    initial={{ y: 30, opacity: 0 }}
+                    whileInView={{ y: 0, opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.2, duration: 0.6 }}
+                >
+                    <h2 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '1rem', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
+                        Ready to Revolutionize<br />Driver Safety?
+                    </h2>
+                    <p style={{ fontSize: '1rem', maxWidth: '600px', margin: '0 auto 2rem', opacity: 0.95, lineHeight: 1.6, fontWeight: 400 }}>
+                        Join forward-thinking research institutes and fleet operators who are already using Fumorive to save lives.
+                    </p>
+                    <button
+                        className="btn"
+                        style={{
+                            background: 'white',
+                            color: 'var(--color-accent-blue)',
+                            padding: '14px 35px',
+                            fontSize: '1rem',
+                            fontWeight: 700,
+                            border: 'none',
+                            borderRadius: '50px',
+                            boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+                        }}
+                    >
+                        Start Your Free Trial
+                    </button>
+                </motion.div>
+            </div>
+
+            {/* Decorative Background Elements */}
+            <div style={{
+                position: 'absolute',
+                top: '-50%',
+                left: '-10%',
+                width: '600px',
+                height: '600px',
+                background: 'rgba(255,255,255,0.05)',
+                borderRadius: '50%',
+            }}></div>
+            <div style={{
+                position: 'absolute',
+                bottom: '-50%',
+                right: '-10%',
+                width: '500px',
+                height: '500px',
+                background: 'rgba(255,255,255,0.05)',
+                borderRadius: '50%',
+            }}></div>
+        </motion.section>
     )
 }
 
@@ -513,36 +693,7 @@ const ValidationSection = () => {
     )
 }
 
-const PricingSection = () => {
-    return (
-        <section id="pricing" className="section">
-            <div className="container">
-                <h2 className="section-title">Pricing Plans</h2>
-                <div className="grid-3" style={{ marginTop: '3rem' }}>
-                    <PricingCard
-                        title="Researcher"
-                        price="$299"
-                        period="/mo"
-                        features={['Single User License', 'Raw EEG Data Export', 'Basic Scenarios', 'Email Support']}
-                    />
-                    <PricingCard
-                        title="Institution"
-                        price="$899"
-                        period="/mo"
-                        highlight={true}
-                        features={['5 User Licenses', 'Advanced Analytics Dashboard', 'Custom Scenarios Editor', 'Priority Support', 'API Access']}
-                    />
-                    <PricingCard
-                        title="Enterprise"
-                        price="Custom"
-                        period=""
-                        features={['Unlimited Licenses', 'On-Premise Deployment', 'Custom Hardware Integration', '24/7 SLA Support']}
-                    />
-                </div>
-            </div>
-        </section>
-    )
-}
+
 
 const FAQSection = () => {
     return (
@@ -561,50 +712,31 @@ const FAQSection = () => {
 
 const FooterSection = () => {
     return (
-        <footer style={{ padding: '5rem 0 2rem', background: 'rgba(255, 255, 255, 0.6)', borderTop: '1px solid rgba(37, 99, 235, 0.1)', backdropFilter: 'blur(10px)' }}>
-            <div className="container">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '3rem', marginBottom: '3rem' }}>
-                    <div>
-                        <img
-                            src={fumoLogo}
-                            alt="Fumorive Logo"
-                            style={{
-                                height: '20px',
-                                width: 'auto',
-                                objectFit: 'contain',
-                                marginBottom: '1rem'
-                            }}
-                        />
-                        <p style={{ color: 'var(--color-text-secondary)', maxWidth: '300px', lineHeight: 1.7, fontSize: '0.95rem' }}>
-                            Future of Mobility & Driver Research
-                        </p>
-                        <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.5rem' }}>
-                            <Github size={20} color="var(--color-text-secondary)" style={{ cursor: 'pointer', transition: 'all 0.3s ease' }} />
-                            <Linkedin size={20} color="var(--color-text-secondary)" style={{ cursor: 'pointer', transition: 'all 0.3s ease' }} />
-                            <Mail size={20} color="var(--color-text-secondary)" style={{ cursor: 'pointer', transition: 'all 0.3s ease' }} />
-                        </div>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '3rem', flexWrap: 'wrap' }}>
-                        <div>
-                            <h4 style={{ marginBottom: '1.5rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>Product</h4>
-                            <ul style={{ listStyle: 'none', padding: 0, color: 'var(--color-text-secondary)', lineHeight: '2', fontSize: '0.95rem' }}>
-                                <li style={{ cursor: 'pointer', transition: 'color 0.3s ease' }}>Features</li>
-                                <li style={{ cursor: 'pointer', transition: 'color 0.3s ease' }}>Integration</li>
-                                <li style={{ cursor: 'pointer', transition: 'color 0.3s ease' }}>Pricing</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 style={{ marginBottom: '1.5rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>Resources</h4>
-                            <ul style={{ listStyle: 'none', padding: 0, color: 'var(--color-text-secondary)', lineHeight: '2', fontSize: '0.95rem' }}>
-                                <li style={{ cursor: 'pointer', transition: 'color 0.3s ease' }}>Documentation</li>
-                                <li style={{ cursor: 'pointer', transition: 'color 0.3s ease' }}>API Reference</li>
-                                <li style={{ cursor: 'pointer', transition: 'color 0.3s ease' }}>Blog</li>
-                            </ul>
-                        </div>
-                    </div>
+        <footer style={{ padding: '2rem 0', background: 'rgba(255, 255, 255, 0.6)', borderTop: '1px solid rgba(37, 99, 235, 0.1)', backdropFilter: 'blur(10px)' }}>
+            <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                {/* Logo */}
+                <div>
+                    <img
+                        src={fumoLogo}
+                        alt="Fumorive Logo"
+                        style={{
+                            height: '20px',
+                            width: 'auto',
+                            objectFit: 'contain'
+                        }}
+                    />
                 </div>
-                <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid rgba(37, 99, 235, 0.1)', textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+
+                {/* Copyright */}
+                <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', textAlign: 'center' }}>
                     &copy; 2026 Fumorive Inc. All rights reserved.
+                </div>
+
+                {/* Socials */}
+                <div style={{ display: 'flex', gap: '1.5rem' }}>
+                    <Github size={20} color="var(--color-text-secondary)" style={{ cursor: 'pointer', transition: 'all 0.3s ease' }} />
+                    <Linkedin size={20} color="var(--color-text-secondary)" style={{ cursor: 'pointer', transition: 'all 0.3s ease' }} />
+                    <Mail size={20} color="var(--color-text-secondary)" style={{ cursor: 'pointer', transition: 'all 0.3s ease' }} />
                 </div>
             </div>
         </footer>
@@ -612,64 +744,70 @@ const FooterSection = () => {
 }
 
 // Helpers
-const Step = ({ number, title, desc, delay = 0 }: any) => (
+const SolutionStep = ({ number, title, desc, icon, delay }: any) => (
     <motion.div
-        style={{ textAlign: 'center', maxWidth: '250px', padding: '1rem' }}
-        initial={{ opacity: 0, scale: 0.8 }}
-        whileInView={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ delay, duration: 0.5 }}
+        style={{
+            background: 'white',
+            borderRadius: '24px',
+            padding: '2.5rem',
+            textAlign: 'center',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.05)',
+            border: '1px solid rgba(0,0,0,0.05)',
+            position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            height: '100%'
+        }}
+        whileHover={{
+            y: -10,
+            boxShadow: '0 20px 50px rgba(0,0,0,0.1)',
+        }}
     >
         <div style={{
-            width: '60px', height: '60px', borderRadius: '50%', background: 'white',
-            color: 'var(--color-accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.5rem', fontWeight: 'bold', margin: '0 auto 1.5rem',
-            boxShadow: 'var(--glass-shadow)'
+            width: '100px',
+            height: '100px',
+            background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-neon))',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '1.5rem',
+            boxShadow: '0 10px 30px rgba(37, 99, 235, 0.3)',
+            position: 'relative',
+            flexShrink: 0
         }}>
-            {number}
+            {icon}
+            <div style={{
+                position: 'absolute',
+                top: '-5px',
+                right: '-5px',
+                background: 'white',
+                color: 'var(--color-accent-blue)',
+                width: '30px',
+                height: '30px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.85rem',
+                fontWeight: '800',
+                boxShadow: '0 4px 10px rgba(0,0,0,0.1)'
+            }}>
+                {number}
+            </div>
         </div>
-        <h3 style={{ marginBottom: '0.5rem', fontSize: '1.15rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>{title}</h3>
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', lineHeight: 1.6 }}>{desc}</p>
+
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--color-text-primary)' }}>{title}</h3>
+        <p style={{ color: 'var(--color-text-secondary)', lineHeight: 1.7, fontSize: '0.95rem' }}>{desc}</p>
     </motion.div>
 )
 
-const PricingCard = ({ title, price, period, features, highlight }: any) => (
-    <motion.div
-        className="card"
-        style={{
-            border: highlight ? '2px solid var(--color-accent-blue)' : '1px solid rgba(37, 99, 235, 0.08)',
-            transform: highlight ? 'scale(1.05)' : 'scale(1)',
-            position: 'relative'
-        }}
-        whileHover={{ transform: highlight ? 'scale(1.08)' : 'translateY(-10px)' }}
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-    >
-        {highlight && <div style={{
-            position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)',
-            background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-neon))',
-            color: 'white',
-            padding: '4px 16px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700,
-            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
-            letterSpacing: '0.5px'
-        }}>POPULAR</div>}
-        <h3 style={{ fontSize: '1.35rem', marginBottom: '0.5rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>{title}</h3>
-        <div style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '2rem', color: highlight ? 'var(--color-accent-blue)' : 'var(--color-text-primary)' }}>
-            {price}<span style={{ fontSize: '0.9rem', color: 'var(--color-text-secondary)', fontWeight: 500 }}>{period}</span>
-        </div>
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {features.map((f: string, i: number) => (
-                <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', color: 'var(--color-text-secondary)', fontSize: '0.95rem' }}>
-                    <CheckCircle size={18} color="var(--color-accent-neon)" /> {f}
-                </li>
-            ))}
-        </ul>
-        <button className={`btn ${highlight ? 'btn-solid' : 'btn-primary'}`} style={{ width: '100%', marginTop: '2rem', fontWeight: 600 }}>
-            Choose Plan
-        </button>
-    </motion.div>
-)
+
 
 const FAQItem = ({ q, a }: any) => (
     <details style={{ background: 'rgba(255, 255, 255, 0.75)', padding: '1.5rem', borderRadius: '12px', cursor: 'pointer', border: '1px solid rgba(37, 99, 235, 0.08)', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)', transition: 'all 0.3s ease' }}>
