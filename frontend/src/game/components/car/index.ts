@@ -14,6 +14,8 @@ export type { PhysicsInfo } from './CarPhysics'
 
 export { CarCameraManager } from './CarCameraManager'
 
+export { DriftParticleSystem } from './DriftParticleSystem'
+
 // Re-export types for convenience
 export type { 
   CameraMode, 

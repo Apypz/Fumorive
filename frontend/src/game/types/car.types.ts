@@ -201,6 +201,70 @@ export interface CarPhysicsConfig {
 export type CarControllerConfig = Omit<CarPhysicsConfig, 'collisionRadius' | 'collisionDamping' | 'collisionBounciness'>
 
 // ============================================
+// DRIFT PARTICLE TYPES
+// ============================================
+
+/**
+ * Individual wheel offset for drift particles
+ */
+export interface WheelOffset {
+  /** X offset from car center (positive = right) */
+  x: number
+  /** Y offset from car center (positive = up) */
+  y: number
+  /** Z offset from car center (positive = forward) */
+  z: number
+}
+
+/**
+ * Drift particle system configuration
+ */
+export interface DriftParticleConfig {
+  /** Enable/disable drift particles */
+  enabled: boolean
+  
+  // Emission
+  /** Base emission rate (particles per second) when drifting lightly */
+  baseEmitRate: number
+  /** Maximum emission rate at full drift intensity */
+  maxEmitRate: number
+  /** Minimum slip angle (degrees) to start emitting particles */
+  minSlipAngle: number
+  /** Slip angle (degrees) at which max emit rate is reached */
+  maxSlipAngle: number
+  
+  // Particle appearance
+  /** Minimum particle size */
+  minSize: number
+  /** Maximum particle size */
+  maxSize: number
+  /** Particle lifetime in seconds */
+  lifetime: number
+  /** Particle color (RGBA, 0-1) */
+  color: { r: number; g: number; b: number; a: number }
+  /** End color for gradient (RGBA, 0-1) */
+  colorEnd: { r: number; g: number; b: number; a: number }
+  
+  // Physics
+  /** Particle emit power (velocity) */
+  emitPower: number
+  /** Gravity affecting particles (positive = down) */
+  gravity: number
+  
+  // Position
+  /** Rear left wheel offset from car center */
+  rearLeftOffset: WheelOffset
+  /** Rear right wheel offset from car center */
+  rearRightOffset: WheelOffset
+  /** Emit box size (spread area) */
+  emitBoxSize: { x: number; y: number; z: number }
+  
+  // Blending
+  /** Use additive blending for brighter effect */
+  additiveBlending: boolean
+}
+
+// ============================================
 // STATE TYPES
 // ============================================
 

@@ -54,6 +54,10 @@ export type {
   CarControllerConfig,
   CarInputState,
   CarPhysicsState,
+  
+  // Drift Particles
+  DriftParticleConfig,
+  WheelOffset,
 } from './car.types'
 
 // ============================================
