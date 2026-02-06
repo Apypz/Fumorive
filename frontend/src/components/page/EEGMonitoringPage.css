@@ -1,0 +1,386 @@
+/* EEG Monitoring Page Styles */
+
+.eeg-monitoring-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header */
+.monitoring-header {
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-content h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.header-content p {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-back {
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-back:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* Alert Banner */
+.fatigue-alert {
+  padding: 14px 16px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-left: 4px solid #ffc107;
+  color: #856404;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  border-radius: 0;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.alert-icon {
+  font-size: 20px;
+}
+
+.alert-message {
+  flex: 1;
+  font-weight: 600;
+}
+
+.alert-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.alert-close:hover {
+  opacity: 1;
+}
+
+/* Main Content */
+.monitoring-content {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.dashboard-section {
+  width: 100%;
+}
+
+/* State History Section */
+.state-history-section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.history-container h2 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #212529;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.no-data {
+  color: #6c757d;
+  font-size: 14px;
+  padding: 20px;
+  text-align: center;
+  background: #f8f9fa;
+  border-radius: 6px;
+  margin: 0;
+}
+
+.timeline-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid;
+  transition: all 0.2s ease;
+}
+
+.timeline-item:hover {
+  background: #e9ecef;
+}
+
+.timeline-item.state-alert {
+  border-left-color: #28a745;
+}
+
+.timeline-item.state-drowsy {
+  border-left-color: #ffc107;
+}
+
+.timeline-item.state-fatigued {
+  border-left-color: #dc3545;
+}
+
+.timeline-time {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: #6c757d;
+  min-width: 60px;
+}
+
+.timeline-state {
+  font-weight: 600;
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.timeline-state.state-alert {
+  background: #d4edda;
+  color: #155724;
+}
+
+.timeline-state.state-drowsy {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.timeline-state.state-fatigued {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Session Info Section */
+.session-info-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.info-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.info-card h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #212529;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.info-card dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 12px;
+}
+
+.info-card dt {
+  font-weight: 600;
+  font-size: 12px;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-card dd {
+  margin: 0;
+  font-size: 13px;
+  color: #495057;
+  word-break: break-all;
+  font-family: 'Courier New', monospace;
+}
+
+.info-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.info-card li {
+  padding: 6px 0;
+  font-size: 13px;
+  color: #495057;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.info-card li::before {
+  content: '•';
+  color: #667eea;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+/* Badge */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-alert {
+  background: #d4edda;
+  color: #155724;
+}
+
+.badge-drowsy {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.badge-fatigued {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* State Legend */
+.state-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-item.alert .dot {
+  background: #28a745;
+}
+
+.legend-item.drowsy .dot {
+  background: #ffc107;
+}
+
+.legend-item.fatigued .dot {
+  background: #dc3545;
+}
+
+/* Footer */
+.monitoring-footer {
+  padding: 16px;
+  background: white;
+  border-top: 1px solid #dee2e6;
+  text-align: center;
+  color: #6c757d;
+  font-size: 13px;
+}
+
+.monitoring-footer p {
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .monitoring-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .monitoring-content {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .state-history-section {
+    padding: 12px;
+  }
+
+  .session-info-section {
+    grid-template-columns: 1fr;
+  }
+
+  .header-content h1 {
+    font-size: 22px;
+  }
+
+  .timeline-items {
+    max-height: 200px;
+  }
+}
