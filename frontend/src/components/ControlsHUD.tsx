@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useGameStore } from '../stores/gameStore'
 
 // Helper function to get camera mode display name
@@ -16,9 +17,23 @@ function getCameraModeDisplay(mode: string): string {
 
 export function ControlsHUD() {
   const { controlMode, cameraMode, engineRunning } = useGameStore()
+  const [isVisible, setIsVisible] = useState(true)
 
   return (
-    <div style={styles.container}>
+    <div style={{
+      ...styles.wrapper,
+      transform: isVisible ? 'translateX(0)' : 'translateX(calc(100% - 24px))',
+    }}>
+      {/* Toggle Button */}
+      <button
+        onClick={() => setIsVisible(!isVisible)}
+        style={styles.toggleButton}
+        title={isVisible ? 'Hide Controls' : 'Show Controls'}
+      >
+        {isVisible ? '›' : '‹'}
+      </button>
+      
+      <div style={styles.container}>
       {/* Engine Status Indicator */}
       <div style={styles.modeSection}>
         <div style={styles.modeLabel}>ENGINE</div>
@@ -93,8 +108,12 @@ export function ControlsHUD() {
         {/* Actions */}
         <div style={styles.controlGroup}>
           <div style={styles.controlRow}>
-            <span style={styles.keyBadge}>SPACE/SHIFT</span>
+            <span style={styles.keyBadge}>SPACE</span>
             <span style={styles.controlDesc}>Rem</span>
+          </div>
+          <div style={styles.controlRow}>
+            <span style={styles.keyBadge}>SHIFT</span>
+            <span style={styles.controlDesc}>Klakson</span>
           </div>
         </div>
       </div>
@@ -145,15 +164,39 @@ export function ControlsHUD() {
           </div>
         </>
       )}
+      </div>
     </div>
   )
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
+  wrapper: {
     position: 'fixed',
     bottom: '1rem',
     right: '1rem',
+    display: 'flex',
+    alignItems: 'flex-start',
+    zIndex: 100,
+    transition: 'transform 0.3s ease-in-out',
+  },
+  toggleButton: {
+    width: '24px',
+    height: '48px',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    borderRight: 'none',
+    borderRadius: '8px 0 0 8px',
+    color: '#fff',
+    fontSize: '1rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: '1rem',
+    backdropFilter: 'blur(10px)',
+    transition: 'background-color 0.2s',
+  },
+  container: {
     padding: '0.75rem 1rem',
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     borderRadius: '12px',
@@ -161,7 +204,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: 'system-ui, -apple-system, sans-serif',
     fontSize: '0.75rem',
     color: '#fff',
-    zIndex: 100,
     backdropFilter: 'blur(10px)',
     minWidth: '180px',
     maxWidth: '220px',
