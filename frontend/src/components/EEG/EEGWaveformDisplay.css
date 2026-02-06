@@ -1,0 +1,41 @@
+/* EEG Waveform Display Styles */
+
+.eeg-waveform-canvas {
+  display: block;
+  image-rendering: auto;
+  image-rendering: crisp-edges;
+}
+
+.eeg-waveform-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.eeg-waveform-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #212529;
+}
+
+.eeg-waveforms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 12px;
+}
+
+.eeg-channel-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+  color: #495057;
+}

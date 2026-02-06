@@ -1,0 +1,339 @@
+/* EEG Monitoring Widget Styles */
+
+.eeg-widget {
+  position: fixed;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(100, 150, 255, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(100, 150, 255, 0.1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #e0e7ff;
+  width: 280px;
+  backdrop-filter: blur(10px);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Header */
+.eeg-widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, rgba(100, 150, 255, 0.1) 0%, rgba(150, 100, 255, 0.05) 100%);
+  border-bottom: 1px solid rgba(100, 150, 255, 0.2);
+  cursor: grab;
+  user-select: none;
+}
+
+.eeg-widget-header:active {
+  cursor: grabbing;
+}
+
+.eeg-widget-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.eeg-widget-icon {
+  font-size: 16px;
+}
+
+.eeg-widget-status {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.eeg-widget-status.connected {
+  background-color: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.eeg-widget-status.disconnected {
+  background-color: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.3);
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.eeg-widget-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.eeg-widget-btn {
+  background: rgba(100, 150, 255, 0.1);
+  border: 1px solid rgba(100, 150, 255, 0.2);
+  color: #a0aec0;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 12px;
+}
+
+.eeg-widget-btn:hover {
+  background: rgba(100, 150, 255, 0.2);
+  color: #cbd5e1;
+}
+
+/* Content */
+.eeg-widget-content {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Status Bar */
+.eeg-widget-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.status-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-indicator.connected {
+  background-color: #10b981;
+}
+
+.status-indicator.disconnected {
+  background-color: #ef4444;
+}
+
+.status-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Cognitive State */
+.eeg-widget-state {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.state-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.state-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border: 2px solid;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.5);
+  font-weight: 600;
+  font-size: 13px;
+  min-height: 32px;
+}
+
+.state-badge.alert {
+  border-color: #10b981;
+  color: #86efac;
+}
+
+.state-badge.drowsy {
+  border-color: #f59e0b;
+  color: #fcd34d;
+}
+
+.state-badge.fatigued {
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+
+/* Fatigue Score */
+.eeg-widget-fatigue {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fatigue-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.fatigue-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f0f9ff;
+}
+
+.fatigue-bar {
+  height: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid rgba(100, 150, 255, 0.2);
+}
+
+.fatigue-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  background: linear-gradient(90deg, #10b981, #f59e0b);
+}
+
+/* Channels */
+.eeg-widget-channels {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.channels-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.channels-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.channel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: rgba(100, 150, 255, 0.05);
+  border: 1px solid rgba(100, 150, 255, 0.1);
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.channel-name {
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.channel-value {
+  font-family: 'Courier New', monospace;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+/* Indicators */
+.eeg-widget-indicators {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(100, 150, 255, 0.1);
+}
+
+.indicator {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  padding: 4px 6px;
+  background: rgba(100, 150, 255, 0.05);
+  border-radius: 4px;
+}
+
+.indicator-name {
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.indicator-value {
+  font-family: 'Courier New', monospace;
+  color: #a0aec0;
+  font-weight: 600;
+}
+
+/* No Data */
+.eeg-widget-no-data {
+  padding: 20px 12px;
+  text-align: center;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.eeg-widget-no-data p {
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .eeg-widget {
+    width: 240px;
+    font-size: 12px;
+  }
+
+  .eeg-widget-title {
+    font-size: 12px;
+  }
+
+  .eeg-widget-content {
+    gap: 8px;
+    padding: 10px;
+  }
+}
+
+/* Dark theme (already applied) */
+:root {
+  --eeg-widget-bg: rgba(15, 23, 42, 0.95);
+  --eeg-widget-border: rgba(100, 150, 255, 0.3);
+  --eeg-widget-text: #e0e7ff;
+}

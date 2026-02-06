@@ -1,0 +1,293 @@
+/* EEG Metrics Display Styles */
+
+.eeg-metrics-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+  border: 1px solid #dee2e6;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.eeg-metrics-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.eeg-metrics-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #212529;
+}
+
+.eeg-connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  animation: pulse-status 2s infinite;
+}
+
+.status-indicator.connected {
+  background-color: #28a745;
+  box-shadow: 0 0 6px rgba(40, 167, 69, 0.6);
+}
+
+.status-indicator.disconnected {
+  background-color: #dc3545;
+  box-shadow: none;
+}
+
+@keyframes pulse-status {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.sample-count {
+  background-color: #e9ecef;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.eeg-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+  color: #721c24;
+  font-size: 13px;
+}
+
+.error-icon {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.error-message {
+  flex: 1;
+  word-break: break-word;
+}
+
+.eeg-no-data {
+  padding: 24px;
+  text-align: center;
+  color: #6c757d;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px dashed #dee2e6;
+}
+
+.eeg-no-data p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Metrics Grid */
+.eeg-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.eeg-metric-card {
+  background: white;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.eeg-metric-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.eeg-metric-card.large {
+  grid-column: span 2;
+}
+
+.metric-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6c757d;
+  margin-bottom: 8px;
+}
+
+.metric-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 4px;
+}
+
+.metric-subtext {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* Cognitive State Card */
+.eeg-metric-card.cognitive-state {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.state-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 2px solid;
+  border-radius: 20px;
+  background: white;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Channels Card */
+.channels-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.channel-value {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.channel-name {
+  font-weight: 600;
+  color: #6c757d;
+}
+
+.channel-data {
+  font-family: 'Courier New', monospace;
+  color: #212529;
+  font-weight: 500;
+}
+
+/* Band Powers Card */
+.bands-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.band-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.band-name {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.band-value {
+  font-family: 'Courier New', monospace;
+  color: #212529;
+  font-weight: 600;
+}
+
+/* Ratios Card */
+.ratios-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ratio-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 6px 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 12px;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ratio-name {
+  color: #6c757d;
+  font-weight: 600;
+  flex: 1;
+}
+
+.ratio-value {
+  font-family: 'Courier New', monospace;
+  color: #212529;
+  font-weight: 600;
+}
+
+.ratio-hint {
+  font-size: 10px;
+  color: #adb5bd;
+  width: 100%;
+  margin-left: 8px;
+}
+
+/* Timestamp Card */
+.timestamp-value {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .eeg-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .eeg-metric-card.large {
+    grid-column: span 1;
+  }
+
+  .eeg-metrics-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .eeg-connection-status {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
