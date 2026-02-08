@@ -83,6 +83,11 @@ export class CarController {
   private mouseLastMoveTime: number = 0
   private mouseIdleThreshold: number = 150 // ms before steering starts returning to center
   
+  // Keyboard steering smoothing
+  private keyboardSteeringTarget: number = 0
+  private keyboardSteeringSpeed: number = 4.0 // How fast steering responds (higher = faster)
+  private keyboardSteeringReturnSpeed: number = 6.0 // How fast steering returns to center
+  
   // Input state
   private input: CarInputState = {
     throttle: 0,
@@ -346,13 +351,15 @@ export class CarController {
         case 'a':
         case 'arrowleft':
           if (this.currentControlMode === 'keyboard') {
-            this.input.steering = pressed ? -1 : (this.input.steering < 0 ? 0 : this.input.steering)
+            // Set target steering, actual value will interpolate smoothly
+            this.keyboardSteeringTarget = pressed ? -1 : (this.keyboardSteeringTarget < 0 ? 0 : this.keyboardSteeringTarget)
           }
           break
         case 'd':
         case 'arrowright':
           if (this.currentControlMode === 'keyboard') {
-            this.input.steering = pressed ? 1 : (this.input.steering > 0 ? 0 : this.input.steering)
+            // Set target steering, actual value will interpolate smoothly
+            this.keyboardSteeringTarget = pressed ? 1 : (this.keyboardSteeringTarget > 0 ? 0 : this.keyboardSteeringTarget)
           }
           break
         case ' ':
@@ -389,6 +396,9 @@ export class CarController {
     
     const dt = Math.min(deltaTime, 0.05)
 
+    // Handle keyboard steering smoothing
+    this.updateKeyboardSteering(dt)
+    
     // Handle mouse steering
     this.updateMouseSteering(dt)
     
@@ -416,6 +426,27 @@ export class CarController {
   /**
    * Update mouse steering input
    */
+  private updateKeyboardSteering(dt: number): void {
+    if (this.currentControlMode !== 'keyboard') return
+    
+    // Smoothly interpolate actual steering toward the target
+    const diff = this.keyboardSteeringTarget - this.input.steering
+    
+    if (Math.abs(diff) < 0.01) {
+      // Close enough, snap to target
+      this.input.steering = this.keyboardSteeringTarget
+    } else if (this.keyboardSteeringTarget === 0) {
+      // Returning to center - use return speed
+      this.input.steering += diff * Math.min(1, this.keyboardSteeringReturnSpeed * dt)
+    } else {
+      // Steering toward target - use normal speed
+      this.input.steering += diff * Math.min(1, this.keyboardSteeringSpeed * dt)
+    }
+    
+    // Clamp to valid range
+    this.input.steering = Math.max(-1, Math.min(1, this.input.steering))
+  }
+
   private updateMouseSteering(dt: number): void {
     if (this.currentControlMode !== 'mouse') return
     

@@ -1,5 +1,5 @@
 // src/pages/Session.tsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { GameCanvas } from '../GameCanvas'
 import { LoadingScreen } from '../LoadingScreen'
 import { DebugOverlay } from '../DebugOverlay'
@@ -9,14 +9,26 @@ import { SteeringWheelHUD } from '../SteeringWheelHUD'
 import { SpeedometerHUD } from '../SpeedometerHUD'
 import { DriftMeter } from '../DriftMeter'
 import { MapSelection } from '../MapSelection'
+import { CameraFatigueMonitor } from '../CameraFatigueMonitor'
+import { EEGMonitoringWidget } from '../EEGMonitoringWidget'
 import { useGameStore } from '../../stores/gameStore'
+import { useSessionStore } from '../../stores/sessionStore'
 import '../../App.css'
 
 export default function Session() {
   const { gameState, setGameState } = useGameStore()
+  const { sessionId, initializeSession } = useSessionStore()
   const [showSettings, setShowSettings] = useState(false)
   const [showMapSelection, setShowMapSelection] = useState(true)
   const [gameStarted, setGameStarted] = useState(false)
+  const [cameraEnabled, setCameraEnabled] = useState(false)
+  const [eegEnabled, setEegEnabled] = useState(true)
+  const [eegCognitiveState, setEegCognitiveState] = useState<'alert' | 'drowsy' | 'fatigued' | undefined>()
+
+  // Initialize session on mount
+  useEffect(() => {
+    initializeSession()
+  }, [initializeSession])
 
   const handleStartGame = () => {
     setShowMapSelection(false)
@@ -88,7 +100,30 @@ export default function Session() {
           
           {/* Steering Wheel visualization */}
           <SteeringWheelHUD />
+
+          {/* Camera Fatigue Monitor - bottom right corner */}
+          <CameraFatigueMonitor 
+            isEnabled={cameraEnabled}
+            onToggle={() => setCameraEnabled(!cameraEnabled)}
+          />
+
+          {/* EEG Monitoring Widget - top right corner */}
+          {eegEnabled && (
+            <EEGMonitoringWidget
+              sessionId={sessionId}
+              defaultPosition="top-right"
+              onStateChange={setEegCognitiveState}
+            />
+          )}
         </>
+      )}
+
+      {/* Show camera toggle button when game started but not playing */}
+      {gameStarted && gameState !== 'playing' && (
+        <CameraFatigueMonitor 
+          isEnabled={cameraEnabled}
+          onToggle={() => setCameraEnabled(!cameraEnabled)}
+        />
       )}
     </div>
   )

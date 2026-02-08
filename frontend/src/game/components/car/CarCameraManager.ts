@@ -14,6 +14,9 @@ import {
   UniversalCamera,
   Camera,
   AbstractMesh,
+  PointerEventTypes,
+  Observer,
+  PointerInfo,
 } from '@babylonjs/core'
 import type { CameraMode, CameraConfig } from '../../types'
 import { DEFAULT_CAMERA_CONFIG } from '../../config'
@@ -32,6 +35,10 @@ export class CarCameraManager {
   // State
   private currentMode: CameraMode = 'third-person'
   private onModeChange: ((mode: CameraMode) => void) | null = null
+  
+  // Wheel zoom - using BabylonJS observer and DOM handler
+  private wheelObserver: Observer<PointerInfo> | null = null
+  private wheelPreventHandler: ((e: WheelEvent) => void) | null = null
 
   constructor(scene: Scene, carMesh: AbstractMesh, config?: Partial<CameraConfig>) {
     this.scene = scene
@@ -60,6 +67,7 @@ export class CarCameraManager {
     this.setupThirdPersonCamera()
     this.setupFirstPersonCamera()
     this.setupFreeCamera()
+    this.setupWheelZoom()
     
     // Start with third person
     this.scene.activeCamera = this.thirdPersonCamera
@@ -115,7 +123,7 @@ export class CarCameraManager {
   }
 
   /**
-   * Setup Free Camera (user can rotate)
+   * Setup Free Camera (user can rotate and zoom)
    */
   private setupFreeCamera(): void {
     const freeConfig = this.config.free
@@ -129,22 +137,78 @@ export class CarCameraManager {
       this.scene
     )
     
+    // Set zoom limits
     this.freeCamera.lowerRadiusLimit = freeConfig.lowerRadiusLimit
     this.freeCamera.upperRadiusLimit = freeConfig.upperRadiusLimit
     this.freeCamera.lowerBetaLimit = freeConfig.lowerBetaLimit
     this.freeCamera.upperBetaLimit = freeConfig.upperBetaLimit
     this.freeCamera.inertia = freeConfig.inertia
     this.freeCamera.panningSensibility = 0
+    
+    // Disable keyboard controls
     this.freeCamera.keysUp = []
     this.freeCamera.keysDown = []
     this.freeCamera.keysLeft = []
     this.freeCamera.keysRight = []
     
+    // Configure wheel zoom - use built-in BabylonJS wheel handling
+    this.freeCamera.wheelPrecision = freeConfig.wheelPrecision ?? 20
+    this.freeCamera.wheelDeltaPercentage = freeConfig.wheelDeltaPercentage ?? 0.05
+    
     if (this.canvas) {
+      // Attach control but detach initially since we start in third-person
       this.freeCamera.attachControl(this.canvas, true)
-      // Detach initially since we start in third-person
       this.freeCamera.detachControl()
     }
+  }
+
+  /**
+   * Setup wheel zoom using BabylonJS pointer observable
+   * This approach works even when pointer is locked
+   */
+  private setupWheelZoom(): void {
+    if (!this.canvas) return
+    
+    const freeConfig = this.config.free
+    const zoomSpeed = freeConfig.wheelDeltaPercentage ?? 0.05
+    const lowerLimit = freeConfig.lowerRadiusLimit ?? 4
+    const upperLimit = freeConfig.upperRadiusLimit ?? 50
+    
+    // Prevent page scroll when in free camera mode - this is the key fix!
+    this.wheelPreventHandler = (e: WheelEvent) => {
+      if (this.currentMode === 'free') {
+        e.preventDefault()
+      }
+    }
+    
+    // Add to canvas with passive: false to allow preventDefault
+    this.canvas.addEventListener('wheel', this.wheelPreventHandler, { passive: false })
+    
+    // Use BabylonJS onPointerObservable to capture wheel events for zoom
+    this.wheelObserver = this.scene.onPointerObservable.add((pointerInfo) => {
+      // Only handle wheel events
+      if (pointerInfo.type !== PointerEventTypes.POINTERWHEEL) {
+        return
+      }
+      
+      // Only zoom when in free camera mode
+      if (this.currentMode !== 'free' || !this.freeCamera) {
+        return
+      }
+      
+      // Get wheel delta from the event
+      const wheelEvent = pointerInfo.event as WheelEvent
+      const delta = wheelEvent.deltaY > 0 ? 1 : -1
+      
+      // Calculate new radius
+      const zoomAmount = this.freeCamera.radius * zoomSpeed * delta
+      const newRadius = this.freeCamera.radius + zoomAmount
+      
+      // Apply zoom with limits
+      this.freeCamera.radius = Math.max(lowerLimit, Math.min(upperLimit, newRadius))
+    })
+    
+    console.log('[CarCameraManager] Wheel zoom initialized with scroll prevention')
   }
 
   /**
@@ -324,6 +388,18 @@ export class CarCameraManager {
    * Dispose all cameras
    */
   dispose(): void {
+    // Remove wheel observer
+    if (this.wheelObserver) {
+      this.scene.onPointerObservable.remove(this.wheelObserver)
+      this.wheelObserver = null
+    }
+    
+    // Remove wheel prevent handler
+    if (this.wheelPreventHandler && this.canvas) {
+      this.canvas.removeEventListener('wheel', this.wheelPreventHandler)
+      this.wheelPreventHandler = null
+    }
+    
     if (this.thirdPersonCamera) {
       this.thirdPersonCamera.dispose()
       this.thirdPersonCamera = null

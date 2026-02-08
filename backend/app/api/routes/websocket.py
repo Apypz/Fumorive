@@ -12,7 +12,7 @@ import json
 
 from app.db.database import get_db
 from app.db.models import Session as DBSession, EEGData, FaceDetectionEvent, GameEvent, Alert
-from app.api.websocket_manager import manager
+from app.api.websocket_manager import manager as ws_manager
 from app.schemas.eeg import EEGDataPoint, FaceDetectionData, GameEventData, AlertData
 
 router = APIRouter(prefix="/ws", tags=["WebSocket"])
