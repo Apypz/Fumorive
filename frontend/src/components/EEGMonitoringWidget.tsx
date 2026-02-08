@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { ChevronDown, ChevronUp, Maximize2, Minimize2 } from 'lucide-react'
-import { useEEGStore } from '../../stores/eegStore'
-import { useEEGWebSocket } from '../../hooks/useEEGWebSocket'
+import { useEEGStore } from '../stores/eegStore'
+import { useEEGWebSocket } from '../hooks/useEEGWebSocket'
 import './EEGMonitoringWidget.css'
 
 interface EEGMonitoringWidgetProps {
