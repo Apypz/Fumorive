@@ -41,8 +41,8 @@ async def websocket_session(
         await websocket.close(code=1008, reason="Session not found")
         return
     
-    # Accept connection
-    await ws_manager.connect(websocket, session_id)
+    # Accept connection - convert session_id to string for consistent key with relay
+    await ws_manager.connect(websocket, str(session_id))
     
     try:
         # Send welcome message
@@ -85,14 +85,14 @@ async def websocket_session(
                 }, websocket)
             
             # Broadcast to all clients in this session
-            await ws_manager.broadcast_to_session(data, session_id)
+            await ws_manager.broadcast_to_session(str(session_id), data)
             
     except WebSocketDisconnect:
-        ws_manager.disconnect(websocket, session_id)
+        ws_manager.disconnect(websocket, str(session_id))
         print(f"Client disconnected from session {session_id}")
     except Exception as e:
         print(f"WebSocket error: {e}")
-        ws_manager.disconnect(websocket, session_id)
+        ws_manager.disconnect(websocket, str(session_id))
 
 
 @router.websocket("/monitor")

@@ -59,7 +59,7 @@ class EEGFeatureExtractor:
         """
         low, high = band
         idx = np.logical_and(freqs >= low, freqs <= high)
-        return np.trapezoid(psd[idx], freqs[idx])
+        return np.trapz(psd[idx], freqs[idx])
 
     def compute_band_powers(self, data: np.ndarray) -> Dict[str, np.ndarray]:
         """

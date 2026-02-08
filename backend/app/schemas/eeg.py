@@ -5,7 +5,7 @@ Week 3, Monday - Enhanced for HTTP endpoint
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional, Dict
+from typing import Optional, Dict, Union
 from datetime import datetime
 from uuid import UUID
 
@@ -39,9 +39,9 @@ class EEGStreamData(BaseModel):
         ..., 
         description="EEG channel values (TP9, AF7, AF8, TP10)"
     )
-    processed: Dict[str, float] = Field(
+    processed: Dict[str, Union[float, str]] = Field(
         default_factory=dict,
-        description="Processed metrics (theta_power, alpha_power, etc.)"
+        description="Processed metrics (theta_power, alpha_power, cognitive_state, etc.)"
     )
     save_to_db: bool = Field(
         default=False,
