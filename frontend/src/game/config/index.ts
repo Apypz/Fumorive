@@ -68,3 +68,11 @@ export {
   type SoundName,
   type AudioConfig,
 } from './audio.config'
+
+// Drift Particle Configuration
+export {
+  DEFAULT_DRIFT_PARTICLE_CONFIG,
+  SMOKE_DRIFT_PARTICLE_CONFIG,
+  DUST_DRIFT_PARTICLE_CONFIG,
+  BURNOUT_DRIFT_PARTICLE_CONFIG,
+} from './drift-particles.config'

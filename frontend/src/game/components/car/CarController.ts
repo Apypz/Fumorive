@@ -19,14 +19,17 @@ import type {
   CameraPositionConfig,
   CarInputState,
   MouseControlConfig,
+  DriftParticleConfig,
 } from '../../types'
 import { 
   DEFAULT_PHYSICS_CONFIG, 
   DEFAULT_CAMERA_CONFIG,
   DEFAULT_MOUSE_CONFIG,
+  DEFAULT_DRIFT_PARTICLE_CONFIG,
 } from '../../config'
 import { CarPhysics } from './CarPhysics'
 import { CarCameraManager } from './CarCameraManager'
+import { DriftParticleSystem } from './DriftParticleSystem'
 import { EngineAudio } from '../../engine/EngineAudio'
 import type { SimpleMap } from '../SimpleMap'
 
@@ -68,6 +71,7 @@ export class CarController {
   private physics: CarPhysics
   private cameraManager: CarCameraManager
   private engineAudio: EngineAudio
+  private driftParticles: DriftParticleSystem
   
   // Engine state
   private engineRunning: boolean = false
@@ -132,6 +136,9 @@ export class CarController {
     
     // Initialize engine audio
     this.engineAudio = new EngineAudio()
+    
+    // Initialize drift particle system
+    this.driftParticles = new DriftParticleSystem(scene, carMesh)
     
     // Setup collision callback for crash sound
     this.physics.onCollision((impactVelocity) => {
@@ -421,6 +428,13 @@ export class CarController {
     
     // Update camera
     this.cameraManager.update(this.physics.getHeading())
+    
+    // Update drift particles
+    this.driftParticles.update(
+      this.physics.getIsDrifting(),
+      this.physics.getSlipAngle(),
+      this.physics.getSpeed()
+    )
   }
 
   /**
@@ -518,6 +532,34 @@ export class CarController {
   }
 
   /**
+   * Update drift particle configuration
+   */
+  updateDriftParticleConfig(config: Partial<DriftParticleConfig>): void {
+    this.driftParticles.updateConfig(config)
+  }
+
+  /**
+   * Get drift particle configuration
+   */
+  getDriftParticleConfig(): DriftParticleConfig {
+    return this.driftParticles.getConfig()
+  }
+
+  /**
+   * Check if drift particles are currently emitting
+   */
+  getDriftParticlesEmitting(): boolean {
+    return this.driftParticles.getIsEmitting()
+  }
+
+  /**
+   * Get current drift particle intensity (0-1)
+   */
+  getDriftParticleIntensity(): number {
+    return this.driftParticles.getIntensity()
+  }
+
+  /**
    * Dispose controller and all sub-systems
    */
   dispose(): void {
@@ -529,6 +571,9 @@ export class CarController {
     
     // Dispose engine audio
     this.engineAudio.dispose()
+    
+    // Dispose drift particles
+    this.driftParticles.dispose()
     
     // Dispose camera manager
     this.cameraManager.dispose()

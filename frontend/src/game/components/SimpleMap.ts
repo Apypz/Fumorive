@@ -849,7 +849,7 @@ export class SimpleMap {
       { x: 290, z: -98, length: 796, offset: ringOffset },  // from z=-496 to z=300
       { x: -286, z: -98, length: 796, offset: ringOffset }, // from z=-496 to z=300
       // Radial vertical - adjusted so barriers end at ring road edge
-      { x: 50, z: 227, length: 144, offset: offset },   // start=155, end=299 (before ring_north)
+      { x: 50, z: 230, length: 140, offset: offset },   // start=171, end=299 (after road_top, before ring_north)
       { x: 50, z: -341, length: 310, offset: offset },  // start=-491, end=-191 (before junction at -178)
       // Note: suburban roads at x:280 and x:-280 share barriers with ring road
     ]
@@ -1630,6 +1630,222 @@ export class SimpleMap {
 
       // Building label
       this.createBuildingLabel(b.name, b.x, b.z, b.height)
+    })
+
+    // === NEW BUILDINGS - DIFFERENT STYLES ===
+    this.createModernBuildings()
+    this.createShopHouses()
+    this.createApartmentBlocks()
+  }
+
+  /**
+   * Modern glass/steel style buildings
+   */
+  private createModernBuildings(): void {
+    const glassMaterial = new PBRMaterial('glassBuildingMaterial', this.scene)
+    glassMaterial.albedoColor = new Color3(0.6, 0.7, 0.8) // Blue-gray glass
+    glassMaterial.metallic = 0.8
+    glassMaterial.roughness = 0.1
+    glassMaterial.alpha = 0.9
+
+    const steelMaterial = new PBRMaterial('steelBuildingMaterial', this.scene)
+    steelMaterial.albedoColor = new Color3(0.5, 0.5, 0.55)
+    steelMaterial.metallic = 0.9
+    steelMaterial.roughness = 0.2
+
+    const modernBuildings = [
+      // Tower 1 - Near north, between A and B (x=0, above road_top z=150)
+      { name: 'Tower 1', x: 0, z: 195, width: 25, depth: 25, height: 22 },
+      // Tower 2 - East of central road, middle area
+      { name: 'Tower 2', x: 15, z: 100, width: 20, depth: 22, height: 18 },
+    ]
+
+    modernBuildings.forEach((b) => {
+      // Main tower body
+      const tower = MeshBuilder.CreateBox(`modern_${b.name}`, {
+        width: b.width,
+        height: b.height,
+        depth: b.depth,
+      }, this.scene)
+      tower.position = new Vector3(b.x, b.height / 2, b.z)
+      tower.material = glassMaterial
+      tower.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(tower)
+      this.meshes.push(tower)
+      this.addBoxCollider(tower)
+
+      // Steel frame accent
+      const frame = MeshBuilder.CreateBox(`frame_${b.name}`, {
+        width: b.width + 0.5,
+        height: b.height * 0.1,
+        depth: b.depth + 0.5,
+      }, this.scene)
+      frame.position = new Vector3(b.x, b.height * 0.9, b.z)
+      frame.material = steelMaterial
+      this.meshes.push(frame)
+
+      // Roof accent
+      const roof = MeshBuilder.CreateBox(`roof_${b.name}`, {
+        width: b.width * 0.6,
+        height: 3,
+        depth: b.depth * 0.6,
+      }, this.scene)
+      roof.position = new Vector3(b.x, b.height + 1.5, b.z)
+      roof.material = steelMaterial
+      this.lightingSetup?.addShadowCaster(roof)
+      this.meshes.push(roof)
+
+      this.createBuildingLabel(b.name, b.x, b.z, b.height + 3)
+    })
+  }
+
+  /**
+   * Ruko/Shop houses - small commercial buildings in a row
+   */
+  private createShopHouses(): void {
+    const colors = [
+      new Color3(0.85, 0.75, 0.65), // Cream
+      new Color3(0.75, 0.82, 0.78), // Mint
+      new Color3(0.82, 0.78, 0.72), // Beige
+      new Color3(0.78, 0.75, 0.85), // Lavender
+    ]
+
+    const awningMaterial = new PBRMaterial('awningMaterial', this.scene)
+    awningMaterial.albedoColor = new Color3(0.6, 0.3, 0.2)
+    awningMaterial.metallic = 0
+    awningMaterial.roughness = 0.9
+
+    // Row 1: South of Gedung F, along west side (x=-130, z=-80 to -140)
+    const shopRow1 = [
+      { x: -130, z: -85, colorIdx: 0 },
+      { x: -130, z: -105, colorIdx: 1 },
+      { x: -130, z: -125, colorIdx: 2 },
+      { x: -130, z: -145, colorIdx: 3 },
+    ]
+
+    // Row 2: East of lake area (x=-60, z=-120 to -160)
+    const shopRow2 = [
+      { x: -60, z: -130, colorIdx: 1 },
+      { x: -60, z: -150, colorIdx: 0 },
+      { x: -60, z: -170, colorIdx: 2 },
+    ]
+
+    const allShops = [...shopRow1, ...shopRow2]
+    const shopWidth = 15
+    const shopDepth = 12
+    const shopHeight = 8
+
+    allShops.forEach((shop, i) => {
+      const shopMaterial = new PBRMaterial(`shopMat_${i}`, this.scene)
+      shopMaterial.albedoColor = colors[shop.colorIdx]
+      shopMaterial.metallic = 0.05
+      shopMaterial.roughness = 0.85
+
+      // Shop body
+      const shopBuilding = MeshBuilder.CreateBox(`shop_${i}`, {
+        width: shopWidth,
+        height: shopHeight,
+        depth: shopDepth,
+      }, this.scene)
+      shopBuilding.position = new Vector3(shop.x, shopHeight / 2, shop.z)
+      shopBuilding.material = shopMaterial
+      shopBuilding.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(shopBuilding)
+      this.meshes.push(shopBuilding)
+      this.addBoxCollider(shopBuilding)
+
+      // Awning (front canopy)
+      const awning = MeshBuilder.CreateBox(`awning_${i}`, {
+        width: shopWidth + 2,
+        height: 0.3,
+        depth: 3,
+      }, this.scene)
+      awning.position = new Vector3(shop.x, shopHeight * 0.4, shop.z + shopDepth / 2 + 1.5)
+      awning.material = awningMaterial
+      this.meshes.push(awning)
+    })
+  }
+
+  /**
+   * Apartment blocks - medium rise residential
+   */
+  private createApartmentBlocks(): void {
+    const apartmentMaterial = new PBRMaterial('apartmentMaterial', this.scene)
+    apartmentMaterial.albedoColor = new Color3(0.88, 0.85, 0.8) // Warm white
+    apartmentMaterial.metallic = 0.05
+    apartmentMaterial.roughness = 0.8
+
+    const balconyMaterial = new PBRMaterial('balconyMaterial', this.scene)
+    balconyMaterial.albedoColor = new Color3(0.6, 0.58, 0.55)
+    balconyMaterial.metallic = 0.3
+    balconyMaterial.roughness = 0.6
+
+    const windowMaterial = new PBRMaterial('windowMaterial', this.scene)
+    windowMaterial.albedoColor = new Color3(0.4, 0.5, 0.6)
+    windowMaterial.metallic = 0.7
+    windowMaterial.roughness = 0.1
+
+    // Apartment locations - between roads, not blocking paths
+    const apartments = [
+      // Block 1: West of road_left_v, between z=80 and z=130
+      { name: 'Apartemen 1', x: -140, z: 80, width: 30, depth: 25, height: 16, floors: 5 },
+      // Block 2: South area, west of center
+      { name: 'Apartemen 2', x: -30, z: -130, width: 28, depth: 22, height: 14, floors: 4 },
+      // Block 3: Far south, west of radial_south
+      { name: 'Apartemen 3', x: 0, z: -240, width: 32, depth: 24, height: 18, floors: 6 },
+    ]
+
+    apartments.forEach((apt) => {
+      // Main building body
+      const building = MeshBuilder.CreateBox(`apt_${apt.name}`, {
+        width: apt.width,
+        height: apt.height,
+        depth: apt.depth,
+      }, this.scene)
+      building.position = new Vector3(apt.x, apt.height / 2, apt.z)
+      building.material = apartmentMaterial
+      building.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(building)
+      this.meshes.push(building)
+      this.addBoxCollider(building)
+
+      // Balcony stripes (horizontal lines)
+      const floorHeight = apt.height / apt.floors
+      for (let f = 1; f < apt.floors; f++) {
+        const balcony = MeshBuilder.CreateBox(`balcony_${apt.name}_${f}`, {
+          width: apt.width + 1,
+          height: 0.4,
+          depth: apt.depth + 1,
+        }, this.scene)
+        balcony.position = new Vector3(apt.x, f * floorHeight, apt.z)
+        balcony.material = balconyMaterial
+        this.meshes.push(balcony)
+      }
+
+      // Window strips on front
+      for (let f = 0; f < apt.floors; f++) {
+        const windowStrip = MeshBuilder.CreateBox(`window_${apt.name}_${f}`, {
+          width: apt.width * 0.8,
+          height: floorHeight * 0.4,
+          depth: 0.2,
+        }, this.scene)
+        windowStrip.position = new Vector3(apt.x, f * floorHeight + floorHeight / 2 + 0.5, apt.z + apt.depth / 2 + 0.1)
+        windowStrip.material = windowMaterial
+        this.meshes.push(windowStrip)
+      }
+
+      // Roof structure
+      const roofStructure = MeshBuilder.CreateBox(`roofStruct_${apt.name}`, {
+        width: apt.width * 0.4,
+        height: 2,
+        depth: apt.depth * 0.4,
+      }, this.scene)
+      roofStructure.position = new Vector3(apt.x, apt.height + 1, apt.z)
+      roofStructure.material = balconyMaterial
+      this.lightingSetup?.addShadowCaster(roofStructure)
+      this.meshes.push(roofStructure)
+
+      this.createBuildingLabel(apt.name, apt.x, apt.z, apt.height + 2)
     })
   }
 
