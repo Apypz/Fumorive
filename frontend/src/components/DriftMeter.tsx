@@ -1,12 +1,7 @@
 import { useGameStore } from '../stores/gameStore'
 
 export function DriftMeter() {
-  const { slipAngle, currentSpeed, cameraMode } = useGameStore()
-  
-  // Don't show in first-person mode
-  if (cameraMode === 'first-person') {
-    return null
-  }
+  const { slipAngle, currentSpeed } = useGameStore()
 
   // Calculate slip intensity (0-100%)
   const absSlipAngle = Math.abs(slipAngle)

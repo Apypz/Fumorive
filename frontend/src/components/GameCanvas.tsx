@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { GameEngine, DemoScene } from '../game'
 import { useGameStore } from '../stores/gameStore'
+import { useViolationStore } from '../stores/violationStore'
 
 export function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -22,6 +23,10 @@ export function GameCanvas() {
     setEngineRunning,
     showInspector,
   } = useGameStore()
+
+  const setIsWrongWay = useGameStore((s) => s.setIsWrongWay)
+  const setCurrentGear = useGameStore((s) => s.setCurrentGear)
+  const setTransmissionMode = useGameStore((s) => s.setTransmissionMode)
 
   // Initialize game engine
   const initGame = useCallback(async () => {
@@ -61,9 +66,18 @@ export function GameCanvas() {
         setEngineRunning(running)
       })
 
+      // Set collision callback for violation tracking
+      demoScene.setOnCollision((impactVelocity) => {
+        // Only register significant collisions (threshold: 3 m/s impact)
+        if (impactVelocity > 3) {
+          useViolationStore.getState().addViolation('collision')
+        }
+      })
+
       await demoScene.init(engine.getContext())
 
       // Start render loop
+      let wrongWayViolationCooldown = 0
       engine.start((deltaTime) => {
         demoScene.update(deltaTime)
 
@@ -74,6 +88,19 @@ export function GameCanvas() {
         setCurrentSpeed(demoScene.getSpeedKmh())
         setIsDrifting(demoScene.getIsDrifting())
         setSlipAngle(demoScene.getSlipAngle())
+
+        // Update gear/transmission info
+        setCurrentGear(demoScene.getCurrentGear())
+        setTransmissionMode(demoScene.getTransmissionMode())
+
+        // Check wrong-way driving (throttled violation trigger every 5 seconds)
+        wrongWayViolationCooldown = Math.max(0, wrongWayViolationCooldown - deltaTime)
+        const wrongWayNow = demoScene.isWrongWay()
+        setIsWrongWay(wrongWayNow)
+        if (wrongWayNow && wrongWayViolationCooldown <= 0) {
+          useViolationStore.getState().addViolation('wrong-way')
+          wrongWayViolationCooldown = 5 // 5 second cooldown between wrong-way violations
+        }
 
         // Update FPS counter every 0.5 seconds
         if (Math.random() < 0.05) {

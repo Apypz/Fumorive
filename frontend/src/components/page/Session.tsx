@@ -11,6 +11,9 @@ import { DriftMeter } from '../DriftMeter'
 import { MapSelection } from '../MapSelection'
 import { CameraFatigueMonitor } from '../CameraFatigueMonitor'
 import { EEGMonitoringWidget } from '../EEGMonitoringWidget'
+import { ViolationHUD } from '../ViolationHUD'
+import { WrongWayWarning } from '../WrongWayWarning'
+import { GearHUD } from '../GearHUD'
 import { useGameStore } from '../../stores/gameStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import '../../App.css'
@@ -95,11 +98,20 @@ export default function Session() {
           {/* Speedometer visualization */}
           <SpeedometerHUD />
           
+          {/* Gear indicator - next to speedometer */}
+          <GearHUD />
+          
           {/* Drift Meter visualization */}
           <DriftMeter />
           
           {/* Steering Wheel visualization */}
           <SteeringWheelHUD />
+
+          {/* Violation tracker - next to speedometer */}
+          <ViolationHUD />
+
+          {/* Wrong-way warning overlay */}
+          <WrongWayWarning />
 
           {/* Camera Fatigue Monitor - bottom right corner */}
           <CameraFatigueMonitor 

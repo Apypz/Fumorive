@@ -16,7 +16,7 @@ function getCameraModeDisplay(mode: string): string {
 }
 
 export function ControlsHUD() {
-  const { controlMode, cameraMode, engineRunning } = useGameStore()
+  const { controlMode, cameraMode, engineRunning, transmissionMode, currentGear } = useGameStore()
   const [isVisible, setIsVisible] = useState(true)
 
   return (
@@ -66,6 +66,16 @@ export function ControlsHUD() {
         </div>
       </div>
 
+      {/* Transmission Mode Indicator */}
+      <div style={styles.modeSection}>
+        <div style={styles.modeLabel}>TRANSMISI</div>
+        <div style={styles.modeValue}>
+          <span style={transmissionMode === 'automatic' ? styles.autoMode : styles.manualMode}>
+            {transmissionMode === 'automatic' ? 'AUTO' : 'MANUAL'}
+          </span>
+        </div>
+      </div>
+
       <div style={styles.divider} />
 
       {/* Controls Guide */}
@@ -76,11 +86,15 @@ export function ControlsHUD() {
         <div style={styles.controlGroup}>
           <div style={styles.controlRow}>
             <span style={styles.keyBadge}>W</span>
-            <span style={styles.controlDesc}>Maju</span>
+            <span style={styles.controlDesc}>
+              {transmissionMode === 'manual' && currentGear === -1 ? 'Mundur (R)' : 'Maju'}
+            </span>
           </div>
           <div style={styles.controlRow}>
             <span style={styles.keyBadge}>S</span>
-            <span style={styles.controlDesc}>Mundur</span>
+            <span style={styles.controlDesc}>
+              {transmissionMode === 'manual' ? 'Rem' : 'Mundur / Rem'}
+            </span>
           </div>
         </div>
 
@@ -135,7 +149,34 @@ export function ControlsHUD() {
           <span style={styles.keyBadge}>V</span>
           <span style={styles.controlDesc}>Ganti Kamera</span>
         </div>
+        <div style={styles.controlRow}>
+          <span style={styles.keyBadgeGear}>X</span>
+          <span style={styles.controlDesc}>Ganti Transmisi (A/M)</span>
+        </div>
       </div>
+
+      {/* Manual gear controls */}
+      {transmissionMode === 'manual' && (
+        <>
+          <div style={styles.divider} />
+          <div style={styles.controlsSection}>
+            <div style={styles.sectionTitle}>GIGI (MANUAL)</div>
+            <div style={styles.controlGroup}>
+              <div style={styles.controlRow}>
+                <span style={styles.keyBadgeGear}>E</span>
+                <span style={styles.controlDesc}>Naik Gigi</span>
+              </div>
+              <div style={styles.controlRow}>
+                <span style={styles.keyBadgeGear}>Q</span>
+                <span style={styles.controlDesc}>Turun Gigi</span>
+              </div>
+            </div>
+            <div style={styles.hint}>
+              R ← N → 1 → 2 → 3 → 4 → 5
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Hints */}
       {controlMode === 'mouse' && cameraMode !== 'free' && (
@@ -234,6 +275,12 @@ const styles: Record<string, React.CSSProperties> = {
   freeMode: {
     color: '#fbbf24', // Yellow/Orange
   },
+  autoMode: {
+    color: '#60a5fa', // Blue
+  },
+  manualMode: {
+    color: '#fbbf24', // Yellow
+  },
   engineOn: {
     color: '#34d399', // Green
   },
@@ -305,6 +352,21 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 'bold',
     fontFamily: 'monospace',
     color: '#ef4444',
+  },
+  keyBadgeGear: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '24px',
+    height: '20px',
+    padding: '0 6px',
+    backgroundColor: 'rgba(251, 191, 36, 0.3)',
+    border: '1px solid rgba(251, 191, 36, 0.5)',
+    borderRadius: '4px',
+    fontSize: '0.65rem',
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+    color: '#fbbf24',
   },
   mouseBadge: {
     display: 'inline-flex',

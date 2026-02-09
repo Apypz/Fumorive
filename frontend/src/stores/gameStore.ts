@@ -51,6 +51,16 @@ interface GameStoreState {
   engineRunning: boolean
   setEngineRunning: (running: boolean) => void
 
+  // Wrong-way detection
+  isWrongWay: boolean
+  setIsWrongWay: (wrongWay: boolean) => void
+
+  // Transmission / Gear
+  transmissionMode: 'automatic' | 'manual'
+  setTransmissionMode: (mode: 'automatic' | 'manual') => void
+  currentGear: number  // -1=R, 0=N, 1-5=forward gears
+  setCurrentGear: (gear: number) => void
+
   // Performance
   fps: number
   setFps: (fps: number) => void
@@ -111,6 +121,16 @@ export const useGameStore = create<GameStoreState>((set) => ({
   // Engine
   engineRunning: false,
   setEngineRunning: (engineRunning) => set({ engineRunning }),
+
+  // Wrong-way detection
+  isWrongWay: false,
+  setIsWrongWay: (isWrongWay) => set({ isWrongWay }),
+
+  // Transmission / Gear
+  transmissionMode: 'automatic',
+  setTransmissionMode: (transmissionMode) => set({ transmissionMode }),
+  currentGear: 0,
+  setCurrentGear: (currentGear) => set({ currentGear }),
 
   // Performance
   fps: 0,

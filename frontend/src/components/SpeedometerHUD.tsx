@@ -1,12 +1,7 @@
 import { useGameStore } from '../stores/gameStore'
 
 export function SpeedometerHUD() {
-  const { currentSpeed, isDrifting, cameraMode } = useGameStore()
-  
-  // Don't show in first-person mode
-  if (cameraMode === 'first-person') {
-    return null
-  }
+  const { currentSpeed, isDrifting } = useGameStore()
 
   // Calculate needle rotation
   // Max speed is 150 km/h, needle rotates from -135 to 135 degrees (270 degree arc)

@@ -19,6 +19,7 @@ import { PostProcessingPipeline } from '../engine/PostProcessingPipeline'
 import { InputManager } from '../engine/InputManager'
 import { CarController } from '../components/car'
 import { SimpleMap } from '../components/SimpleMap'
+import { WrongWayDetector } from '../systems/WrongWayDetector'
 
 export type { MapType }
 
@@ -45,6 +46,10 @@ export class DemoScene implements GameScene {
   private onControlModeChange: ((mode: ControlMode) => void) | null = null
   // Engine state change callback
   private onEngineStateChange: ((running: boolean) => void) | null = null
+  // Collision callback
+  private onCollisionCallback: ((impactVelocity: number) => void) | null = null
+  // Wrong-way detection
+  private wrongWayDetector: WrongWayDetector = new WrongWayDetector()
 
   constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'solo-city') {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
@@ -81,6 +86,16 @@ export class DemoScene implements GameScene {
     // Also set on car controller if already initialized
     if (this.carController) {
       this.carController.onEngineStateChanged(callback)
+    }
+  }
+
+  /**
+   * Set callback for collision events (to update violation system)
+   */
+  setOnCollision(callback: (impactVelocity: number) => void): void {
+    this.onCollisionCallback = callback
+    if (this.carController) {
+      this.carController.onCollisionEvent(callback)
     }
   }
 
@@ -138,6 +153,41 @@ export class DemoScene implements GameScene {
    */
   isEngineRunning(): boolean {
     return this.carController?.isEngineRunning() ?? false
+  }
+
+  /**
+   * Get current gear number (-1=R, 0=N, 1-5)
+   */
+  getCurrentGear(): number {
+    return this.carController?.getCurrentGear() ?? 0
+  }
+
+  /**
+   * Get gear display name (R, N, 1-5)
+   */
+  getGearName(): string {
+    return this.carController?.getGearName() ?? 'N'
+  }
+
+  /**
+   * Get transmission mode
+   */
+  getTransmissionMode(): 'automatic' | 'manual' {
+    return this.carController?.getTransmissionMode() ?? 'automatic'
+  }
+
+  /**
+   * Get engine RPM
+   */
+  getRPM(): number {
+    return this.carController?.getRPM() ?? 800
+  }
+
+  /**
+   * Get whether car is driving the wrong way (against traffic)
+   */
+  isWrongWay(): boolean {
+    return this.wrongWayDetector.isWrongWay
   }
 
   async init(context: SceneContext): Promise<void> {
@@ -299,6 +349,11 @@ export class DemoScene implements GameScene {
           this.carController.onEngineStateChanged(this.onEngineStateChange)
         }
 
+        // Set collision callback
+        if (this.onCollisionCallback) {
+          this.carController.onCollisionEvent(this.onCollisionCallback)
+        }
+
         // Set map reference for collision detection
         if (this.simpleMap) {
           this.carController.setMap(this.simpleMap)
@@ -426,6 +481,14 @@ export class DemoScene implements GameScene {
   update(deltaTime: number): void {
     // Update car controller (physics, movement, and camera)
     this.carController?.update(deltaTime)
+
+    // Update wrong-way detection
+    if (this.carController) {
+      const position = this.carController.getPosition()
+      const heading = this.carController.getHeading()
+      const speed = this.carController.getSpeed()
+      this.wrongWayDetector.update(position, heading, speed, deltaTime)
+    }
   }
 
   dispose(): void {

@@ -21,7 +21,7 @@ export const DEFAULT_PHYSICS_CONFIG: CarPhysicsConfig = {
   // ENGINE
   // ============================================
   /** Maximum forward speed in m/s. 35 m/s ≈ 126 km/h */
-  maxSpeed: 100,
+  maxSpeed: 40,
   
   /** Maximum reverse speed in m/s. 12 m/s ≈ 43 km/h */
   reverseMaxSpeed: 12,
