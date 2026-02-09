@@ -24,13 +24,13 @@ export const DEFAULT_PHYSICS_CONFIG: CarPhysicsConfig = {
   maxSpeed: 40,
   
   /** Maximum reverse speed in m/s. 12 m/s ≈ 43 km/h */
-  reverseMaxSpeed: 12,
+  reverseMaxSpeed: 5,
   
   /** Forward acceleration force in m/s². Higher = faster acceleration */
-  acceleration: 18,
+  acceleration: 5,
   
   /** Reverse acceleration force in m/s² */
-  reverseAcceleration: 10,
+  reverseAcceleration: 2,
   
   /** Deceleration when coasting (no throttle) in m/s² */
   engineBraking: 4,

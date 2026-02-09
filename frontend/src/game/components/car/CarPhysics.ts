@@ -219,17 +219,27 @@ export class CarPhysics {
 
     // === REVERSE (gear -1) ===
     if (gear === -1) {
-      if (input.throttle > 0) {
-        // In manual reverse, W = go backward
+      // Determine the "go backward" input based on transmission mode
+      // Manual: W (throttle>0) = go backward in R, S = brake
+      // Automatic: S (throttle<0) = go backward in R, W = brake/switch to forward
+      const wantsReverse = this.transmissionMode === 'manual'
+        ? input.throttle > 0
+        : input.throttle < 0
+      const wantsBrake = this.transmissionMode === 'manual'
+        ? input.throttle < 0
+        : input.throttle > 0
+
+      if (wantsReverse) {
+        const absThrottle = Math.abs(input.throttle)
         if (this.forwardVelocity > 0.5) {
           // Still rolling forward - brake first
           force = -this.config.brakeForce
         } else if (this.forwardVelocity > -CarPhysics.REVERSE_MAX_SPEED) {
           const powerFactor = 1 - Math.pow(Math.abs(this.forwardVelocity) / CarPhysics.REVERSE_MAX_SPEED, 2) * 0.6
-          force = -this.config.reverseAcceleration * CarPhysics.REVERSE_ACCEL_MULT * powerFactor * input.throttle
+          force = -this.config.reverseAcceleration * CarPhysics.REVERSE_ACCEL_MULT * powerFactor * absThrottle
         }
-      } else if (input.throttle < 0) {
-        // S key in reverse gear = brake
+      } else if (wantsBrake) {
+        // Opposite key in reverse gear = brake
         if (Math.abs(this.forwardVelocity) > 0.1) {
           force = -Math.sign(this.forwardVelocity) * this.config.brakeForce
         }
@@ -655,27 +665,27 @@ export class CarPhysics {
    * Automatic transmission logic
    */
   private updateAutoTransmission(input: CarInputState, speed: number): void {
-    if (this.autoShiftTimer > 0) return
-
     const absForwardSpeed = Math.abs(this.forwardVelocity)
 
-    // Handle reverse in automatic: pressing S when stopped or slow
+    // === REVERSE: pressing S when stopped or very slow ===
     if (input.throttle < 0 && this.forwardVelocity <= 0.5) {
       if (this.currentGear !== -1) {
         this.currentGear = -1
-        this.autoShiftTimer = CarPhysics.SHIFT_COOLDOWN
+        // No cooldown for entering reverse from stop – instant response
       }
       return
     }
 
-    // Handle forward: pressing W
+    // === FORWARD: pressing W ===
     if (input.throttle > 0) {
-      // If in reverse or neutral, shift to 1st
+      // From reverse/neutral → 1st instantly (no cooldown for this essential shift)
       if (this.currentGear <= 0) {
         this.currentGear = 1
-        this.autoShiftTimer = CarPhysics.SHIFT_COOLDOWN
         return
       }
+
+      // Gear-to-gear shifts respect cooldown
+      if (this.autoShiftTimer > 0) return
 
       // Upshift: when speed exceeds threshold of current gear
       if (this.currentGear < CarPhysics.MAX_GEAR) {
@@ -698,10 +708,9 @@ export class CarPhysics {
       }
     }
 
-    // No throttle and slow → go to neutral
-    if (input.throttle === 0 && absForwardSpeed < 1 && this.currentGear !== 0) {
+    // No throttle, fully stopped → neutral (only when truly stopped)
+    if (input.throttle === 0 && !input.brake && absForwardSpeed < 0.3 && this.currentGear !== 0) {
       this.currentGear = 0
-      this.autoShiftTimer = CarPhysics.SHIFT_COOLDOWN
     }
   }
 
