@@ -130,11 +130,13 @@ async def log_requests(request: Request, call_next):
 # Note: Cannot use ["*"] with allow_credentials=True
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:5173",
+    "http://localhost:3001",  # Vite dev server (main)
+    "http://localhost:5173",  # Vite default port
+    "http://localhost:5174",  # Vite alternative port
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
     "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
 ]
 app.add_middleware(
     CORSMiddleware,

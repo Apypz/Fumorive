@@ -20,6 +20,7 @@ export class SimpleMap {
   private lightingSetup: LightingSetup | null
   private meshes: AbstractMesh[] = []
   private colliders: Collider[] = []
+  private spawnPoint: { x: number; z: number; rotationY: number } = { x: 0, z: 0, rotationY: 0 }
   
   // Map boundaries - diperluas untuk objektif game
   private mapBounds = {
@@ -40,6 +41,11 @@ export class SimpleMap {
 
   getMapBounds() {
     return this.mapBounds
+  }
+
+  /** Get the spawn point for the car (position + facing direction) */
+  getSpawnPoint() {
+    return this.spawnPoint
   }
 
   checkCollision(position: Vector3, radius: number = 1.5): { collided: boolean; normal: Vector3; penetration: number } {
@@ -115,6 +121,7 @@ export class SimpleMap {
     this.createLake()
     this.createTrees()
     this.createBushes()
+    this.createSpawnStation()
     this.createMapBoundaryWalls()
     
     console.log('[SimpleMap] Solo City map created with', this.colliders.length, 'colliders')
@@ -131,6 +138,7 @@ export class SimpleMap {
     this.createParkBenches()
     this.createParkFountain()
     this.createParkLamps()
+    this.createParkSpawnArea()
     this.createMapBoundaryWalls()
     
     console.log('[SimpleMap] Sriwedari Park map created with', this.colliders.length, 'colliders')
@@ -771,6 +779,8 @@ export class SimpleMap {
       { x: 170, z: -100 },
       { x: 170, z: -178 },
       { x: 50, z: -178 },
+      // Station exit junction (driveway meets road_center_v)
+      { x: 50, z: 73 },
     ]
 
     // Ring road junctions (ring road width offset)
@@ -1511,6 +1521,22 @@ export class SimpleMap {
     this.lightingSetup?.addShadowCaster(cornerSW_NE)
     this.meshes.push(cornerSW_NE)
     this.addBoxCollider(cornerSW_NE)
+
+    // ============================================
+    // Station exit junction at road_center_v (50, 73)
+    // West side OPEN (garage exit), East side BLOCKED
+    // ============================================
+    const blockEastStation = MeshBuilder.CreateBox('tjunc_50_73_block_east', {
+      width: width,
+      height: height,
+      depth: roadWidth,
+    }, this.scene)
+    blockEastStation.position = new Vector3(50 + offset, height / 2, 73)
+    blockEastStation.material = material
+    blockEastStation.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockEastStation)
+    this.meshes.push(blockEastStation)
+    this.addBoxCollider(blockEastStation)
   }
 
   private createBarriersWithGaps(
@@ -2076,6 +2102,289 @@ export class SimpleMap {
       max: max.clone(),
       mesh: mesh,
     })
+  }
+
+  // ============================================
+  // SPAWN STATION / GARAGE
+  // ============================================
+
+  /**
+   * Solo City – "Fumorive Station"
+   * A covered carport west of road_center_v.
+   * The car starts inside facing EAST – drive straight out onto road_center_v.
+   */
+  private createSpawnStation(): void {
+    // Station is west of road_center_v (x=50). Car faces east (+X).
+    const stationX = 18
+    const stationZ = 73
+
+    // Spawn: car faces east (+X toward road_center_v)
+    // heading convention: forward = (sin(h), 0, cos(h)) → PI/2 = east
+    this.spawnPoint = { x: stationX, z: stationZ, rotationY: Math.PI / 2 }
+
+    // --- Materials ---
+    const concreteMat = new PBRMaterial('stationConcrete', this.scene)
+    concreteMat.albedoColor = new Color3(0.72, 0.72, 0.70)
+    concreteMat.metallic = 0.05
+    concreteMat.roughness = 0.92
+
+    const roofMat = new PBRMaterial('stationRoof', this.scene)
+    roofMat.albedoColor = new Color3(0.28, 0.32, 0.38)
+    roofMat.metallic = 0.7
+    roofMat.roughness = 0.3
+
+    const pillarMat = new PBRMaterial('stationPillar', this.scene)
+    pillarMat.albedoColor = new Color3(0.9, 0.82, 0.2)
+    pillarMat.metallic = 0.3
+    pillarMat.roughness = 0.5
+
+    const wallMat = new PBRMaterial('stationWall', this.scene)
+    wallMat.albedoColor = new Color3(0.55, 0.55, 0.52)
+    wallMat.metallic = 0.1
+    wallMat.roughness = 0.8
+
+    const stripeMat = new PBRMaterial('stationStripe', this.scene)
+    stripeMat.albedoColor = new Color3(0.95, 0.85, 0.15)
+    stripeMat.metallic = 0
+    stripeMat.roughness = 0.7
+
+    // --- Concrete Floor Pad ---
+    const floor = MeshBuilder.CreateGround('stationFloor', {
+      width: 28,
+      height: 22,
+    }, this.scene)
+    floor.position = new Vector3(stationX, 0.04, stationZ)
+    floor.material = concreteMat
+    floor.receiveShadows = true
+    this.meshes.push(floor)
+
+    // --- Driveway connecting station EAST to road_center_v ---
+    // Station east edge: stationX + 14 = 32
+    // road_center_v west edge: 50 - 8 = 42
+    // Driveway fills the gap and overlaps slightly for seamless connection
+    const driveway = MeshBuilder.CreateGround('stationDriveway', {
+      width: 22,   // spans from ~27 to ~49, overlapping station edge and road edge
+      height: 14,
+    }, this.scene)
+    driveway.position = new Vector3(stationX + 20, 0.03, stationZ)
+    driveway.material = concreteMat
+    driveway.receiveShadows = true
+    this.meshes.push(driveway)
+
+    // --- Yellow guide stripes on floor (parking lines) ---
+    const stripePositions = [
+      { x: stationX, z: stationZ + 8 },
+      { x: stationX, z: stationZ - 8 },
+    ]
+    stripePositions.forEach((pos, i) => {
+      const stripe = MeshBuilder.CreateGround(`stationStripe_${i}`, {
+        width: 24,
+        height: 0.3,
+      }, this.scene)
+      stripe.position = new Vector3(pos.x, 0.05, pos.z)
+      stripe.material = stripeMat
+      this.meshes.push(stripe)
+    })
+
+    // Center dashed arrow line pointing east (exit direction)
+    for (let d = 0; d < 5; d++) {
+      const dash = MeshBuilder.CreateGround(`stationDash_${d}`, {
+        width: 3,
+        height: 0.25,
+      }, this.scene)
+      dash.position = new Vector3(stationX - 10 + d * 5.5, 0.05, stationZ)
+      dash.material = stripeMat
+      this.meshes.push(dash)
+    }
+
+    // --- Flat Roof / Canopy ---
+    const roof = MeshBuilder.CreateBox('stationRoof', {
+      width: 30,
+      height: 0.4,
+      depth: 24,
+    }, this.scene)
+    roof.position = new Vector3(stationX, 6.2, stationZ)
+    roof.material = roofMat
+    this.lightingSetup?.addShadowCaster(roof)
+    this.meshes.push(roof)
+
+    // Roof edge trim on EAST lip (exit side visual cue)
+    const roofEdge = MeshBuilder.CreateBox('stationRoofEdge', {
+      width: 0.3,
+      height: 0.8,
+      depth: 24,
+    }, this.scene)
+    roofEdge.position = new Vector3(stationX + 15, 5.8, stationZ)
+    roofEdge.material = pillarMat
+    this.meshes.push(roofEdge)
+
+    // --- 4 Support Pillars ---
+    const pillarPositions = [
+      { x: stationX - 13, z: stationZ - 10 },
+      { x: stationX - 13, z: stationZ + 10 },
+      { x: stationX + 13, z: stationZ - 10 },
+      { x: stationX + 13, z: stationZ + 10 },
+    ]
+    pillarPositions.forEach((pos, i) => {
+      const pillar = MeshBuilder.CreateCylinder(`stationPillar_${i}`, {
+        diameter: 0.8,
+        height: 6,
+        tessellation: 8,
+      }, this.scene)
+      pillar.position = new Vector3(pos.x, 3, pos.z)
+      pillar.material = pillarMat
+      pillar.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(pillar)
+      this.meshes.push(pillar)
+    })
+
+    // --- Back Wall on WEST side (behind the car) ---
+    const backWall = MeshBuilder.CreateBox('stationBackWall', {
+      width: 0.6,
+      height: 6,
+      depth: 24,
+    }, this.scene)
+    backWall.position = new Vector3(stationX - 14.5, 3, stationZ)
+    backWall.material = wallMat
+    backWall.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(backWall)
+    this.meshes.push(backWall)
+    this.addBoxCollider(backWall)
+
+    // --- EAST side is OPEN (exit towards road_center_v) – no wall here ---
+
+    // --- Side Bollards (north & south edges) ---
+    const bollardMat = new PBRMaterial('bollardMat', this.scene)
+    bollardMat.albedoColor = new Color3(0.85, 0.2, 0.15)
+    bollardMat.metallic = 0.3
+    bollardMat.roughness = 0.5
+
+    const bollardRow = [
+      // North side
+      { x: stationX - 8, z: stationZ + 11.5 },
+      { x: stationX, z: stationZ + 11.5 },
+      { x: stationX + 8, z: stationZ + 11.5 },
+      // South side
+      { x: stationX - 8, z: stationZ - 11.5 },
+      { x: stationX, z: stationZ - 11.5 },
+      { x: stationX + 8, z: stationZ - 11.5 },
+    ]
+    bollardRow.forEach((pos, i) => {
+      const bollard = MeshBuilder.CreateCylinder(`stationBollard_${i}`, {
+        diameter: 0.6,
+        height: 1.2,
+        tessellation: 8,
+      }, this.scene)
+      bollard.position = new Vector3(pos.x, 0.6, pos.z)
+      bollard.material = bollardMat
+      this.lightingSetup?.addShadowCaster(bollard)
+      this.meshes.push(bollard)
+    })
+
+    // Side barriers (invisible colliders along north & south)
+    const sideColliderN = MeshBuilder.CreateBox('stationSideN', {
+      width: 28,
+      height: 1.5,
+      depth: 0.5,
+    }, this.scene)
+    sideColliderN.position = new Vector3(stationX, 0.75, stationZ + 11.5)
+    sideColliderN.isVisible = false
+    this.meshes.push(sideColliderN)
+    this.addBoxCollider(sideColliderN)
+
+    const sideColliderS = MeshBuilder.CreateBox('stationSideS', {
+      width: 28,
+      height: 1.5,
+      depth: 0.5,
+    }, this.scene)
+    sideColliderS.position = new Vector3(stationX, 0.75, stationZ - 11.5)
+    sideColliderS.isVisible = false
+    this.meshes.push(sideColliderS)
+    this.addBoxCollider(sideColliderS)
+
+    // --- Station Sign ---
+    this.createBuildingLabel('Fumorive Station', stationX, stationZ, 7)
+
+    console.log(`[SimpleMap] Spawn station created at (${stationX}, ${stationZ}), exit faces EAST → road_center_v`)
+  }
+
+  /**
+   * Sriwedari Park – simple parking / starting area
+   * A small open concrete pad next to the main path.
+   */
+  private createParkSpawnArea(): void {
+    const padX = 0
+    const padZ = -80
+
+    // Update spawn point
+    this.spawnPoint = { x: padX, z: padZ, rotationY: Math.PI / 2 }
+
+    const concreteMat = new PBRMaterial('parkPadConcrete', this.scene)
+    concreteMat.albedoColor = new Color3(0.7, 0.7, 0.68)
+    concreteMat.metallic = 0.05
+    concreteMat.roughness = 0.9
+
+    const stripeMat = new PBRMaterial('parkPadStripe', this.scene)
+    stripeMat.albedoColor = new Color3(0.95, 0.95, 0.95)
+    stripeMat.metallic = 0
+    stripeMat.roughness = 0.8
+
+    // Concrete pad
+    const pad = MeshBuilder.CreateGround('parkSpawnPad', {
+      width: 20,
+      height: 16,
+    }, this.scene)
+    pad.position = new Vector3(padX, 0.03, padZ)
+    pad.material = concreteMat
+    pad.receiveShadows = true
+    this.meshes.push(pad)
+
+    // Parking stripes
+    for (let i = -1; i <= 1; i++) {
+      const stripe = MeshBuilder.CreateGround(`parkStripe_${i}`, {
+        width: 0.25,
+        height: 14,
+      }, this.scene)
+      stripe.position = new Vector3(padX + i * 6, 0.04, padZ)
+      stripe.material = stripeMat
+      this.meshes.push(stripe)
+    }
+
+    // Connecting path to main paths
+    const connector = MeshBuilder.CreateGround('parkSpawnConnector', {
+      width: 12,
+      height: 34,
+    }, this.scene)
+    connector.position = new Vector3(padX, 0.015, padZ + 25)
+    connector.material = concreteMat
+    connector.receiveShadows = true
+    this.meshes.push(connector)
+
+    // Small "P" marker (parking sign post)
+    const postMat = new PBRMaterial('parkPostMat', this.scene)
+    postMat.albedoColor = new Color3(0.2, 0.4, 0.8)
+    postMat.metallic = 0.5
+    postMat.roughness = 0.4
+
+    const signPost = MeshBuilder.CreateCylinder('parkSignPost', {
+      diameter: 0.3,
+      height: 3,
+      tessellation: 8,
+    }, this.scene)
+    signPost.position = new Vector3(padX - 10, 1.5, padZ)
+    signPost.material = postMat
+    this.meshes.push(signPost)
+
+    const signPlate = MeshBuilder.CreateBox('parkSignPlate', {
+      width: 2,
+      height: 2,
+      depth: 0.15,
+    }, this.scene)
+    signPlate.position = new Vector3(padX - 10, 3.5, padZ)
+    signPlate.material = postMat
+    this.meshes.push(signPlate)
+
+    console.log(`[SimpleMap] Park spawn area created at (${padX}, ${padZ})`)
   }
 
   dispose(): void {

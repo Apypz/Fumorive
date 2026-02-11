@@ -14,8 +14,11 @@ import { EEGMonitoringWidget } from '../EEGMonitoringWidget'
 import { ViolationHUD } from '../ViolationHUD'
 import { WrongWayWarning } from '../WrongWayWarning'
 import { GearHUD } from '../GearHUD'
+import { WaypointHUD } from '../WaypointHUD'
 import { useGameStore } from '../../stores/gameStore'
 import { useSessionStore } from '../../stores/sessionStore'
+import { useWaypointStore } from '../../stores/waypointStore'
+import { useViolationStore } from '../../stores/violationStore'
 import '../../App.css'
 
 export default function Session() {
@@ -36,12 +39,16 @@ export default function Session() {
   const handleStartGame = () => {
     setShowMapSelection(false)
     setGameStarted(true)
+    // Reset pelanggaran setiap mulai sesi baru
+    useViolationStore.getState().resetViolations()
   }
 
   const handleBackToMapSelect = () => {
     setShowMapSelection(true)
     setGameStarted(false)
     setGameState('loading')
+    useWaypointStore.getState().resetWaypoints()
+    useViolationStore.getState().resetViolations()
   }
 
   return (
@@ -112,6 +119,9 @@ export default function Session() {
 
           {/* Wrong-way warning overlay */}
           <WrongWayWarning />
+
+          {/* Waypoint/Checkpoint navigation HUD */}
+          <WaypointHUD />
 
           {/* Camera Fatigue Monitor - bottom right corner */}
           <CameraFatigueMonitor 

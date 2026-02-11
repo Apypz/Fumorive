@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../stores/gameStore'
 import type { MapType } from '../game/types/map.types'
 
@@ -28,6 +29,7 @@ interface MapSelectionProps {
 }
 
 export function MapSelection({ onStartGame }: MapSelectionProps) {
+  const navigate = useNavigate()
   const { selectedMap, setSelectedMap } = useGameStore()
 
   const handleMapSelect = (mapId: MapType) => {
@@ -36,6 +38,10 @@ export function MapSelection({ onStartGame }: MapSelectionProps) {
 
   const handleStartGame = () => {
     onStartGame()
+  }
+
+  const handleBackToDashboard = () => {
+    navigate('/dashboard')
   }
 
   return (
@@ -66,9 +72,14 @@ export function MapSelection({ onStartGame }: MapSelectionProps) {
           ))}
         </div>
 
-        <button style={styles.startButton} onClick={handleStartGame}>
-          MULAI GAME
-        </button>
+        <div style={styles.buttonGroup}>
+          <button style={styles.startButton} onClick={handleStartGame}>
+            MULAI GAME
+          </button>
+          <button style={styles.backButton} onClick={handleBackToDashboard}>
+            KEMBALI KE DASHBOARD
+          </button>
+        </div>
 
         <div style={styles.controlsHint}>
           <p>Kontrol: K untuk nyalakan mesin | WASD untuk bergerak | SPACE/SHIFT untuk rem | V untuk kamera | C untuk steering</p>
@@ -161,6 +172,13 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 'bold',
     letterSpacing: '0.05em',
   },
+  buttonGroup: {
+    display: 'flex',
+    gap: '1rem',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    marginBottom: '1rem',
+  },
   startButton: {
     backgroundColor: '#3b82f6',
     color: '#fff',
@@ -173,6 +191,18 @@ const styles: Record<string, React.CSSProperties> = {
     transition: 'all 0.3s ease',
     letterSpacing: '0.1em',
     boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)',
+  },
+  backButton: {
+    backgroundColor: 'rgba(107, 114, 128, 0.8)',
+    color: '#fff',
+    border: '2px solid rgba(255, 255, 255, 0.2)',
+    padding: '1rem 2.5rem',
+    fontSize: '1.1rem',
+    fontWeight: 'bold',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    letterSpacing: '0.05em',
   },
   controlsHint: {
     marginTop: '2rem',

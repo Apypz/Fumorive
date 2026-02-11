@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react'
 import { GameEngine, DemoScene } from '../game'
 import { useGameStore } from '../stores/gameStore'
 import { useViolationStore } from '../stores/violationStore'
+import { useWaypointStore } from '../stores/waypointStore'
 
 export function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -100,6 +101,40 @@ export function GameCanvas() {
         if (wrongWayNow && wrongWayViolationCooldown <= 0) {
           useViolationStore.getState().addViolation('wrong-way')
           wrongWayViolationCooldown = 5 // 5 second cooldown between wrong-way violations
+        }
+
+        // Update waypoint store for HUD
+        const wpData = demoScene.getWaypointSessionData()
+        if (wpData) {
+          useWaypointStore.getState().setSessionData(wpData)
+          const dist = demoScene.getDistanceToActiveWaypoint()
+          useWaypointStore.getState().setDistanceToActive(dist)
+          const activePos = demoScene.getActiveWaypointPosition()
+          if (activePos) {
+            useWaypointStore.getState().setActiveWaypointPos(activePos.x, activePos.z)
+          }
+          // Push car position & heading for nav arrow
+          const carPos = demoScene.getCarPosition()
+          const carHdg = demoScene.getCarHeading()
+          useWaypointStore.getState().setCarPose(carPos.x, carPos.z, carHdg)
+        }
+
+        // Check waypoint system for reach/complete events
+        const wpSystem = demoScene.getWaypointSystem()
+        if (wpSystem) {
+          const sessionInfo = wpSystem.getSessionData()
+          // Detect newly reached waypoints
+          const lastReached = sessionInfo.reachedCount - 1
+          if (lastReached >= 0) {
+            const storeLastReached = useWaypointStore.getState().lastReachedIndex
+            if (lastReached !== storeLastReached) {
+              useWaypointStore.getState().setLastReachedIndex(lastReached)
+            }
+          }
+          // Detect route completion
+          if (sessionInfo.isCompleted && !useWaypointStore.getState().isRouteCompleted) {
+            useWaypointStore.getState().setRouteCompleted(sessionInfo.elapsedTime)
+          }
         }
 
         // Update FPS counter every 0.5 seconds
