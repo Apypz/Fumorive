@@ -20,6 +20,7 @@ from app.api.routes.websocket import router as websocket_router
 from app.api.routes.eeg import router as eeg_router
 from app.api.routes.face import router as face_router
 from app.api.routes.users import router as users_router
+from app.api.routes.alerts import router as alerts_router
 
 # Configure logging
 logging.basicConfig(
@@ -55,7 +56,6 @@ Real-time fatigue detection system using:
     redoc_url="/api/redoc",
     contact={
         "name": "Fumorive Team",
-        "email": "[EMAIL_ADDRESS]",
     },
     license_info={
         "name": "MIT License",
@@ -155,6 +155,7 @@ app.include_router(sessions_router, prefix=API_V1_PREFIX)
 app.include_router(websocket_router, prefix=API_V1_PREFIX)
 app.include_router(eeg_router, prefix=API_V1_PREFIX)
 app.include_router(face_router, prefix=API_V1_PREFIX)
+app.include_router(alerts_router, prefix=API_V1_PREFIX)
 
 # ============================================
 # HEALTH CHECK ENDPOINTS

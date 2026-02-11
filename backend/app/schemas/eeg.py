@@ -128,6 +128,35 @@ class AlertData(BaseModel):
     trigger_reason: str
 
 
+class AlertResponse(BaseModel):
+    """Schema for alert API response with ID"""
+    id: int
+    session_id: UUID
+    timestamp: datetime
+    alert_level: str
+    fatigue_score: float
+    eeg_contribution: float
+    face_contribution: float
+    trigger_reason: str
+    acknowledged: bool
+    
+    model_config = {"from_attributes": True}
+
+
+class AlertUpdate(BaseModel):
+    """Schema for updating alert (acknowledge/dismiss)"""
+    acknowledged: Optional[bool] = None
+    trigger_reason: Optional[str] = None
+
+
+class AlertList(BaseModel):
+    """Schema for paginated alert list"""
+    total: int
+    limit: int
+    offset: int
+    alerts: list[AlertResponse]
+
+
 class GameEventData(BaseModel):
     """Schema for game event data"""
     session_id: UUID

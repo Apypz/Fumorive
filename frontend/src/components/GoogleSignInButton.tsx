@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { signInWithGoogle } from '../utils/auth';
+import { useUserStore } from '../stores/userStore';
 import './GoogleSignInButton.css';
 
 interface GoogleSignInButtonProps {
@@ -18,13 +18,15 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
 }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const loginWithGoogle = useUserStore((state) => state.loginWithGoogle);
 
     const handleGoogleSignIn = async () => {
         setIsLoading(true);
         setError(null);
 
         try {
-            await signInWithGoogle();
+            // Use the store's loginWithGoogle which handles token + user state
+            await loginWithGoogle();
             if (onSuccess) {
                 onSuccess();
             }
@@ -38,6 +40,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
             setIsLoading(false);
         }
     };
+
 
     return (
         <div className="google-signin-container">

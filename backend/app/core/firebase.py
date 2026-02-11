@@ -77,7 +77,13 @@ def verify_firebase_token(id_token: str) -> Optional[Dict[str, Any]]:
     
     try:
         # Verify the token with Firebase
-        decoded_token = auth.verify_id_token(id_token)
+        # Add leeway (tolerance) for clock skew between client and server
+        # This prevents "Token used too early" errors from minor time differences
+        decoded_token = auth.verify_id_token(
+            id_token,
+            check_revoked=False,  # Don't check revocation for performance
+            clock_skew_seconds=10  # Allow 10 seconds of clock difference
+        )
         
         # Extract user information
         user_info = {
