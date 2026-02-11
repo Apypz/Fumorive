@@ -2,11 +2,9 @@ import { useGameStore } from '../stores/gameStore'
 
 export function SteeringWheelHUD() {
   const { steeringAngle, cameraMode } = useGameStore()
-  
-  // Don't show in first-person mode
-  if (cameraMode === 'first-person') {
-    return null
-  }
+
+  // Hide in first-person view (real steering wheel already visible in cockpit)
+  if (cameraMode === 'first-person') return null
 
   // Convert steering input (-1 to 1) to rotation degrees
   // Max rotation is about 120 degrees each way for realistic steering

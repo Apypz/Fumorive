@@ -146,10 +146,14 @@ async def relay_eeg_to_clients(session_id: str, data: Dict[str, Any]) -> int:
         Number of clients that received the data
     """
     # Prepare message for WebSocket clients
+    # Frontend expects type: "eeg_data" with flattened structure
     message = {
-        "type": "eeg_stream",
-        "session_id": session_id,
-        "data": data
+        "type": "eeg_data",
+        "session_id": session_id,  # Already string from caller
+        "timestamp": data.get("timestamp"),
+        "sample_rate": data.get("sample_rate"),
+        "channels": data.get("channels"),
+        "processed": data.get("processed")
     }
     
     # Broadcast to all clients connected to this session

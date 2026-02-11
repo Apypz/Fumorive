@@ -40,29 +40,38 @@ async def update_user_me(
     # Check if anything to update
     if not user_update.model_dump(exclude_unset=True):
         return current_user
+    
+    # Re-query user from this session to avoid detached instance error
+    user = db.query(User).filter(User.id == current_user.id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
         
     # Update fields
     if user_update.full_name is not None:
-        current_user.full_name = user_update.full_name
+        user.full_name = user_update.full_name
         
     if user_update.profile_picture is not None:
-        current_user.profile_picture = user_update.profile_picture
+        user.profile_picture = user_update.profile_picture
         
     # Commit changes
     db.commit()
-    db.refresh(current_user)
+    db.refresh(user)
     
     # Update cache
     user_cache_data = {
-        "id": str(current_user.id),
-        "email": current_user.email,
-        "hashed_password": current_user.hashed_password,
-        "full_name": current_user.full_name,
-        "role": current_user.role,
-        "is_active": current_user.is_active,
-        "profile_picture": current_user.profile_picture
+        "id": str(user.id),
+        "email": user.email,
+        "hashed_password": user.hashed_password,
+        "full_name": user.full_name,
+        "role": user.role,
+        "is_active": user.is_active,
+        "profile_picture": user.profile_picture
     }
     
-    cache_user_session(current_user.id, user_cache_data)
+    cache_user_session(user.id, user_cache_data)
     
-    return current_user
+    return user
+

@@ -41,7 +41,7 @@ export const DEFAULT_MOUSE_CONFIG: MouseControlConfig = {
    * Lower value = more sensitive, higher value = less sensitive.
    * Recommended range: 100-300
    */
-  sensitivity: 150,
+  sensitivity: 200,
   
   /**
    * How fast steering returns to center when mouse stops moving.

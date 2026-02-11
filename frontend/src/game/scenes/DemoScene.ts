@@ -19,6 +19,10 @@ import { PostProcessingPipeline } from '../engine/PostProcessingPipeline'
 import { InputManager } from '../engine/InputManager'
 import { CarController } from '../components/car'
 import { SimpleMap } from '../components/SimpleMap'
+import { WrongWayDetector } from '../systems/WrongWayDetector'
+import { WaypointSystem, getRandomRoute } from '../systems/WaypointSystem'
+import { WaypointMarkers } from '../systems/WaypointMarkers'
+import type { WaypointSessionData } from '../systems/WaypointSystem'
 
 export type { MapType }
 
@@ -45,6 +49,13 @@ export class DemoScene implements GameScene {
   private onControlModeChange: ((mode: ControlMode) => void) | null = null
   // Engine state change callback
   private onEngineStateChange: ((running: boolean) => void) | null = null
+  // Collision callback
+  private onCollisionCallback: ((impactVelocity: number) => void) | null = null
+  // Wrong-way detection
+  private wrongWayDetector: WrongWayDetector = new WrongWayDetector()
+  // Waypoint navigation system
+  private waypointSystem: WaypointSystem | null = null
+  private waypointMarkers: WaypointMarkers | null = null
 
   constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'solo-city') {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
@@ -81,6 +92,16 @@ export class DemoScene implements GameScene {
     // Also set on car controller if already initialized
     if (this.carController) {
       this.carController.onEngineStateChanged(callback)
+    }
+  }
+
+  /**
+   * Set callback for collision events (to update violation system)
+   */
+  setOnCollision(callback: (impactVelocity: number) => void): void {
+    this.onCollisionCallback = callback
+    if (this.carController) {
+      this.carController.onCollisionEvent(callback)
     }
   }
 
@@ -140,6 +161,87 @@ export class DemoScene implements GameScene {
     return this.carController?.isEngineRunning() ?? false
   }
 
+  /**
+   * Get current gear number (-1=R, 0=N, 1-5)
+   */
+  getCurrentGear(): number {
+    return this.carController?.getCurrentGear() ?? 0
+  }
+
+  /**
+   * Get gear display name (R, N, 1-5)
+   */
+  getGearName(): string {
+    return this.carController?.getGearName() ?? 'N'
+  }
+
+  /**
+   * Get transmission mode
+   */
+  getTransmissionMode(): 'automatic' | 'manual' {
+    return this.carController?.getTransmissionMode() ?? 'automatic'
+  }
+
+  /**
+   * Get engine RPM
+   */
+  getRPM(): number {
+    return this.carController?.getRPM() ?? 800
+  }
+
+  /**
+   * Get whether car is driving the wrong way (against traffic)
+   */
+  isWrongWay(): boolean {
+    return this.wrongWayDetector.isWrongWay
+  }
+
+  /**
+   * Get the waypoint system instance
+   */
+  getWaypointSystem(): WaypointSystem | null {
+    return this.waypointSystem
+  }
+
+  /**
+   * Get waypoint session data for UI
+   */
+  getWaypointSessionData(): WaypointSessionData | null {
+    return this.waypointSystem?.getSessionData() ?? null
+  }
+
+  /**
+   * Get distance from car to active waypoint
+   */
+  getDistanceToActiveWaypoint(): number {
+    if (!this.waypointSystem || !this.carController) return -1
+    return this.waypointSystem.getDistanceToActive(this.carController.getPosition())
+  }
+
+  /**
+   * Get active waypoint position {x, z} or null
+   */
+  getActiveWaypointPosition(): { x: number; z: number } | null {
+    const wp = this.waypointSystem?.getActiveWaypoint()
+    if (!wp) return null
+    return { x: wp.position.x, z: wp.position.z }
+  }
+
+  /**
+   * Get car heading in radians (for navigation arrow)
+   */
+  getCarHeading(): number {
+    return this.carController?.getHeading() ?? 0
+  }
+
+  /**
+   * Get car world position {x, z}
+   */
+  getCarPosition(): { x: number; z: number } {
+    const pos = this.carController?.getPosition()
+    return pos ? { x: pos.x, z: pos.z } : { x: 0, z: 0 }
+  }
+
   async init(context: SceneContext): Promise<void> {
     this.scene = context.scene
     this.canvas = context.canvas
@@ -189,6 +291,54 @@ export class DemoScene implements GameScene {
     // Create demo objects (optional, can be removed if you only want the car)
     // this.createDemoObjects()
 
+    // Initialize waypoint system only for Solo City
+    if (this.mapType === 'solo-city') {
+      const route = getRandomRoute(this.mapType)
+      this.waypointSystem = new WaypointSystem(route)
+      console.log(`[DemoScene] Waypoint route selected: ${route.name} (${route.waypoints.length} checkpoints)`)
+
+      // Create 3D waypoint markers in the scene
+      this.waypointMarkers = new WaypointMarkers(this.scene!)
+      this.waypointMarkers.createMarkers(route.waypoints)
+
+    // Listen for waypoint state changes to update 3D markers
+    this.waypointSystem.setOnWaypointReached((_wpId, index, total) => {
+      console.log(`[DemoScene] Checkpoint ${index + 1}/${total} reached!`)
+      // Update all marker states
+      if (this.waypointSystem && this.waypointMarkers) {
+        const data = this.waypointSystem.getSessionData()
+        this.waypointMarkers.updateStates(
+          data.waypointProgress.map(p => ({
+            waypointId: p.waypointId,
+            state: p.state,
+          }))
+        )
+      }
+    })
+
+    this.waypointSystem.setOnWaypointChanged((_currentIndex) => {
+      // Update marker states when active waypoint changes
+      if (this.waypointSystem && this.waypointMarkers) {
+        const data = this.waypointSystem.getSessionData()
+        this.waypointMarkers.updateStates(
+          data.waypointProgress.map(p => ({
+            waypointId: p.waypointId,
+            state: p.state,
+          }))
+        )
+      }
+    })
+
+    this.waypointSystem.setOnRouteCompleted((elapsedTime, missed) => {
+      console.log(`[DemoScene] Route completed! Time: ${elapsedTime.toFixed(1)}s, Missed: ${missed}`)
+    })
+
+      // Auto-start the waypoint timer
+      this.waypointSystem.start()
+    } else {
+      console.log('[DemoScene] Sriwedari Park: waypoint system disabled')
+    }
+
     console.log('[DemoScene] Initialized')
   }
 
@@ -222,14 +372,17 @@ export class DemoScene implements GameScene {
         const rootMesh = result.meshes[0]
         this.carMesh = rootMesh
 
-        // Position the car on road_center_v (vertical road at x:50)
-        rootMesh.position = new Vector3(50, 0, 50)
+        // Position car at the map's spawn station / garage
+        const spawn = this.simpleMap?.getSpawnPoint() ?? { x: 50, z: 50, rotationY: Math.PI / 2 }
+        rootMesh.position = new Vector3(spawn.x, 0, spawn.z)
         
         // Scale - model sudah di-resize di Blender, gunakan skala 1.0
         rootMesh.scaling = new Vector3(1.0, 1.0, 1.0)
         
-        // Rotate car to face North (+Z direction) - adjust based on model's default orientation
-        rootMesh.rotation.y = Math.PI / 2
+        // GLB models import with rotationQuaternion which overrides euler rotation.
+        // Clear it so rotation.y is respected, then CarController.initFromMesh reads it.
+        rootMesh.rotationQuaternion = null
+        rootMesh.rotation.y = spawn.rotationY
         
         // Enable collision on car mesh
         rootMesh.checkCollisions = true
@@ -297,6 +450,11 @@ export class DemoScene implements GameScene {
         // Set engine state change callback
         if (this.onEngineStateChange) {
           this.carController.onEngineStateChanged(this.onEngineStateChange)
+        }
+
+        // Set collision callback
+        if (this.onCollisionCallback) {
+          this.carController.onCollisionEvent(this.onCollisionCallback)
         }
 
         // Set map reference for collision detection
@@ -426,6 +584,19 @@ export class DemoScene implements GameScene {
   update(deltaTime: number): void {
     // Update car controller (physics, movement, and camera)
     this.carController?.update(deltaTime)
+
+    // Update wrong-way detection
+    if (this.carController) {
+      const position = this.carController.getPosition()
+      const heading = this.carController.getHeading()
+      const speed = this.carController.getSpeed()
+      this.wrongWayDetector.update(position, heading, speed, deltaTime)
+
+      // Update waypoint system
+      if (this.waypointSystem) {
+        this.waypointSystem.update(position, deltaTime)
+      }
+    }
   }
 
   dispose(): void {
@@ -446,6 +617,9 @@ export class DemoScene implements GameScene {
       this.carMesh = null
     }
 
+    this.waypointMarkers?.dispose()
+    this.waypointMarkers = null
+    this.waypointSystem = null
     this.onCameraModeChange = null
     this.onControlModeChange = null
     this.canvas = null

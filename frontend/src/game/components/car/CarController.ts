@@ -10,6 +10,7 @@ import {
   AbstractMesh,
   KeyboardEventTypes,
   Camera,
+  Vector3,
 } from '@babylonjs/core'
 import type { 
   CameraMode, 
@@ -77,6 +78,9 @@ export class CarController {
   private engineRunning: boolean = false
   private onEngineStateChange: ((running: boolean) => void) | null = null
   
+  // Collision callback for external systems (violation tracking)
+  private onCollisionEventCallback: ((impactVelocity: number) => void) | null = null
+  
   // Control state
   private currentControlMode: ControlMode = 'keyboard'
   private onControlModeChange: ((mode: ControlMode) => void) | null = null
@@ -140,15 +144,26 @@ export class CarController {
     // Initialize drift particle system
     this.driftParticles = new DriftParticleSystem(scene, carMesh)
     
-    // Setup collision callback for crash sound
+    // Setup collision callback for crash sound + external notification
     this.physics.onCollision((impactVelocity) => {
       this.engineAudio.playCrashSound(impactVelocity)
+      // Notify external systems (violation tracking)
+      if (this.onCollisionEventCallback) {
+        this.onCollisionEventCallback(impactVelocity)
+      }
     })
     
     // Setup input handling
     this.setupInput()
     
     console.log('[CarController] Initialized with modular physics and camera')
+  }
+
+  /**
+   * Set callback for collision events (external systems like violation tracking)
+   */
+  onCollisionEvent(callback: (impactVelocity: number) => void): void {
+    this.onCollisionEventCallback = callback
   }
 
   /**
@@ -391,6 +406,18 @@ export class CarController {
           // Toggle engine on/off
           if (pressed) this.toggleEngine()
           break
+        case 'x':
+          // Toggle transmission mode (automatic/manual)
+          if (pressed) this.physics.toggleTransmissionMode()
+          break
+        case 'e':
+          // Shift up (manual mode)
+          if (pressed) this.physics.shiftUp()
+          break
+        case 'q':
+          // Shift down (manual mode)
+          if (pressed) this.physics.shiftDown()
+          break
       }
     })
   }
@@ -515,6 +542,30 @@ export class CarController {
 
   getSteeringInput(): number {
     return this.input.steering
+  }
+
+  getHeading(): number {
+    return this.physics.getHeading()
+  }
+
+  getPosition(): Vector3 {
+    return this.carMesh.position.clone()
+  }
+
+  getCurrentGear(): number {
+    return this.physics.getCurrentGear()
+  }
+
+  getGearName(): string {
+    return this.physics.getGearName()
+  }
+
+  getTransmissionMode(): 'automatic' | 'manual' {
+    return this.physics.getTransmissionMode()
+  }
+
+  getRPM(): number {
+    return this.physics.getRPM()
   }
 
   /**

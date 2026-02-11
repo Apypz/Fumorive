@@ -20,6 +20,7 @@ export class SimpleMap {
   private lightingSetup: LightingSetup | null
   private meshes: AbstractMesh[] = []
   private colliders: Collider[] = []
+  private spawnPoint: { x: number; z: number; rotationY: number } = { x: 0, z: 0, rotationY: 0 }
   
   // Map boundaries - diperluas untuk objektif game
   private mapBounds = {
@@ -40,6 +41,11 @@ export class SimpleMap {
 
   getMapBounds() {
     return this.mapBounds
+  }
+
+  /** Get the spawn point for the car (position + facing direction) */
+  getSpawnPoint() {
+    return this.spawnPoint
   }
 
   checkCollision(position: Vector3, radius: number = 1.5): { collided: boolean; normal: Vector3; penetration: number } {
@@ -115,6 +121,7 @@ export class SimpleMap {
     this.createLake()
     this.createTrees()
     this.createBushes()
+    this.createSpawnStation()
     this.createMapBoundaryWalls()
     
     console.log('[SimpleMap] Solo City map created with', this.colliders.length, 'colliders')
@@ -131,6 +138,7 @@ export class SimpleMap {
     this.createParkBenches()
     this.createParkFountain()
     this.createParkLamps()
+    this.createParkSpawnArea()
     this.createMapBoundaryWalls()
     
     console.log('[SimpleMap] Sriwedari Park map created with', this.colliders.length, 'colliders')
@@ -535,49 +543,45 @@ export class SimpleMap {
     // Ring road segments forming a large circle/square around central district
     const ringRadius = 280
     
-    // North ring segment
-    this.createRoadSegment('ring_north', 0, 300, 560, ringRoadWidth, roadMaterial)
+    // North ring segment (extended to reach ring_east at x=284)
+    this.createRoadSegment('ring_north', 2, 310, 564, ringRoadWidth, roadMaterial)
     
-    // South ring segment
-    this.createRoadSegment('ring_south', 0, -500, 560, ringRoadWidth, roadMaterial)
+    // South ring segment (extended to reach ring_east at x=284)
+    this.createRoadSegment('ring_south', 2, -506, 564, ringRoadWidth, roadMaterial)
     
     // East ring segment
-    this.createRoadSegment('ring_east', 284, -100, ringRoadWidth, 800, roadMaterial)
+    this.createRoadSegment('ring_east', 290, -100, ringRoadWidth, 800, roadMaterial)
     
     // West ring segment
-    this.createRoadSegment('ring_west', -280, -100, ringRoadWidth, 800, roadMaterial)
+    this.createRoadSegment('ring_west', -286, -100, ringRoadWidth, 800, roadMaterial)
 
     // === RADIAL ROADS (Connecting Center to Ring) ===
     
     // North radial - extends road_center_v to ring
     this.createRoadSegment('radial_north', 50, 240, roadWidth, 180, roadMaterial)
     
-    // South radial - extends road_center_v to ring
-    this.createRoadSegment('radial_south', 50, -350, roadWidth, 300, roadMaterial)
+    // South radial - extends road_center_v to ring (shifted north and extended to connect)
+    this.createRoadSegment('radial_south', 50, -343, roadWidth, 326, roadMaterial)
     
     // East radial - extends from center to ring
-    this.createRoadSegment('radial_east', 225, -100, 118, roadWidth, roadMaterial)
+    this.createRoadSegment('radial_east', 190, -100, 200, roadWidth, roadMaterial)
     
     // West radial - extends from center to ring
-    this.createRoadSegment('radial_west', -180, 50, 200, roadWidth, roadMaterial)
+    this.createRoadSegment('radial_west', -183, 50, 206, roadWidth, roadMaterial)
 
     // === SUBURBAN ROADS (Outside Ring) ===
     
     // North suburban area
-    this.createRoadSegment('suburb_north_1', -150, 300, 200, roadWidth, roadMaterial)
-    this.createRoadSegment('suburb_north_2', 150, 300, 200, roadWidth, roadMaterial)
+    this.createRoadSegment('suburb_north_1', -150, 310, 200, roadWidth, roadMaterial)
+    this.createRoadSegment('suburb_north_2', 150, 310, 200, roadWidth, roadMaterial)
     
     // South suburban area
-    this.createRoadSegment('suburb_south_1', -150, -500, 200, roadWidth, roadMaterial)
-    this.createRoadSegment('suburb_south_2', 150, -500, 200, roadWidth, roadMaterial)
+    this.createRoadSegment('suburb_south_1', -150, -506, 200, roadWidth, roadMaterial)
+    this.createRoadSegment('suburb_south_2', 150, -506, 200, roadWidth, roadMaterial)
     
     // East suburban
-    this.createRoadSegment('suburb_east_1', 284, 100, roadWidth, 180, roadMaterial)
-    this.createRoadSegment('suburb_east_2', 284, -300, roadWidth, 180, roadMaterial)
-    
-    // West suburban
-    this.createRoadSegment('suburb_west_1', -280, 100, roadWidth, 180, roadMaterial)
-    this.createRoadSegment('suburb_west_2', -280, -300, roadWidth, 180, roadMaterial)
+    this.createRoadSegment('suburb_east_1', 290, 100, roadWidth, 180, roadMaterial)
+    this.createRoadSegment('suburb_east_2', 290, -300, roadWidth, 180, roadMaterial)
 
     // === JUNCTIONS ===
     
@@ -594,26 +598,24 @@ export class SimpleMap {
     this.createJunction(50, -178, roadWidth)
     
     // Ring road intersections with radial roads
-    this.createJunction(50, 300, ringRoadWidth)    // North ring + radial_north
-    this.createJunction(50, -500, ringRoadWidth)   // South ring + radial_south
-    this.createJunction(284, -100, ringRoadWidth)  // East ring + radial_east
-    this.createJunction(-280, 50, ringRoadWidth)   // West ring + radial_west
+    this.createJunction(50, 310, ringRoadWidth)    // North ring + radial_north
+    this.createJunction(50, -506, ringRoadWidth)   // South ring + radial_south
+    this.createJunction(290, -100, ringRoadWidth)  // East ring + radial_east
+    this.createJunction(-286, 50, ringRoadWidth)   // West ring + radial_west
     
     // Ring road corners
-    this.createJunction(284, 300, ringRoadWidth)   // NE corner
-    this.createJunction(-280, 300, ringRoadWidth)  // NW corner
-    this.createJunction(284, -500, ringRoadWidth)  // SE corner
-    this.createJunction(-280, -500, ringRoadWidth) // SW corner
+    this.createJunction(290, 310, ringRoadWidth)   // NE corner
+    this.createJunction(-286, 310, ringRoadWidth)  // NW corner
+    this.createJunction(290, -506, ringRoadWidth)  // SE corner
+    this.createJunction(-286, -506, ringRoadWidth) // SW corner
     
     // Suburban intersections
-    this.createJunction(-150, 300, roadWidth)  // North suburb west
-    this.createJunction(150, 300, roadWidth)   // North suburb east
-    this.createJunction(-150, -500, roadWidth) // South suburb west
-    this.createJunction(150, -500, roadWidth)  // South suburb east
-    this.createJunction(284, 100, roadWidth)   // East suburb north
-    this.createJunction(284, -300, roadWidth)  // East suburb south
-    this.createJunction(-280, 100, roadWidth)  // West suburb north
-    this.createJunction(-280, -300, roadWidth) // West suburb south
+    this.createJunction(-150, 310, roadWidth)  // North suburb west
+    this.createJunction(150, 310, roadWidth)   // North suburb east
+    this.createJunction(-150, -506, roadWidth) // South suburb west
+    this.createJunction(150, -506, roadWidth)  // South suburb east
+    this.createJunction(290, 100, roadWidth)   // East suburb north
+    this.createJunction(290, -300, roadWidth)  // East suburb south
 
     // Road markings
     this.createRoadMarkings()
@@ -693,16 +695,16 @@ export class SimpleMap {
       { x: 135, z: -100, length: 70 },
       { x: 110, z: -178, length: 130 },
       // Ring road
-      { x: 0, z: 300, length: 560 },
-      { x: 0, z: -500, length: 560 },
+      { x: 2, z: 310, length: 564 },
+      { x: 2, z: -506, length: 564 },
       // Radial roads (horizontal parts)
-      { x: 225, z: -100, length: 118 },
-      { x: -180, z: 50, length: 200 },
+      { x: 190, z: -100, length: 200 },
+      { x: -183, z: 50, length: 206 },
       // Suburban
-      { x: -150, z: 300, length: 200 },
-      { x: 150, z: 300, length: 200 },
-      { x: -150, z: -500, length: 200 },
-      { x: 150, z: -500, length: 200 },
+      { x: -150, z: 310, length: 200 },
+      { x: 150, z: 310, length: 200 },
+      { x: -150, z: -506, length: 200 },
+      { x: 150, z: -506, length: 200 },
     ]
 
     horizontalRoads.forEach(road => {
@@ -726,16 +728,14 @@ export class SimpleMap {
       { x: 90, z: -27, length: 170 },
       { x: 170, z: -139, length: 94 },
       // Ring road
-      { x: 284, z: -100, length: 800 },
-      { x: -280, z: -100, length: 800 },
+      { x: 290, z: -100, length: 800 },
+      { x: -286, z: -100, length: 800 },
       // Radial roads
       { x: 50, z: 240, length: 180 },
-      { x: 50, z: -350, length: 300 },
+      { x: 50, z: -343, length: 326 },
       // Suburban
-      { x: 284, z: 100, length: 180 },
-      { x: 284, z: -300, length: 180 },
-      { x: -280, z: 100, length: 180 },
-      { x: -280, z: -300, length: 180 },
+      { x: 290, z: 100, length: 180 },
+      { x: 290, z: -300, length: 180 },
     ]
 
     verticalRoads.forEach(road => {
@@ -766,9 +766,8 @@ export class SimpleMap {
     const ringOffset = ringRoadWidth / 2 + barrierWidth / 2
     const junctionGap = roadWidth + 2 // Gap size at intersections
 
-    // All junction positions (where barriers should have gaps)
-    const junctions = [
-      // Central district
+    // Central district junctions (normal road width offset)
+    const centralJunctions = [
       { x: -80, z: 150 },
       { x: 50, z: 150 },
       { x: -80, z: 50 },
@@ -780,26 +779,22 @@ export class SimpleMap {
       { x: 170, z: -100 },
       { x: 170, z: -178 },
       { x: 50, z: -178 },
-      // Ring road intersections
-      { x: 50, z: 300 },
-      { x: 50, z: -500 },
-      { x: 284, z: -100 },
-      { x: -280, z: 50 },
-      // Ring corners
-      { x: 284, z: 300 },
-      { x: -280, z: 300 },
-      { x: 284, z: -500 },
-      { x: -280, z: -500 },
-      // Suburban
-      { x: -150, z: 300 },
-      { x: 150, z: 300 },
-      { x: -150, z: -500 },
-      { x: 150, z: -500 },
-      { x: 284, z: 100 },
-      { x: 284, z: -300 },
-      { x: -280, z: 100 },
-      { x: -280, z: -300 },
+      // Station exit junction (driveway meets road_center_v)
+      { x: 50, z: 73 },
     ]
+
+    // Ring road junctions (ring road width offset)
+    const ringJunctions = [
+      // Ring road intersections with radial
+      { x: 50, z: 310 },     // ring_north + radial_north (corners handled separately)
+      { x: 50, z: -506 },    // ring_south + radial_south
+      { x: 290, z: -100 },   // ring_east + radial_east
+      { x: -286, z: 50 },    // ring_west + radial_west
+      // Ring corners - handled manually, barriers end before corners
+    ]
+
+    // Combined junctions for barrier gap calculation
+    const junctions = [...centralJunctions, ...ringJunctions]
 
     // Horizontal roads with their barrier positions
     const horizontalRoads = [
@@ -809,17 +804,13 @@ export class SimpleMap {
       { x: -10, z: -50, length: 120, offset: offset },
       { x: 135, z: -100, length: 70, offset: offset },
       { x: 110, z: -178, length: 130, offset: offset },
-      // Ring road
-      { x: 0, z: 300, length: 560, offset: ringOffset },
-      { x: 0, z: -500, length: 560, offset: ringOffset },
-      // Radial horizontal
-      { x: 225, z: -100, length: 118, offset: offset },
-      { x: -180, z: 50, length: 200, offset: offset },
-      // Suburban
-      { x: -150, z: 300, length: 200, offset: offset },
-      { x: 150, z: 300, length: 200, offset: offset },
-      { x: -150, z: -500, length: 200, offset: offset },
-      { x: 150, z: -500, length: 200, offset: offset },
+      // Ring road (barriers end before corners for clean fit)
+      { x: 2, z: 310, length: 556, offset: ringOffset },   // from x=-276 to x=280
+      { x: 2, z: -506, length: 556, offset: ringOffset },  // from x=-276 to x=280
+      // Radial horizontal - adjusted so barriers end at ring road edge
+      { x: 185, z: -100, length: 190, offset: offset },  // ends at x=280, before ring_east
+      { x: -178, z: 50, length: 196, offset: offset },   // starts at x=-276, after ring_west
+      // Note: suburban roads at z:300 and z:-500 share barriers with ring road
     ]
 
     // Create barriers for horizontal roads with gaps at junctions
@@ -864,12 +855,12 @@ export class SimpleMap {
       { x: -80, z: 50, length: 200, offset: offset },
       { x: 90, z: -27, length: 170, offset: offset },
       { x: 170, z: -139, length: 94, offset: offset },
-      // Ring road (covers full east/west edges, no need for separate suburban barriers)
-      { x: 284, z: -100, length: 800, offset: ringOffset },
-      { x: -280, z: -100, length: 800, offset: ringOffset },
-      // Radial vertical
-      { x: 50, z: 240, length: 180, offset: offset },
-      { x: 50, z: -350, length: 300, offset: offset },
+      // Ring road (barriers end before corners for clean fit)
+      { x: 290, z: -98, length: 796, offset: ringOffset },  // from z=-496 to z=300
+      { x: -286, z: -98, length: 796, offset: ringOffset }, // from z=-496 to z=300
+      // Radial vertical - adjusted so barriers end at ring road edge
+      { x: 50, z: 230, length: 140, offset: offset },   // start=171, end=299 (after road_top, before ring_north)
+      { x: 50, z: -341, length: 310, offset: offset },  // start=-491, end=-191 (before junction at -178)
       // Note: suburban roads at x:280 and x:-280 share barriers with ring road
     ]
 
@@ -925,6 +916,17 @@ export class SimpleMap {
     const cornerSize = width + 0.5 // Size of corner piece
 
     junctions.forEach((junction, i) => {
+      // Skip radial-ring junctions - custom corners handled in createTJunctionBarriers
+      if (junction.x === 50 && junction.z === 310) return   // radial_north + ring_north
+      if (junction.x === 50 && junction.z === -506) return  // radial_south + ring_south
+      if (junction.x === 290 && junction.z === -100) return // radial_east + ring_east
+      if (junction.x === -286 && junction.z === 50) return  // radial_west + ring_west
+      // Skip ring corners - custom handling in createTJunctionBarriers
+      if (junction.x === 290 && junction.z === 310) return   // NE corner
+      if (junction.x === -286 && junction.z === 310) return  // NW corner
+      if (junction.x === 290 && junction.z === -506) return  // SE corner
+      if (junction.x === -286 && junction.z === -506) return // SW corner
+
       // Create 4 corner pieces for each junction (NE, NW, SE, SW)
       const corners = [
         { x: junction.x + offset, z: junction.z + offset, name: 'NE' },  // North-East
@@ -1017,7 +1019,7 @@ export class SimpleMap {
     this.addBoxCollider(blockNorth1)
 
     // T-junction at road_center_v & road_top (50, 150)
-    // Block going straight (east) and turning left (north)
+    // Block going straight (east) - north is now open for radial_north access
     
     // Barrier blocking straight path (east side of junction)
     const blockEast2 = MeshBuilder.CreateBox('tjunc_50_150_block_east', {
@@ -1032,18 +1034,7 @@ export class SimpleMap {
     this.meshes.push(blockEast2)
     this.addBoxCollider(blockEast2)
 
-    // Barrier blocking left turn (north side of junction)
-    const blockNorth2 = MeshBuilder.CreateBox('tjunc_50_150_block_north', {
-      width: roadWidth,
-      height: height,
-      depth: width,
-    }, this.scene)
-    blockNorth2.position = new Vector3(50, height / 2, 150 + offset)
-    blockNorth2.material = material
-    blockNorth2.receiveShadows = true
-    this.lightingSetup?.addShadowCaster(blockNorth2)
-    this.meshes.push(blockNorth2)
-    this.addBoxCollider(blockNorth2)
+    // North side is now OPEN for radial_north access
 
     // Junction (-80, 50) is now a full 4-way intersection
     // Allows access to: road_left_v (N/S), road_mid (E), radial_west (W)
@@ -1078,11 +1069,22 @@ export class SimpleMap {
     this.meshes.push(blockSouth4)
     this.addBoxCollider(blockSouth4)
 
-    // Junction (50, -50) is now a full 4-way intersection (no T-junction barriers)
-    // Mobil bisa lewat dari semua arah: utara, selatan, timur, dan barat
+    // Junction (50, -50) - road_lower & road_center_v
+    // Block east side
+    const blockEast10 = MeshBuilder.CreateBox('tjunc_50_-50_block_east', {
+      width: width,
+      height: height,
+      depth: roadWidth,
+    }, this.scene)
+    blockEast10.position = new Vector3(50 + offset, height / 2, -50)
+    blockEast10.material = material
+    blockEast10.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockEast10)
+    this.meshes.push(blockEast10)
+    this.addBoxCollider(blockEast10)
 
     // T-junction at road_center_v & road_south_H (50, -178)
-    // Block west and south sides
+    // Block west side - south is now open for radial_south access
     
     // Barrier blocking west side of junction
     const blockWest6 = MeshBuilder.CreateBox('tjunc_50_-178_block_west', {
@@ -1097,18 +1099,7 @@ export class SimpleMap {
     this.meshes.push(blockWest6)
     this.addBoxCollider(blockWest6)
 
-    // Barrier blocking south side of junction
-    const blockSouth6 = MeshBuilder.CreateBox('tjunc_50_-178_block_south', {
-      width: roadWidth,
-      height: height,
-      depth: width,
-    }, this.scene)
-    blockSouth6.position = new Vector3(50, height / 2, -178 - offset)
-    blockSouth6.material = material
-    blockSouth6.receiveShadows = true
-    this.lightingSetup?.addShadowCaster(blockSouth6)
-    this.meshes.push(blockSouth6)
-    this.addBoxCollider(blockSouth6)
+    // South side is now OPEN for radial_south access
 
     // T-junction at road_south_H & road_gedungH_east (170, -178)
     // Block east and south sides
@@ -1183,6 +1174,369 @@ export class SimpleMap {
     this.lightingSetup?.addShadowCaster(blockSouth9)
     this.meshes.push(blockSouth9)
     this.addBoxCollider(blockSouth9)
+
+    // Ring road width for corner blocking barriers
+    const ringRoadWidth = 20
+    const ringOffset = ringRoadWidth / 2 + width / 2
+
+    // T-junction at ring_north & radial_north (50, 310)
+    // Block north side so cars can only turn east or west
+    const blockNorthRadialNorth = MeshBuilder.CreateBox('tjunc_50_310_block_north', {
+      width: ringRoadWidth,
+      height: height,
+      depth: width,
+    }, this.scene)
+    blockNorthRadialNorth.position = new Vector3(50, height / 2, 310 + ringOffset)
+    blockNorthRadialNorth.material = material
+    blockNorthRadialNorth.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockNorthRadialNorth)
+    this.meshes.push(blockNorthRadialNorth)
+    this.addBoxCollider(blockNorthRadialNorth)
+
+    // Custom corners for (50, 310) junction - radial road (16 width) meets ring road (20 width)
+    const radialOffset = 16 / 2 + width / 2  // 8.2 for radial side (south)
+    const cornerSize = width + 0.5
+
+    // SE corner - where radial meets ring on east side
+    const cornerSE = MeshBuilder.CreateBox('corner_50_310_SE', {
+      width: cornerSize,
+      height: height,
+      depth: cornerSize,
+    }, this.scene)
+    cornerSE.position = new Vector3(50 + radialOffset, height / 2, 310 - ringOffset)
+    cornerSE.material = material
+    cornerSE.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(cornerSE)
+    this.meshes.push(cornerSE)
+    this.addBoxCollider(cornerSE)
+
+    // SW corner - where radial meets ring on west side
+    const cornerSW = MeshBuilder.CreateBox('corner_50_310_SW', {
+      width: cornerSize,
+      height: height,
+      depth: cornerSize,
+    }, this.scene)
+    cornerSW.position = new Vector3(50 - radialOffset, height / 2, 310 - ringOffset)
+    cornerSW.material = material
+    cornerSW.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(cornerSW)
+    this.meshes.push(cornerSW)
+    this.addBoxCollider(cornerSW)
+
+    // ============================================
+    // T-junction at ring_south & radial_south (50, -506)
+    // Block south side so cars can only turn east or west
+    // ============================================
+    const blockSouthRadialSouth = MeshBuilder.CreateBox('tjunc_50_-506_block_south', {
+      width: ringRoadWidth,
+      height: height,
+      depth: width,
+    }, this.scene)
+    blockSouthRadialSouth.position = new Vector3(50, height / 2, -506 - ringOffset)
+    blockSouthRadialSouth.material = material
+    blockSouthRadialSouth.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockSouthRadialSouth)
+    this.meshes.push(blockSouthRadialSouth)
+    this.addBoxCollider(blockSouthRadialSouth)
+
+    // Corners for (50, -506) junction
+    const cornerSouthNE = MeshBuilder.CreateBox('corner_50_-506_NE', {
+      width: cornerSize,
+      height: height,
+      depth: cornerSize,
+    }, this.scene)
+    cornerSouthNE.position = new Vector3(50 + radialOffset, height / 2, -506 + ringOffset)
+    cornerSouthNE.material = material
+    cornerSouthNE.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(cornerSouthNE)
+    this.meshes.push(cornerSouthNE)
+    this.addBoxCollider(cornerSouthNE)
+
+    const cornerSouthNW = MeshBuilder.CreateBox('corner_50_-506_NW', {
+      width: cornerSize,
+      height: height,
+      depth: cornerSize,
+    }, this.scene)
+    cornerSouthNW.position = new Vector3(50 - radialOffset, height / 2, -506 + ringOffset)
+    cornerSouthNW.material = material
+    cornerSouthNW.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(cornerSouthNW)
+    this.meshes.push(cornerSouthNW)
+    this.addBoxCollider(cornerSouthNW)
+
+    // ============================================
+    // T-junction at ring_east & radial_east (290, -100)
+    // Block east side so cars can only turn north or south
+    // ============================================
+    const blockEastRadialEast = MeshBuilder.CreateBox('tjunc_290_-100_block_east', {
+      width: width,
+      height: height,
+      depth: ringRoadWidth,
+    }, this.scene)
+    blockEastRadialEast.position = new Vector3(290 + ringOffset, height / 2, -100)
+    blockEastRadialEast.material = material
+    blockEastRadialEast.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockEastRadialEast)
+    this.meshes.push(blockEastRadialEast)
+    this.addBoxCollider(blockEastRadialEast)
+
+    // Corners for (290, -100) junction
+    const cornerEastNW = MeshBuilder.CreateBox('corner_290_-100_NW', {
+      width: cornerSize,
+      height: height,
+      depth: cornerSize,
+    }, this.scene)
+    cornerEastNW.position = new Vector3(290 - ringOffset, height / 2, -100 + radialOffset)
+    cornerEastNW.material = material
+    cornerEastNW.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(cornerEastNW)
+    this.meshes.push(cornerEastNW)
+    this.addBoxCollider(cornerEastNW)
+
+    const cornerEastSW = MeshBuilder.CreateBox('corner_290_-100_SW', {
+      width: cornerSize,
+      height: height,
+      depth: cornerSize,
+    }, this.scene)
+    cornerEastSW.position = new Vector3(290 - ringOffset, height / 2, -100 - radialOffset)
+    cornerEastSW.material = material
+    cornerEastSW.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(cornerEastSW)
+    this.meshes.push(cornerEastSW)
+    this.addBoxCollider(cornerEastSW)
+
+    // ============================================
+    // T-junction at ring_west & radial_west (-286, 50)
+    // Block west side so cars can only turn north or south
+    // ============================================
+    const blockWestRadialWest = MeshBuilder.CreateBox('tjunc_-286_50_block_west', {
+      width: width,
+      height: height,
+      depth: ringRoadWidth,
+    }, this.scene)
+    blockWestRadialWest.position = new Vector3(-286 - ringOffset, height / 2, 50)
+    blockWestRadialWest.material = material
+    blockWestRadialWest.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockWestRadialWest)
+    this.meshes.push(blockWestRadialWest)
+    this.addBoxCollider(blockWestRadialWest)
+
+    // Corners for (-286, 50) junction
+    const cornerWestNE = MeshBuilder.CreateBox('corner_-286_50_NE', {
+      width: cornerSize,
+      height: height,
+      depth: cornerSize,
+    }, this.scene)
+    cornerWestNE.position = new Vector3(-286 + ringOffset, height / 2, 50 + radialOffset)
+    cornerWestNE.material = material
+    cornerWestNE.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(cornerWestNE)
+    this.meshes.push(cornerWestNE)
+    this.addBoxCollider(cornerWestNE)
+
+    const cornerWestSE = MeshBuilder.CreateBox('corner_-286_50_SE', {
+      width: cornerSize,
+      height: height,
+      depth: cornerSize,
+    }, this.scene)
+    cornerWestSE.position = new Vector3(-286 + ringOffset, height / 2, 50 - radialOffset)
+    cornerWestSE.material = material
+    cornerWestSE.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(cornerWestSE)
+    this.meshes.push(cornerWestSE)
+    this.addBoxCollider(cornerWestSE)
+
+    // ============================================
+    // Ring corner at NE (290, 310)
+    // Block north and east sides so cars can only go south or west
+    // ============================================
+    
+    // Block north side
+    const blockNE_North = MeshBuilder.CreateBox('corner_290_310_block_north', {
+      width: ringRoadWidth,
+      height: height,
+      depth: width,
+    }, this.scene)
+    blockNE_North.position = new Vector3(290, height / 2, 310 + ringOffset)
+    blockNE_North.material = material
+    blockNE_North.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockNE_North)
+    this.meshes.push(blockNE_North)
+    this.addBoxCollider(blockNE_North)
+
+    // Block east side
+    const blockNE_East = MeshBuilder.CreateBox('corner_290_310_block_east', {
+      width: width,
+      height: height,
+      depth: ringRoadWidth,
+    }, this.scene)
+    blockNE_East.position = new Vector3(290 + ringOffset, height / 2, 310)
+    blockNE_East.material = material
+    blockNE_East.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockNE_East)
+    this.meshes.push(blockNE_East)
+    this.addBoxCollider(blockNE_East)
+
+    // SW corner piece for NE junction (290, 310)
+    const cornerNE_SW = MeshBuilder.CreateBox('corner_290_310_SW', {
+      width: cornerSize,
+      height: height,
+      depth: cornerSize,
+    }, this.scene)
+    cornerNE_SW.position = new Vector3(290 - ringOffset, height / 2, 310 - ringOffset)
+    cornerNE_SW.material = material
+    cornerNE_SW.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(cornerNE_SW)
+    this.meshes.push(cornerNE_SW)
+    this.addBoxCollider(cornerNE_SW)
+
+    // ============================================
+    // Ring corner at NW (-286, 310)
+    // Block north and west sides so cars can only go south or east
+    // ============================================
+    
+    // Block north side
+    const blockNW_North = MeshBuilder.CreateBox('corner_-286_310_block_north', {
+      width: ringRoadWidth,
+      height: height,
+      depth: width,
+    }, this.scene)
+    blockNW_North.position = new Vector3(-286, height / 2, 310 + ringOffset)
+    blockNW_North.material = material
+    blockNW_North.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockNW_North)
+    this.meshes.push(blockNW_North)
+    this.addBoxCollider(blockNW_North)
+
+    // Block west side
+    const blockNW_West = MeshBuilder.CreateBox('corner_-286_310_block_west', {
+      width: width,
+      height: height,
+      depth: ringRoadWidth,
+    }, this.scene)
+    blockNW_West.position = new Vector3(-286 - ringOffset, height / 2, 310)
+    blockNW_West.material = material
+    blockNW_West.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockNW_West)
+    this.meshes.push(blockNW_West)
+    this.addBoxCollider(blockNW_West)
+
+    // SE corner piece for NW junction (-286, 310)
+    const cornerNW_SE = MeshBuilder.CreateBox('corner_-286_310_SE', {
+      width: cornerSize,
+      height: height,
+      depth: cornerSize,
+    }, this.scene)
+    cornerNW_SE.position = new Vector3(-286 + ringOffset, height / 2, 310 - ringOffset)
+    cornerNW_SE.material = material
+    cornerNW_SE.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(cornerNW_SE)
+    this.meshes.push(cornerNW_SE)
+    this.addBoxCollider(cornerNW_SE)
+
+    // ============================================
+    // Ring corner at SE (290, -506)
+    // Block south and east sides so cars can only go north or west
+    // ============================================
+    
+    // Block south side
+    const blockSE_South = MeshBuilder.CreateBox('corner_290_-506_block_south', {
+      width: ringRoadWidth,
+      height: height,
+      depth: width,
+    }, this.scene)
+    blockSE_South.position = new Vector3(290, height / 2, -506 - ringOffset)
+    blockSE_South.material = material
+    blockSE_South.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockSE_South)
+    this.meshes.push(blockSE_South)
+    this.addBoxCollider(blockSE_South)
+
+    // Block east side
+    const blockSE_East = MeshBuilder.CreateBox('corner_290_-506_block_east', {
+      width: width,
+      height: height,
+      depth: ringRoadWidth,
+    }, this.scene)
+    blockSE_East.position = new Vector3(290 + ringOffset, height / 2, -506)
+    blockSE_East.material = material
+    blockSE_East.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockSE_East)
+    this.meshes.push(blockSE_East)
+    this.addBoxCollider(blockSE_East)
+
+    // NW corner piece for SE junction (290, -506)
+    const cornerSE_NW = MeshBuilder.CreateBox('corner_290_-506_NW', {
+      width: cornerSize,
+      height: height,
+      depth: cornerSize,
+    }, this.scene)
+    cornerSE_NW.position = new Vector3(290 - ringOffset, height / 2, -506 + ringOffset)
+    cornerSE_NW.material = material
+    cornerSE_NW.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(cornerSE_NW)
+    this.meshes.push(cornerSE_NW)
+    this.addBoxCollider(cornerSE_NW)
+
+    // ============================================
+    // Ring corner at SW (-286, -506)
+    // Block south and west sides so cars can only go north or east
+    // ============================================
+    
+    // Block south side
+    const blockSW_South = MeshBuilder.CreateBox('corner_-286_-506_block_south', {
+      width: ringRoadWidth,
+      height: height,
+      depth: width,
+    }, this.scene)
+    blockSW_South.position = new Vector3(-286, height / 2, -506 - ringOffset)
+    blockSW_South.material = material
+    blockSW_South.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockSW_South)
+    this.meshes.push(blockSW_South)
+    this.addBoxCollider(blockSW_South)
+
+    // Block west side
+    const blockSW_West = MeshBuilder.CreateBox('corner_-286_-506_block_west', {
+      width: width,
+      height: height,
+      depth: ringRoadWidth,
+    }, this.scene)
+    blockSW_West.position = new Vector3(-286 - ringOffset, height / 2, -506)
+    blockSW_West.material = material
+    blockSW_West.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockSW_West)
+    this.meshes.push(blockSW_West)
+    this.addBoxCollider(blockSW_West)
+
+    // NE corner piece for SW junction (-286, -506)
+    const cornerSW_NE = MeshBuilder.CreateBox('corner_-286_-506_NE', {
+      width: cornerSize,
+      height: height,
+      depth: cornerSize,
+    }, this.scene)
+    cornerSW_NE.position = new Vector3(-286 + ringOffset, height / 2, -506 + ringOffset)
+    cornerSW_NE.material = material
+    cornerSW_NE.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(cornerSW_NE)
+    this.meshes.push(cornerSW_NE)
+    this.addBoxCollider(cornerSW_NE)
+
+    // ============================================
+    // Station exit junction at road_center_v (50, 73)
+    // West side OPEN (garage exit), East side BLOCKED
+    // ============================================
+    const blockEastStation = MeshBuilder.CreateBox('tjunc_50_73_block_east', {
+      width: width,
+      height: height,
+      depth: roadWidth,
+    }, this.scene)
+    blockEastStation.position = new Vector3(50 + offset, height / 2, 73)
+    blockEastStation.material = material
+    blockEastStation.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(blockEastStation)
+    this.meshes.push(blockEastStation)
+    this.addBoxCollider(blockEastStation)
   }
 
   private createBarriersWithGaps(
@@ -1302,6 +1656,222 @@ export class SimpleMap {
 
       // Building label
       this.createBuildingLabel(b.name, b.x, b.z, b.height)
+    })
+
+    // === NEW BUILDINGS - DIFFERENT STYLES ===
+    this.createModernBuildings()
+    this.createShopHouses()
+    this.createApartmentBlocks()
+  }
+
+  /**
+   * Modern glass/steel style buildings
+   */
+  private createModernBuildings(): void {
+    const glassMaterial = new PBRMaterial('glassBuildingMaterial', this.scene)
+    glassMaterial.albedoColor = new Color3(0.6, 0.7, 0.8) // Blue-gray glass
+    glassMaterial.metallic = 0.8
+    glassMaterial.roughness = 0.1
+    glassMaterial.alpha = 0.9
+
+    const steelMaterial = new PBRMaterial('steelBuildingMaterial', this.scene)
+    steelMaterial.albedoColor = new Color3(0.5, 0.5, 0.55)
+    steelMaterial.metallic = 0.9
+    steelMaterial.roughness = 0.2
+
+    const modernBuildings = [
+      // Tower 1 - Near north, between A and B (x=0, above road_top z=150)
+      { name: 'Tower 1', x: 0, z: 195, width: 25, depth: 25, height: 22 },
+      // Tower 2 - East of central road, middle area
+      { name: 'Tower 2', x: 15, z: 100, width: 20, depth: 22, height: 18 },
+    ]
+
+    modernBuildings.forEach((b) => {
+      // Main tower body
+      const tower = MeshBuilder.CreateBox(`modern_${b.name}`, {
+        width: b.width,
+        height: b.height,
+        depth: b.depth,
+      }, this.scene)
+      tower.position = new Vector3(b.x, b.height / 2, b.z)
+      tower.material = glassMaterial
+      tower.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(tower)
+      this.meshes.push(tower)
+      this.addBoxCollider(tower)
+
+      // Steel frame accent
+      const frame = MeshBuilder.CreateBox(`frame_${b.name}`, {
+        width: b.width + 0.5,
+        height: b.height * 0.1,
+        depth: b.depth + 0.5,
+      }, this.scene)
+      frame.position = new Vector3(b.x, b.height * 0.9, b.z)
+      frame.material = steelMaterial
+      this.meshes.push(frame)
+
+      // Roof accent
+      const roof = MeshBuilder.CreateBox(`roof_${b.name}`, {
+        width: b.width * 0.6,
+        height: 3,
+        depth: b.depth * 0.6,
+      }, this.scene)
+      roof.position = new Vector3(b.x, b.height + 1.5, b.z)
+      roof.material = steelMaterial
+      this.lightingSetup?.addShadowCaster(roof)
+      this.meshes.push(roof)
+
+      this.createBuildingLabel(b.name, b.x, b.z, b.height + 3)
+    })
+  }
+
+  /**
+   * Ruko/Shop houses - small commercial buildings in a row
+   */
+  private createShopHouses(): void {
+    const colors = [
+      new Color3(0.85, 0.75, 0.65), // Cream
+      new Color3(0.75, 0.82, 0.78), // Mint
+      new Color3(0.82, 0.78, 0.72), // Beige
+      new Color3(0.78, 0.75, 0.85), // Lavender
+    ]
+
+    const awningMaterial = new PBRMaterial('awningMaterial', this.scene)
+    awningMaterial.albedoColor = new Color3(0.6, 0.3, 0.2)
+    awningMaterial.metallic = 0
+    awningMaterial.roughness = 0.9
+
+    // Row 1: South of Gedung F, along west side (x=-130, z=-80 to -140)
+    const shopRow1 = [
+      { x: -130, z: -85, colorIdx: 0 },
+      { x: -130, z: -105, colorIdx: 1 },
+      { x: -130, z: -125, colorIdx: 2 },
+      { x: -130, z: -145, colorIdx: 3 },
+    ]
+
+    // Row 2: East of lake area (x=-60, z=-120 to -160)
+    const shopRow2 = [
+      { x: -60, z: -130, colorIdx: 1 },
+      { x: -60, z: -150, colorIdx: 0 },
+      { x: -60, z: -170, colorIdx: 2 },
+    ]
+
+    const allShops = [...shopRow1, ...shopRow2]
+    const shopWidth = 15
+    const shopDepth = 12
+    const shopHeight = 8
+
+    allShops.forEach((shop, i) => {
+      const shopMaterial = new PBRMaterial(`shopMat_${i}`, this.scene)
+      shopMaterial.albedoColor = colors[shop.colorIdx]
+      shopMaterial.metallic = 0.05
+      shopMaterial.roughness = 0.85
+
+      // Shop body
+      const shopBuilding = MeshBuilder.CreateBox(`shop_${i}`, {
+        width: shopWidth,
+        height: shopHeight,
+        depth: shopDepth,
+      }, this.scene)
+      shopBuilding.position = new Vector3(shop.x, shopHeight / 2, shop.z)
+      shopBuilding.material = shopMaterial
+      shopBuilding.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(shopBuilding)
+      this.meshes.push(shopBuilding)
+      this.addBoxCollider(shopBuilding)
+
+      // Awning (front canopy)
+      const awning = MeshBuilder.CreateBox(`awning_${i}`, {
+        width: shopWidth + 2,
+        height: 0.3,
+        depth: 3,
+      }, this.scene)
+      awning.position = new Vector3(shop.x, shopHeight * 0.4, shop.z + shopDepth / 2 + 1.5)
+      awning.material = awningMaterial
+      this.meshes.push(awning)
+    })
+  }
+
+  /**
+   * Apartment blocks - medium rise residential
+   */
+  private createApartmentBlocks(): void {
+    const apartmentMaterial = new PBRMaterial('apartmentMaterial', this.scene)
+    apartmentMaterial.albedoColor = new Color3(0.88, 0.85, 0.8) // Warm white
+    apartmentMaterial.metallic = 0.05
+    apartmentMaterial.roughness = 0.8
+
+    const balconyMaterial = new PBRMaterial('balconyMaterial', this.scene)
+    balconyMaterial.albedoColor = new Color3(0.6, 0.58, 0.55)
+    balconyMaterial.metallic = 0.3
+    balconyMaterial.roughness = 0.6
+
+    const windowMaterial = new PBRMaterial('windowMaterial', this.scene)
+    windowMaterial.albedoColor = new Color3(0.4, 0.5, 0.6)
+    windowMaterial.metallic = 0.7
+    windowMaterial.roughness = 0.1
+
+    // Apartment locations - between roads, not blocking paths
+    const apartments = [
+      // Block 1: West of road_left_v, between z=80 and z=130
+      { name: 'Apartemen 1', x: -140, z: 80, width: 30, depth: 25, height: 16, floors: 5 },
+      // Block 2: South area, west of center
+      { name: 'Apartemen 2', x: -30, z: -130, width: 28, depth: 22, height: 14, floors: 4 },
+      // Block 3: Far south, west of radial_south
+      { name: 'Apartemen 3', x: 0, z: -240, width: 32, depth: 24, height: 18, floors: 6 },
+    ]
+
+    apartments.forEach((apt) => {
+      // Main building body
+      const building = MeshBuilder.CreateBox(`apt_${apt.name}`, {
+        width: apt.width,
+        height: apt.height,
+        depth: apt.depth,
+      }, this.scene)
+      building.position = new Vector3(apt.x, apt.height / 2, apt.z)
+      building.material = apartmentMaterial
+      building.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(building)
+      this.meshes.push(building)
+      this.addBoxCollider(building)
+
+      // Balcony stripes (horizontal lines)
+      const floorHeight = apt.height / apt.floors
+      for (let f = 1; f < apt.floors; f++) {
+        const balcony = MeshBuilder.CreateBox(`balcony_${apt.name}_${f}`, {
+          width: apt.width + 1,
+          height: 0.4,
+          depth: apt.depth + 1,
+        }, this.scene)
+        balcony.position = new Vector3(apt.x, f * floorHeight, apt.z)
+        balcony.material = balconyMaterial
+        this.meshes.push(balcony)
+      }
+
+      // Window strips on front
+      for (let f = 0; f < apt.floors; f++) {
+        const windowStrip = MeshBuilder.CreateBox(`window_${apt.name}_${f}`, {
+          width: apt.width * 0.8,
+          height: floorHeight * 0.4,
+          depth: 0.2,
+        }, this.scene)
+        windowStrip.position = new Vector3(apt.x, f * floorHeight + floorHeight / 2 + 0.5, apt.z + apt.depth / 2 + 0.1)
+        windowStrip.material = windowMaterial
+        this.meshes.push(windowStrip)
+      }
+
+      // Roof structure
+      const roofStructure = MeshBuilder.CreateBox(`roofStruct_${apt.name}`, {
+        width: apt.width * 0.4,
+        height: 2,
+        depth: apt.depth * 0.4,
+      }, this.scene)
+      roofStructure.position = new Vector3(apt.x, apt.height + 1, apt.z)
+      roofStructure.material = balconyMaterial
+      this.lightingSetup?.addShadowCaster(roofStructure)
+      this.meshes.push(roofStructure)
+
+      this.createBuildingLabel(apt.name, apt.x, apt.z, apt.height + 2)
     })
   }
 
@@ -1532,6 +2102,289 @@ export class SimpleMap {
       max: max.clone(),
       mesh: mesh,
     })
+  }
+
+  // ============================================
+  // SPAWN STATION / GARAGE
+  // ============================================
+
+  /**
+   * Solo City – "Fumorive Station"
+   * A covered carport west of road_center_v.
+   * The car starts inside facing EAST – drive straight out onto road_center_v.
+   */
+  private createSpawnStation(): void {
+    // Station is west of road_center_v (x=50). Car faces east (+X).
+    const stationX = 18
+    const stationZ = 73
+
+    // Spawn: car faces east (+X toward road_center_v)
+    // heading convention: forward = (sin(h), 0, cos(h)) → PI/2 = east
+    this.spawnPoint = { x: stationX, z: stationZ, rotationY: Math.PI / 2 }
+
+    // --- Materials ---
+    const concreteMat = new PBRMaterial('stationConcrete', this.scene)
+    concreteMat.albedoColor = new Color3(0.72, 0.72, 0.70)
+    concreteMat.metallic = 0.05
+    concreteMat.roughness = 0.92
+
+    const roofMat = new PBRMaterial('stationRoof', this.scene)
+    roofMat.albedoColor = new Color3(0.28, 0.32, 0.38)
+    roofMat.metallic = 0.7
+    roofMat.roughness = 0.3
+
+    const pillarMat = new PBRMaterial('stationPillar', this.scene)
+    pillarMat.albedoColor = new Color3(0.9, 0.82, 0.2)
+    pillarMat.metallic = 0.3
+    pillarMat.roughness = 0.5
+
+    const wallMat = new PBRMaterial('stationWall', this.scene)
+    wallMat.albedoColor = new Color3(0.55, 0.55, 0.52)
+    wallMat.metallic = 0.1
+    wallMat.roughness = 0.8
+
+    const stripeMat = new PBRMaterial('stationStripe', this.scene)
+    stripeMat.albedoColor = new Color3(0.95, 0.85, 0.15)
+    stripeMat.metallic = 0
+    stripeMat.roughness = 0.7
+
+    // --- Concrete Floor Pad ---
+    const floor = MeshBuilder.CreateGround('stationFloor', {
+      width: 28,
+      height: 22,
+    }, this.scene)
+    floor.position = new Vector3(stationX, 0.04, stationZ)
+    floor.material = concreteMat
+    floor.receiveShadows = true
+    this.meshes.push(floor)
+
+    // --- Driveway connecting station EAST to road_center_v ---
+    // Station east edge: stationX + 14 = 32
+    // road_center_v west edge: 50 - 8 = 42
+    // Driveway fills the gap and overlaps slightly for seamless connection
+    const driveway = MeshBuilder.CreateGround('stationDriveway', {
+      width: 22,   // spans from ~27 to ~49, overlapping station edge and road edge
+      height: 14,
+    }, this.scene)
+    driveway.position = new Vector3(stationX + 20, 0.03, stationZ)
+    driveway.material = concreteMat
+    driveway.receiveShadows = true
+    this.meshes.push(driveway)
+
+    // --- Yellow guide stripes on floor (parking lines) ---
+    const stripePositions = [
+      { x: stationX, z: stationZ + 8 },
+      { x: stationX, z: stationZ - 8 },
+    ]
+    stripePositions.forEach((pos, i) => {
+      const stripe = MeshBuilder.CreateGround(`stationStripe_${i}`, {
+        width: 24,
+        height: 0.3,
+      }, this.scene)
+      stripe.position = new Vector3(pos.x, 0.05, pos.z)
+      stripe.material = stripeMat
+      this.meshes.push(stripe)
+    })
+
+    // Center dashed arrow line pointing east (exit direction)
+    for (let d = 0; d < 5; d++) {
+      const dash = MeshBuilder.CreateGround(`stationDash_${d}`, {
+        width: 3,
+        height: 0.25,
+      }, this.scene)
+      dash.position = new Vector3(stationX - 10 + d * 5.5, 0.05, stationZ)
+      dash.material = stripeMat
+      this.meshes.push(dash)
+    }
+
+    // --- Flat Roof / Canopy ---
+    const roof = MeshBuilder.CreateBox('stationRoof', {
+      width: 30,
+      height: 0.4,
+      depth: 24,
+    }, this.scene)
+    roof.position = new Vector3(stationX, 6.2, stationZ)
+    roof.material = roofMat
+    this.lightingSetup?.addShadowCaster(roof)
+    this.meshes.push(roof)
+
+    // Roof edge trim on EAST lip (exit side visual cue)
+    const roofEdge = MeshBuilder.CreateBox('stationRoofEdge', {
+      width: 0.3,
+      height: 0.8,
+      depth: 24,
+    }, this.scene)
+    roofEdge.position = new Vector3(stationX + 15, 5.8, stationZ)
+    roofEdge.material = pillarMat
+    this.meshes.push(roofEdge)
+
+    // --- 4 Support Pillars ---
+    const pillarPositions = [
+      { x: stationX - 13, z: stationZ - 10 },
+      { x: stationX - 13, z: stationZ + 10 },
+      { x: stationX + 13, z: stationZ - 10 },
+      { x: stationX + 13, z: stationZ + 10 },
+    ]
+    pillarPositions.forEach((pos, i) => {
+      const pillar = MeshBuilder.CreateCylinder(`stationPillar_${i}`, {
+        diameter: 0.8,
+        height: 6,
+        tessellation: 8,
+      }, this.scene)
+      pillar.position = new Vector3(pos.x, 3, pos.z)
+      pillar.material = pillarMat
+      pillar.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(pillar)
+      this.meshes.push(pillar)
+    })
+
+    // --- Back Wall on WEST side (behind the car) ---
+    const backWall = MeshBuilder.CreateBox('stationBackWall', {
+      width: 0.6,
+      height: 6,
+      depth: 24,
+    }, this.scene)
+    backWall.position = new Vector3(stationX - 14.5, 3, stationZ)
+    backWall.material = wallMat
+    backWall.receiveShadows = true
+    this.lightingSetup?.addShadowCaster(backWall)
+    this.meshes.push(backWall)
+    this.addBoxCollider(backWall)
+
+    // --- EAST side is OPEN (exit towards road_center_v) – no wall here ---
+
+    // --- Side Bollards (north & south edges) ---
+    const bollardMat = new PBRMaterial('bollardMat', this.scene)
+    bollardMat.albedoColor = new Color3(0.85, 0.2, 0.15)
+    bollardMat.metallic = 0.3
+    bollardMat.roughness = 0.5
+
+    const bollardRow = [
+      // North side
+      { x: stationX - 8, z: stationZ + 11.5 },
+      { x: stationX, z: stationZ + 11.5 },
+      { x: stationX + 8, z: stationZ + 11.5 },
+      // South side
+      { x: stationX - 8, z: stationZ - 11.5 },
+      { x: stationX, z: stationZ - 11.5 },
+      { x: stationX + 8, z: stationZ - 11.5 },
+    ]
+    bollardRow.forEach((pos, i) => {
+      const bollard = MeshBuilder.CreateCylinder(`stationBollard_${i}`, {
+        diameter: 0.6,
+        height: 1.2,
+        tessellation: 8,
+      }, this.scene)
+      bollard.position = new Vector3(pos.x, 0.6, pos.z)
+      bollard.material = bollardMat
+      this.lightingSetup?.addShadowCaster(bollard)
+      this.meshes.push(bollard)
+    })
+
+    // Side barriers (invisible colliders along north & south)
+    const sideColliderN = MeshBuilder.CreateBox('stationSideN', {
+      width: 28,
+      height: 1.5,
+      depth: 0.5,
+    }, this.scene)
+    sideColliderN.position = new Vector3(stationX, 0.75, stationZ + 11.5)
+    sideColliderN.isVisible = false
+    this.meshes.push(sideColliderN)
+    this.addBoxCollider(sideColliderN)
+
+    const sideColliderS = MeshBuilder.CreateBox('stationSideS', {
+      width: 28,
+      height: 1.5,
+      depth: 0.5,
+    }, this.scene)
+    sideColliderS.position = new Vector3(stationX, 0.75, stationZ - 11.5)
+    sideColliderS.isVisible = false
+    this.meshes.push(sideColliderS)
+    this.addBoxCollider(sideColliderS)
+
+    // --- Station Sign ---
+    this.createBuildingLabel('Fumorive Station', stationX, stationZ, 7)
+
+    console.log(`[SimpleMap] Spawn station created at (${stationX}, ${stationZ}), exit faces EAST → road_center_v`)
+  }
+
+  /**
+   * Sriwedari Park – simple parking / starting area
+   * A small open concrete pad next to the main path.
+   */
+  private createParkSpawnArea(): void {
+    const padX = 0
+    const padZ = -80
+
+    // Update spawn point
+    this.spawnPoint = { x: padX, z: padZ, rotationY: Math.PI / 2 }
+
+    const concreteMat = new PBRMaterial('parkPadConcrete', this.scene)
+    concreteMat.albedoColor = new Color3(0.7, 0.7, 0.68)
+    concreteMat.metallic = 0.05
+    concreteMat.roughness = 0.9
+
+    const stripeMat = new PBRMaterial('parkPadStripe', this.scene)
+    stripeMat.albedoColor = new Color3(0.95, 0.95, 0.95)
+    stripeMat.metallic = 0
+    stripeMat.roughness = 0.8
+
+    // Concrete pad
+    const pad = MeshBuilder.CreateGround('parkSpawnPad', {
+      width: 20,
+      height: 16,
+    }, this.scene)
+    pad.position = new Vector3(padX, 0.03, padZ)
+    pad.material = concreteMat
+    pad.receiveShadows = true
+    this.meshes.push(pad)
+
+    // Parking stripes
+    for (let i = -1; i <= 1; i++) {
+      const stripe = MeshBuilder.CreateGround(`parkStripe_${i}`, {
+        width: 0.25,
+        height: 14,
+      }, this.scene)
+      stripe.position = new Vector3(padX + i * 6, 0.04, padZ)
+      stripe.material = stripeMat
+      this.meshes.push(stripe)
+    }
+
+    // Connecting path to main paths
+    const connector = MeshBuilder.CreateGround('parkSpawnConnector', {
+      width: 12,
+      height: 34,
+    }, this.scene)
+    connector.position = new Vector3(padX, 0.015, padZ + 25)
+    connector.material = concreteMat
+    connector.receiveShadows = true
+    this.meshes.push(connector)
+
+    // Small "P" marker (parking sign post)
+    const postMat = new PBRMaterial('parkPostMat', this.scene)
+    postMat.albedoColor = new Color3(0.2, 0.4, 0.8)
+    postMat.metallic = 0.5
+    postMat.roughness = 0.4
+
+    const signPost = MeshBuilder.CreateCylinder('parkSignPost', {
+      diameter: 0.3,
+      height: 3,
+      tessellation: 8,
+    }, this.scene)
+    signPost.position = new Vector3(padX - 10, 1.5, padZ)
+    signPost.material = postMat
+    this.meshes.push(signPost)
+
+    const signPlate = MeshBuilder.CreateBox('parkSignPlate', {
+      width: 2,
+      height: 2,
+      depth: 0.15,
+    }, this.scene)
+    signPlate.position = new Vector3(padX - 10, 3.5, padZ)
+    signPlate.material = postMat
+    this.meshes.push(signPlate)
+
+    console.log(`[SimpleMap] Park spawn area created at (${padX}, ${padZ})`)
   }
 
   dispose(): void {

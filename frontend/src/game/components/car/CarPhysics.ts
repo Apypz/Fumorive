@@ -45,6 +45,28 @@ export class CarPhysics {
   private bodyRoll: number = 0
   private bodyPitch: number = 0
 
+  // === TRANSMISSION SYSTEM ===
+  private transmissionMode: 'automatic' | 'manual' = 'automatic'
+  private currentGear: number = 0  // -1=R, 0=N, 1-5=forward gears
+  private rpm: number = 800  // Engine RPM for sound/visual
+
+  // Gear configuration: [maxSpeed m/s, accelMultiplier]
+  private static readonly GEAR_TABLE: Array<[number, number]> = [
+    [0, 0],        // N (neutral) - no drive
+    [8, 1.8],      // 1st: max ~29 km/h, high torque
+    [16, 1.4],     // 2nd: max ~58 km/h
+    [25, 1.1],     // 3rd: max ~90 km/h
+    [33, 0.85],    // 4th: max ~119 km/h
+    [40, 0.7],     // 5th: max ~144 km/h (top gear)
+  ]
+  private static readonly REVERSE_MAX_SPEED = 12  // m/s (~43 km/h)
+  private static readonly REVERSE_ACCEL_MULT = 1.2
+  private static readonly AUTO_UPSHIFT_RPM = 0.85    // shift up at 85% of gear's max speed
+  private static readonly AUTO_DOWNSHIFT_RPM = 0.35  // shift down at 35% of gear's max speed
+  private static readonly MAX_GEAR = 5
+  private static readonly SHIFT_COOLDOWN = 0.3  // seconds between auto shifts
+  private autoShiftTimer: number = 0
+
   // Collision callback
   private onCollisionCallback: ((impactVelocity: number) => void) | null = null
 
@@ -104,6 +126,9 @@ export class CarPhysics {
     // Clamp deltaTime for stability
     const clampedDt = Math.min(dt, 0.05)
     
+    // Update auto-shift timer
+    this.autoShiftTimer = Math.max(0, this.autoShiftTimer - clampedDt)
+    
     // Get direction vectors
     const forward = this.getForwardVector()
     const right = this.getRightVector()
@@ -115,6 +140,14 @@ export class CarPhysics {
     // Calculate slip angle and drift detection
     const speed = this.velocity.length()
     this.updateDriftState(speed)
+    
+    // Auto transmission logic
+    if (this.transmissionMode === 'automatic') {
+      this.updateAutoTransmission(input, speed)
+    }
+    
+    // Update RPM estimation
+    this.updateRPM()
     
     // Calculate forces
     const longitudinalForce = this.calculateLongitudinalForce(input, speed)
@@ -158,27 +191,108 @@ export class CarPhysics {
 
   /**
    * Calculate longitudinal (forward/backward) force
+   * Now respects gear system - force depends on current gear
    */
   private calculateLongitudinalForce(input: CarInputState, speed: number): number {
     let force = 0
+    
+    const gear = this.currentGear
+
+    // === NEUTRAL (gear 0) - no drive force ===
+    if (gear === 0) {
+      // No throttle drive in neutral, only braking / engine braking
+      if (input.brake && Math.abs(this.forwardVelocity) > 0.1) {
+        force = -Math.sign(this.forwardVelocity) * this.config.brakeForce
+      }
+      if (!input.brake && Math.abs(this.forwardVelocity) > 0.5) {
+        force = -Math.sign(this.forwardVelocity) * this.config.engineBraking
+      }
+      // Resistance forces
+      if (Math.abs(this.forwardVelocity) > 0.1) {
+        const rollingResistance = this.config.rollingResistance * this.config.mass * Math.abs(this.forwardVelocity)
+        const airDrag = 0.5 * this.config.airDragCoefficient * speed * speed
+        const resistanceForce = (rollingResistance + airDrag) * Math.sign(this.forwardVelocity)
+        force -= resistanceForce / this.config.mass
+      }
+      return force
+    }
+
+    // === REVERSE (gear -1) ===
+    if (gear === -1) {
+      // Determine the "go backward" input based on transmission mode
+      // Manual: W (throttle>0) = go backward in R, S = brake
+      // Automatic: S (throttle<0) = go backward in R, W = brake/switch to forward
+      const wantsReverse = this.transmissionMode === 'manual'
+        ? input.throttle > 0
+        : input.throttle < 0
+      const wantsBrake = this.transmissionMode === 'manual'
+        ? input.throttle < 0
+        : input.throttle > 0
+
+      if (wantsReverse) {
+        const absThrottle = Math.abs(input.throttle)
+        if (this.forwardVelocity > 0.5) {
+          // Still rolling forward - brake first
+          force = -this.config.brakeForce
+        } else if (this.forwardVelocity > -CarPhysics.REVERSE_MAX_SPEED) {
+          const powerFactor = 1 - Math.pow(Math.abs(this.forwardVelocity) / CarPhysics.REVERSE_MAX_SPEED, 2) * 0.6
+          force = -this.config.reverseAcceleration * CarPhysics.REVERSE_ACCEL_MULT * powerFactor * absThrottle
+        }
+      } else if (wantsBrake) {
+        // Opposite key in reverse gear = brake
+        if (Math.abs(this.forwardVelocity) > 0.1) {
+          force = -Math.sign(this.forwardVelocity) * this.config.brakeForce
+        }
+      }
+
+      // Brake pedal
+      if (input.brake && Math.abs(this.forwardVelocity) > 0.1) {
+        force = -Math.sign(this.forwardVelocity) * this.config.brakeForce
+      }
+
+      // Engine braking in reverse
+      if (input.throttle === 0 && !input.brake && Math.abs(this.forwardVelocity) > 0.5) {
+        force = -Math.sign(this.forwardVelocity) * this.config.engineBraking
+      }
+
+      // Resistance
+      if (Math.abs(this.forwardVelocity) > 0.1) {
+        const rollingResistance = this.config.rollingResistance * this.config.mass * Math.abs(this.forwardVelocity)
+        const airDrag = 0.5 * this.config.airDragCoefficient * speed * speed
+        const resistanceForce = (rollingResistance + airDrag) * Math.sign(this.forwardVelocity)
+        force -= resistanceForce / this.config.mass
+      }
+      return force
+    }
+
+    // === FORWARD GEARS (1-5) ===
+    const [gearMaxSpeed, accelMult] = CarPhysics.GEAR_TABLE[gear]
     
     // Throttle
     if (input.throttle > 0) {
       if (this.forwardVelocity < 0) {
         // Braking if moving backward
         force = this.config.brakeForce
-      } else if (this.forwardVelocity < this.config.maxSpeed) {
-        // Accelerate with power curve
-        const powerFactor = 1 - Math.pow(this.forwardVelocity / this.config.maxSpeed, 2) * 0.6
-        force = this.config.acceleration * powerFactor * input.throttle
+      } else if (this.forwardVelocity < gearMaxSpeed) {
+        // Accelerate with power curve limited by gear
+        const gearRatio = this.forwardVelocity / gearMaxSpeed
+        const powerFactor = 1 - Math.pow(gearRatio, 2) * 0.6
+        force = this.config.acceleration * accelMult * powerFactor * input.throttle
       }
+      // If speed exceeds gear max, no more acceleration (hitting rev limiter)
     } else if (input.throttle < 0) {
-      if (this.forwardVelocity > 0.5) {
-        // Braking if moving forward
-        force = -this.config.brakeForce
-      } else if (this.forwardVelocity > -this.config.reverseMaxSpeed) {
-        // Reverse acceleration
-        force = this.config.reverseAcceleration * input.throttle
+      // In automatic: S = reverse/brake. In manual forward gear: S = brake only
+      if (this.transmissionMode === 'automatic') {
+        if (this.forwardVelocity > 0.5) {
+          force = -this.config.brakeForce
+        } else if (this.forwardVelocity > -this.config.reverseMaxSpeed) {
+          force = this.config.reverseAcceleration * input.throttle
+        }
+      } else {
+        // Manual mode, forward gear: S = brake only (must switch to R to reverse)
+        if (Math.abs(this.forwardVelocity) > 0.1) {
+          force = -Math.sign(this.forwardVelocity) * this.config.brakeForce
+        }
       }
     }
     
@@ -474,6 +588,18 @@ export class CarPhysics {
     return this.heading
   }
 
+  getCurrentGear(): number {
+    return this.currentGear
+  }
+
+  getTransmissionMode(): 'automatic' | 'manual' {
+    return this.transmissionMode
+  }
+
+  getRPM(): number {
+    return this.rpm
+  }
+
   getPhysicsInfo(): PhysicsInfo {
     return {
       speed: this.getSpeed(),
@@ -484,6 +610,132 @@ export class CarPhysics {
       steerAngle: this.getSteerAngle(),
       isGrounded: this.isGrounded,
     }
+  }
+
+  // === TRANSMISSION CONTROL ===
+
+  /**
+   * Toggle between automatic and manual transmission
+   */
+  toggleTransmissionMode(): 'automatic' | 'manual' {
+    this.transmissionMode = this.transmissionMode === 'automatic' ? 'manual' : 'automatic'
+    console.log(`[CarPhysics] Transmission: ${this.transmissionMode}`)
+    // When switching to manual, keep current gear
+    // When switching to automatic, let auto-shift take over
+    return this.transmissionMode
+  }
+
+  /**
+   * Shift up one gear (manual mode)
+   */
+  shiftUp(): number {
+    if (this.transmissionMode !== 'manual') return this.currentGear
+    
+    if (this.currentGear < CarPhysics.MAX_GEAR) {
+      this.currentGear++
+      console.log(`[CarPhysics] Shift up → Gear ${this.getGearName()}`)
+    }
+    return this.currentGear
+  }
+
+  /**
+   * Shift down one gear (manual mode) 
+   * Goes from 1 → N(0) → R(-1)
+   */
+  shiftDown(): number {
+    if (this.transmissionMode !== 'manual') return this.currentGear
+    
+    if (this.currentGear > -1) {
+      this.currentGear--
+      console.log(`[CarPhysics] Shift down → Gear ${this.getGearName()}`)
+    }
+    return this.currentGear
+  }
+
+  /**
+   * Get gear display name
+   */
+  getGearName(): string {
+    if (this.currentGear === -1) return 'R'
+    if (this.currentGear === 0) return 'N'
+    return `${this.currentGear}`
+  }
+
+  /**
+   * Automatic transmission logic
+   */
+  private updateAutoTransmission(input: CarInputState, speed: number): void {
+    const absForwardSpeed = Math.abs(this.forwardVelocity)
+
+    // === REVERSE: pressing S when stopped or very slow ===
+    if (input.throttle < 0 && this.forwardVelocity <= 0.5) {
+      if (this.currentGear !== -1) {
+        this.currentGear = -1
+        // No cooldown for entering reverse from stop – instant response
+      }
+      return
+    }
+
+    // === FORWARD: pressing W ===
+    if (input.throttle > 0) {
+      // From reverse/neutral → 1st instantly (no cooldown for this essential shift)
+      if (this.currentGear <= 0) {
+        this.currentGear = 1
+        return
+      }
+
+      // Gear-to-gear shifts respect cooldown
+      if (this.autoShiftTimer > 0) return
+
+      // Upshift: when speed exceeds threshold of current gear
+      if (this.currentGear < CarPhysics.MAX_GEAR) {
+        const [gearMax] = CarPhysics.GEAR_TABLE[this.currentGear]
+        if (absForwardSpeed > gearMax * CarPhysics.AUTO_UPSHIFT_RPM) {
+          this.currentGear++
+          this.autoShiftTimer = CarPhysics.SHIFT_COOLDOWN
+          return
+        }
+      }
+
+      // Downshift: when speed drops below threshold
+      if (this.currentGear > 1) {
+        const [lowerGearMax] = CarPhysics.GEAR_TABLE[this.currentGear - 1]
+        if (absForwardSpeed < lowerGearMax * CarPhysics.AUTO_DOWNSHIFT_RPM) {
+          this.currentGear--
+          this.autoShiftTimer = CarPhysics.SHIFT_COOLDOWN
+          return
+        }
+      }
+    }
+
+    // No throttle, fully stopped → neutral (only when truly stopped)
+    if (input.throttle === 0 && !input.brake && absForwardSpeed < 0.3 && this.currentGear !== 0) {
+      this.currentGear = 0
+    }
+  }
+
+  /**
+   * Estimate RPM from speed and current gear (for UI/audio)
+   */
+  private updateRPM(): void {
+    const idleRPM = 800
+    const maxRPM = 7000
+    const absSpeed = Math.abs(this.forwardVelocity)
+
+    if (this.currentGear === 0) {
+      this.rpm = idleRPM
+      return
+    }
+
+    if (this.currentGear === -1) {
+      const ratio = Math.min(1, absSpeed / CarPhysics.REVERSE_MAX_SPEED)
+      this.rpm = idleRPM + (maxRPM - idleRPM) * ratio
+      return
+    }
+
+    const [gearMax] = CarPhysics.GEAR_TABLE[this.currentGear]
+    const ratio = Math.min(1, absSpeed / gearMax)
+    this.rpm = idleRPM + (maxRPM - idleRPM) * ratio
   }
 
   /**
@@ -501,5 +753,8 @@ export class CarPhysics {
     this.slipAngle = 0
     this.bodyRoll = 0
     this.bodyPitch = 0
+    this.currentGear = 0
+    this.rpm = 800
+    this.autoShiftTimer = 0
   }
 }

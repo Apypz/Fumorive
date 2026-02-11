@@ -20,6 +20,9 @@ from app.api.routes.websocket import router as websocket_router
 from app.api.routes.eeg import router as eeg_router
 from app.api.routes.face import router as face_router
 from app.api.routes.users import router as users_router
+from app.api.routes.alerts import router as alerts_router
+from app.api.routes.playback import router as playback_router
+from app.api.routes.export import router as export_router
 
 # Configure logging
 logging.basicConfig(
@@ -55,7 +58,6 @@ Real-time fatigue detection system using:
     redoc_url="/api/redoc",
     contact={
         "name": "Fumorive Team",
-        "email": "[EMAIL_ADDRESS]",
     },
     license_info={
         "name": "MIT License",
@@ -130,11 +132,13 @@ async def log_requests(request: Request, call_next):
 # Note: Cannot use ["*"] with allow_credentials=True
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:5173",
+    "http://localhost:3001",  # Vite dev server (main)
+    "http://localhost:5173",  # Vite default port
+    "http://localhost:5174",  # Vite alternative port
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
     "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -155,6 +159,9 @@ app.include_router(sessions_router, prefix=API_V1_PREFIX)
 app.include_router(websocket_router, prefix=API_V1_PREFIX)
 app.include_router(eeg_router, prefix=API_V1_PREFIX)
 app.include_router(face_router, prefix=API_V1_PREFIX)
+app.include_router(alerts_router, prefix=API_V1_PREFIX)
+app.include_router(playback_router, prefix=API_V1_PREFIX)
+app.include_router(export_router, prefix=API_V1_PREFIX)
 
 # ============================================
 # HEALTH CHECK ENDPOINTS

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authService, type LoginData, type RegisterData, type UserResponse } from '../api/auth';
-import { parseJWT, getAccessToken, clearTokens } from '../utils/auth';
+import { parseJWT, getAccessToken, clearTokens, signInWithGoogle } from '../utils/auth';
 
 interface UserState {
     user: UserResponse | null;
@@ -10,10 +10,12 @@ interface UserState {
     error: string | null;
 
     login: (credentials: LoginData) => Promise<void>;
+    loginWithGoogle: () => Promise<void>;
     register: (data: RegisterData) => Promise<void>;
     logout: () => Promise<void>;
     updateProfile: (data: Partial<UserResponse>) => void;
     setError: (error: string | null) => void;
+    refreshUserFromToken: () => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -65,6 +67,46 @@ export const useUserStore = create<UserState>()(
                 }
             },
 
+            loginWithGoogle: async () => {
+                set({ isLoading: true, error: null });
+                try {
+                    // Sign in with Google (saves tokens to localStorage)
+                    const result = await signInWithGoogle();
+
+                    if (!result) {
+                        throw new Error('Google sign-in returned no result');
+                    }
+
+                    // Parse the new JWT to get user info
+                    const decodedToken = parseJWT(result.access_token);
+                    if (!decodedToken) {
+                        throw new Error('Failed to decode access token');
+                    }
+
+                    // Extract user info from JWT payload (this comes from database, not Google)
+                    const user: UserResponse = {
+                        id: decodedToken.user_id || 'unknown',
+                        email: decodedToken.email || '',
+                        full_name: decodedToken.full_name || 'User',
+                        role: decodedToken.role || 'student',
+                        is_active: true,
+                        created_at: new Date().toISOString()
+                    };
+
+                    set({
+                        isAuthenticated: true,
+                        isLoading: false,
+                        user
+                    });
+                } catch (error: any) {
+                    set({
+                        isLoading: false,
+                        error: error.message || 'Google login failed'
+                    });
+                    throw error;
+                }
+            },
+
             register: async (data) => {
                 set({ isLoading: true, error: null });
                 try {
@@ -106,6 +148,31 @@ export const useUserStore = create<UserState>()(
             },
 
             setError: (error) => set({ error }),
+
+            refreshUserFromToken: () => {
+                const accessToken = getAccessToken();
+                if (!accessToken) {
+                    set({ user: null, isAuthenticated: false });
+                    return;
+                }
+
+                const decodedToken = parseJWT(accessToken);
+                if (!decodedToken) {
+                    set({ user: null, isAuthenticated: false });
+                    return;
+                }
+
+                const user: UserResponse = {
+                    id: decodedToken.user_id || 'unknown',
+                    email: decodedToken.email || '',
+                    full_name: decodedToken.full_name || 'User',
+                    role: decodedToken.role || 'student',
+                    is_active: true,
+                    created_at: new Date().toISOString()
+                };
+
+                set({ user, isAuthenticated: true });
+            },
         }),
         {
             name: 'user-storage',

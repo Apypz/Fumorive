@@ -249,6 +249,14 @@ class EEGStreamingServer:
             "TP10": float(np.mean(raw_data[:, 3])) if raw_data.shape[1] > 3 else 0
         }
         
+        # Determine cognitive state based on fatigue
+        if fatigue_score < 30:
+            cognitive_state = "alert"
+        elif fatigue_score < 60:
+            cognitive_state = "drowsy"
+        else:
+            cognitive_state = "fatigued"
+        
         # 8. Build payload
         payload = {
             "session_id": self.session_id,
@@ -262,12 +270,9 @@ class EEGStreamingServer:
                 "gamma_power": float(np.mean(features.get('gamma', [0]))),
                 "theta_alpha_ratio": float(result['metrics'].get('theta_alpha', 1.0)),
                 "beta_alpha_ratio": float(result['metrics'].get('beta_alpha', 1.0)),
-                "fatigue_score": round(fatigue_score, 2),
-                "cognitive_state": backend_state,
+                "eeg_fatigue_score": round(fatigue_score, 2),  # Frontend expects this name
                 "signal_quality": float(quality),
-                # Internal state (untuk debugging)
-                "_internal_state": result['state'],
-                "_confidence": result['confidence']
+                "cognitive_state": cognitive_state  # Frontend expects this for State display
             },
             "save_to_db": self.save_to_db
         }
@@ -388,13 +393,12 @@ class EEGStreamingServer:
                     now = time.time()
                     if now - last_log >= 5.0:
                         elapsed = now - self.start_time
-                        state = payload['processed']['cognitive_state']
-                        fatigue = payload['processed']['fatigue_score']
-                        internal = payload['processed']['_internal_state']
+                        fatigue = payload['processed']['eeg_fatigue_score']
+                        signal_quality = payload['processed']['signal_quality']
                         
                         logger.info(
-                            f"[{elapsed:.0f}s] State: {state} ({internal}) | "
-                            f"Fatigue: {fatigue:.0f}% | "
+                            f"[{elapsed:.0f}s] Fatigue: {fatigue:.0f}% | "
+                            f"Signal Quality: {signal_quality:.2f} | "
                             f"Sent: {self.samples_sent} | Errors: {self.errors}"
                         )
                         last_log = now
