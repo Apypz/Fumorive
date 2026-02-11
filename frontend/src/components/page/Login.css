@@ -33,7 +33,7 @@
     padding: 4rem;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
     overflow: hidden;
 }
 
@@ -70,9 +70,13 @@
     line-height: 1.2;
 }
 
+
 .partners-section {
     position: relative;
     z-index: 10;
+    background: transparent !important; /* Force transparent */
+    margin-top: auto;
+    padding-bottom: 0;
 }
 
 .partners-label {
