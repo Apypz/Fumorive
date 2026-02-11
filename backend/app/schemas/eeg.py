@@ -2,10 +2,11 @@
 EEG and Face Detection Schemas
 Pydantic models for real-time EEG and face detection data
 Week 3, Monday - Enhanced for HTTP endpoint
+Week 4 - Added playback response schemas
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, Union
+from typing import Optional, Dict, Union, List, Any, Literal
 from datetime import datetime
 from uuid import UUID
 
@@ -167,3 +168,97 @@ class GameEventData(BaseModel):
     lane_deviation: Optional[float] = Field(None, description="Distance from center (meters)")
     weather: Optional[str] = Field(None, pattern="^(clear|rain|fog)$")
     time_of_day: Optional[str] = Field(None, pattern="^(day|night|sunset)$")
+
+
+# ============================================
+# SESSION PLAYBACK RESPONSE SCHEMAS
+# ============================================
+
+class EEGDataResponse(BaseModel):
+    """EEG data record for playback"""
+    id: int
+    session_id: UUID
+    timestamp: datetime
+    raw_channels: Optional[Dict[str, float]] = None
+    delta_power: Optional[float] = None
+    theta_power: Optional[float] = None
+    alpha_power: Optional[float] = None
+    beta_power: Optional[float] = None
+    gamma_power: Optional[float] = None
+    theta_alpha_ratio: Optional[float] = None
+    beta_alpha_ratio: Optional[float] = None
+    signal_quality: Optional[float] = None
+    cognitive_state: Optional[str] = None
+    eeg_fatigue_score: Optional[float] = None
+
+    model_config = {"from_attributes": True}
+
+
+class FaceEventResponse(BaseModel):
+    """Face detection event for playback"""
+    id: int
+    session_id: UUID
+    timestamp: datetime
+    eye_aspect_ratio: Optional[float] = None
+    mouth_aspect_ratio: Optional[float] = None
+    eyes_closed: bool = False
+    yawning: bool = False
+    blink_count: int = 0
+    blink_rate: Optional[float] = None
+    head_yaw: Optional[float] = None
+    head_pitch: Optional[float] = None
+    head_roll: Optional[float] = None
+    face_fatigue_score: Optional[float] = None
+
+    model_config = {"from_attributes": True}
+
+
+class GameEventResponse(BaseModel):
+    """Game event for playback"""
+    id: int
+    session_id: UUID
+    timestamp: datetime
+    event_type: Optional[str] = None
+    event_data: Optional[Dict] = None
+    speed: Optional[float] = None
+    lane_deviation: Optional[float] = None
+    weather: Optional[str] = None
+    time_of_day: Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+
+class TimelineEvent(BaseModel):
+    """Unified timeline event combining all data types"""
+    type: str  # "eeg", "face", "game", "alert"
+    timestamp: datetime
+    data: Dict[str, Any]
+
+
+class PaginatedResponse(BaseModel):
+    """Generic paginated response wrapper"""
+    total: int
+    page: int
+    page_size: int
+    has_next: bool
+
+
+class PaginatedEEGResponse(PaginatedResponse):
+    """Paginated EEG data"""
+    data: List[EEGDataResponse]
+
+
+class PaginatedFaceResponse(PaginatedResponse):
+    """Paginated face events"""
+    data: List[FaceEventResponse]
+
+
+class PaginatedGameResponse(PaginatedResponse):
+    """Paginated game events"""
+    data: List[GameEventResponse]
+
+
+class TimelineResponse(PaginatedResponse):
+    """Paginated timeline"""
+    events: List[TimelineEvent]
+

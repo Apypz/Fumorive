@@ -21,6 +21,8 @@ from app.api.routes.eeg import router as eeg_router
 from app.api.routes.face import router as face_router
 from app.api.routes.users import router as users_router
 from app.api.routes.alerts import router as alerts_router
+from app.api.routes.playback import router as playback_router
+from app.api.routes.export import router as export_router
 
 # Configure logging
 logging.basicConfig(
@@ -158,6 +160,8 @@ app.include_router(websocket_router, prefix=API_V1_PREFIX)
 app.include_router(eeg_router, prefix=API_V1_PREFIX)
 app.include_router(face_router, prefix=API_V1_PREFIX)
 app.include_router(alerts_router, prefix=API_V1_PREFIX)
+app.include_router(playback_router, prefix=API_V1_PREFIX)
+app.include_router(export_router, prefix=API_V1_PREFIX)
 
 # ============================================
 # HEALTH CHECK ENDPOINTS
