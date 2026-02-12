@@ -15,6 +15,42 @@ export interface SessionCreate {
     settings?: any;
 }
 
+export interface SessionUpdate {
+    session_name?: string;
+    session_status?: 'active' | 'completed' | 'failed';
+    settings?: any;
+    ended_at?: string;
+    duration_seconds?: number;
+    avg_fatigue_score?: number;
+    max_fatigue_score?: number;
+    alert_count?: number;
+}
+
+export interface ViolationData {
+    type: string;
+    points: number;
+    timestamp: number;
+    description: string;
+}
+
+export interface GameSessionData {
+    routeName: string;
+    totalWaypoints: number;
+    reachedCount: number;
+    missedCount: number;
+    completionTime: number;
+    violations: ViolationData[];
+    totalViolationPoints: number;
+    eegData?: any[];
+    gameMetrics?: {
+        averageSpeed: number;
+        maxSpeed: number;
+        collisions: number;
+        laneDeviations: number;
+        totalDistance: number;
+    };
+}
+
 export interface SessionResponse {
     id: string;
     user_id: string;
@@ -24,6 +60,17 @@ export interface SessionResponse {
     started_at: string;
     ended_at?: string;
     duration_seconds?: number;
+    avg_fatigue_score?: number;
+    max_fatigue_score?: number;
+    alert_count?: number;
+    settings?: any;
+}
+
+export interface SessionListResponse {
+    total: number;
+    sessions: SessionResponse[];
+    page: number;
+    page_size: number;
 }
 
 export const sessionApi = {
@@ -93,6 +140,107 @@ export const sessionApi = {
             }
         );
         return response.data;
+    },
+
+    /**
+     * Complete a session with final data
+     */
+    complete: async (sessionId: string, data?: SessionUpdate): Promise<SessionResponse> => {
+        const token = getAccessToken();
+        if (!token) {
+            throw new Error('Not authenticated. Please log in first.');
+        }
+        
+        // First update session with final stats if provided
+        if (data) {
+            await axios.patch(
+                `${API_BASE_URL}/sessions/${sessionId}`,
+                data,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+        }
+        
+        // Then mark as complete
+        const response = await axios.post(
+            `${API_BASE_URL}/sessions/${sessionId}/complete`,
+            {},
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }
+        );
+        return response.data;
+    },
+
+    /**
+     * Update a session
+     */
+    update: async (sessionId: string, data: SessionUpdate): Promise<SessionResponse> => {
+        const token = getAccessToken();
+        if (!token) {
+            throw new Error('Not authenticated. Please log in first.');
+        }
+        const response = await axios.patch(
+            `${API_BASE_URL}/sessions/${sessionId}`,
+            data,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }
+        );
+        return response.data;
+    },
+
+    /**
+     * List user's sessions with pagination
+     */
+    list: async (page: number = 1, pageSize: number = 20, status?: string): Promise<SessionListResponse> => {
+        const token = getAccessToken();
+        if (!token) {
+            throw new Error('Not authenticated. Please log in first.');
+        }
+        
+        const params = new URLSearchParams({
+            page: page.toString(),
+            page_size: pageSize.toString(),
+        });
+        if (status) {
+            params.append('status', status);
+        }
+        
+        const response = await axios.get(
+            `${API_BASE_URL}/sessions?${params.toString()}`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }
+        );
+        return response.data;
+    },
+
+    /**
+     * Delete a session
+     */
+    delete: async (sessionId: string): Promise<void> => {
+        const token = getAccessToken();
+        if (!token) {
+            throw new Error('Not authenticated. Please log in first.');
+        }
+        await axios.delete(
+            `${API_BASE_URL}/sessions/${sessionId}`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            }
+        );
     }
 };
 

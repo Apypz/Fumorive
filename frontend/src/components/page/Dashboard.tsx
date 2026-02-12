@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
     Gamepad2,
@@ -19,8 +19,6 @@ import {
     Gauge,
     Calendar,
     Clock,
-    Download,
-    Filter,
     Search,
     BarChart3,
     Sliders,
@@ -28,7 +26,9 @@ import {
     Shield,
     Database,
     Info,
-    Camera
+    Camera,
+    Trash2,
+    Flag
 } from 'lucide-react';
 import { useUserStore } from '../../stores/userStore';
 import { useEEGStore } from '../../stores/eegStore';
@@ -36,13 +36,37 @@ import './Dashboard.css';
 
 type TabView = 'overview' | 'history' | 'profile' | 'settings';
 
+interface SavedSession {
+    sessionId: string;
+    startTime: string;
+    endTime?: string;
+    duration?: number;
+    routeName?: string;
+    totalWaypoints?: number;
+    reachedCount?: number;
+    missedCount?: number;
+    completionTime?: number;
+    violations?: any[];
+    totalViolationPoints?: number;
+    eegData?: any[];
+    gameMetrics?: any;
+    savedAt: string;
+    stats?: any;
+    violationStats?: any;
+}
+
 const Dashboard = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [activeTab, setActiveTab] = useState<TabView>('overview');
     const navigate = useNavigate();
+    const location = useLocation();
     const { user, logout } = useUserStore();
     const [fullName, setFullName] = useState(user?.full_name || '');
     const [isSaving, setIsSaving] = useState(false);
+    
+    // History state
+    const [sessionHistory, setSessionHistory] = useState<SavedSession[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
     
     // EEG Store
     const isConnected = useEEGStore((state) => state.isConnected);
@@ -115,6 +139,93 @@ const Dashboard = () => {
             setFullName(user.full_name);
         }
     }, [user?.full_name]);
+
+    // Load session history from localStorage
+    useEffect(() => {
+        const loadHistory = () => {
+            try {
+                const saved = localStorage.getItem('sessionHistory');
+                if (saved) {
+                    const sessions = JSON.parse(saved) as SavedSession[];
+                    setSessionHistory(sessions);
+                }
+            } catch (error) {
+                console.error('Failed to load session history:', error);
+            }
+        };
+        loadHistory();
+        
+        // Listen for storage changes (in case another tab updates)
+        window.addEventListener('storage', loadHistory);
+        return () => window.removeEventListener('storage', loadHistory);
+    }, []);
+
+    // Check if navigated with tab state
+    useEffect(() => {
+        const state = location.state as { tab?: TabView } | null;
+        if (state?.tab) {
+            setActiveTab(state.tab);
+            // Clear the state
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
+
+    // Calculate history statistics
+    const historyStats = useMemo(() => {
+        if (sessionHistory.length === 0) {
+            return {
+                totalSessions: 0,
+                totalHours: '0',
+                avgFatigue: '--',
+                totalAlerts: 0
+            };
+        }
+
+        const totalDuration = sessionHistory.reduce((sum, s) => sum + (s.duration || s.completionTime || 0), 0);
+        const totalHours = (totalDuration / 3600).toFixed(1);
+        
+        const allFatigueScores = sessionHistory
+            .filter(s => s.stats?.avgFatigue)
+            .map(s => parseFloat(s.stats.avgFatigue));
+        const avgFatigue = allFatigueScores.length > 0 
+            ? (allFatigueScores.reduce((a, b) => a + b, 0) / allFatigueScores.length).toFixed(2)
+            : '--';
+        
+        const totalAlerts = sessionHistory.reduce((sum, s) => sum + (s.violations?.length || 0), 0);
+
+        return {
+            totalSessions: sessionHistory.length,
+            totalHours,
+            avgFatigue,
+            totalAlerts
+        };
+    }, [sessionHistory]);
+
+    // Filter sessions by search
+    const filteredSessions = useMemo(() => {
+        if (!searchQuery.trim()) return sessionHistory;
+        const query = searchQuery.toLowerCase();
+        return sessionHistory.filter(s => 
+            s.routeName?.toLowerCase().includes(query) ||
+            s.sessionId.toLowerCase().includes(query) ||
+            new Date(s.startTime).toLocaleDateString().includes(query)
+        );
+    }, [sessionHistory, searchQuery]);
+
+    // Handle view session details
+    const handleViewSession = (session: SavedSession) => {
+        navigate('/session-results', { state: session });
+    };
+
+    // Handle delete session
+    const handleDeleteSession = (sessionId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (window.confirm('Apakah Anda yakin ingin menghapus sesi ini?')) {
+            const updated = sessionHistory.filter(s => s.sessionId !== sessionId);
+            setSessionHistory(updated);
+            localStorage.setItem('sessionHistory', JSON.stringify(updated));
+        }
+    };
 
     // Update average metrics and graph data from EEG store
     useEffect(() => {
@@ -773,21 +884,81 @@ const Dashboard = () => {
                                     <span>Sesi Terakhir</span>
                                 </div>
                             </div>
-                            <div style={{
-                                padding: '2rem 1rem',
-                                textAlign: 'center',
-                                color: '#64748b'
-                            }}>
-                                <Calendar size={48} style={{ margin: '0 auto 1rem', opacity: 0.2 }} />
-                                <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem' }}>Belum ada sesi yang dijalankan</p>
-                                <button
-                                    className="btn-primary"
-                                    style={{ padding: '10px 20px', fontSize: '0.9rem' }}
-                                    onClick={() => setActiveTab('history')}
-                                >
-                                    Lihat History
-                                </button>
-                            </div>
+                            {sessionHistory.length > 0 ? (
+                                (() => {
+                                    const lastSession = sessionHistory[0];
+                                    const startDate = new Date(lastSession.startTime);
+                                    const duration = lastSession.duration || lastSession.completionTime || 0;
+                                    const durationMin = Math.floor(duration / 60);
+                                    
+                                    return (
+                                        <div 
+                                            style={{ padding: '1rem', cursor: 'pointer' }}
+                                            onClick={() => handleViewSession(lastSession)}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                                                <div style={{
+                                                    width: '48px',
+                                                    height: '48px',
+                                                    borderRadius: '10px',
+                                                    background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center'
+                                                }}>
+                                                    <Flag size={24} color="white" />
+                                                </div>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ fontWeight: 600, color: '#1e293b' }}>{lastSession.routeName || 'Sesi Mengemudi'}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                                                        {startDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} • {durationMin} menit
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                                {lastSession.reachedCount !== undefined && (
+                                                    <span style={{ padding: '0.25rem 0.5rem', background: '#f0fdf4', color: '#10b981', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                                        ✓ {lastSession.reachedCount}/{lastSession.totalWaypoints} checkpoint
+                                                    </span>
+                                                )}
+                                                <span style={{ 
+                                                    padding: '0.25rem 0.5rem', 
+                                                    background: (lastSession.totalViolationPoints || 0) === 0 ? '#f0fdf4' : '#fef2f2', 
+                                                    color: (lastSession.totalViolationPoints || 0) === 0 ? '#10b981' : '#ef4444', 
+                                                    borderRadius: '4px', 
+                                                    fontSize: '0.75rem', 
+                                                    fontWeight: 600 
+                                                }}>
+                                                    ⚠️ {lastSession.totalViolationPoints || 0} poin pelanggaran
+                                                </span>
+                                            </div>
+                                            <button
+                                                className="btn-primary"
+                                                style={{ marginTop: '1rem', padding: '8px 16px', fontSize: '0.85rem', width: '100%' }}
+                                                onClick={(e) => { e.stopPropagation(); setActiveTab('history'); }}
+                                            >
+                                                Lihat Semua History ({sessionHistory.length})
+                                            </button>
+                                        </div>
+                                    );
+                                })()
+                            ) : (
+                                <div style={{
+                                    padding: '2rem 1rem',
+                                    textAlign: 'center',
+                                    color: '#64748b'
+                                }}>
+                                    <Calendar size={48} style={{ margin: '0 auto 1rem', opacity: 0.2 }} />
+                                    <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem' }}>Belum ada sesi yang dijalankan</p>
+                                    <button
+                                        className="btn-primary"
+                                        style={{ padding: '10px 20px', fontSize: '0.9rem' }}
+                                        onClick={() => navigate('/session')}
+                                    >
+                                        Mulai Sesi
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -802,7 +973,9 @@ const Dashboard = () => {
                                     <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }} />
                                     <input
                                         type="text"
-                                        placeholder="Search sessions..."
+                                        placeholder="Cari sesi..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
                                         style={{
                                             width: '100%',
                                             padding: '10px 12px 10px 40px',
@@ -812,13 +985,12 @@ const Dashboard = () => {
                                         }}
                                     />
                                 </div>
-                                <button style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>
-                                    <Filter size={18} />
-                                    <span>Filter</span>
-                                </button>
-                                <button style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', background: 'white', cursor: 'pointer' }}>
-                                    <Download size={18} />
-                                    <span>Export</span>
+                                <button 
+                                    onClick={() => navigate('/session')}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', border: 'none', borderRadius: '8px', background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)', color: 'white', cursor: 'pointer', fontWeight: 600 }}
+                                >
+                                    <Gamepad2 size={18} />
+                                    <span>Sesi Baru</span>
                                 </button>
                             </div>
                         </div>
@@ -826,14 +998,14 @@ const Dashboard = () => {
                         {/* Session Statistics Overview */}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem', color: '#64748b' }}>
                             {[
-                                { label: 'Total Sessions', value: '0', icon: <BarChart3 size={20} />, color: '#3b82f6' },
-                                { label: 'Total Hours', value: '0h', icon: <Clock size={20} />, color: '#10b981' },
-                                { label: 'Avg. Fatigue Score', value: '--', icon: <TrendingUp size={20} />, color: '#f59e0b' },
-                                { label: 'Alerts Triggered', value: '0', icon: <AlertTriangle size={20} />, color: '#ef4444' }
+                                { label: 'Total Sesi', value: historyStats.totalSessions.toString(), icon: <BarChart3 size={20} />, color: '#3b82f6' },
+                                { label: 'Total Jam', value: `${historyStats.totalHours}h`, icon: <Clock size={20} />, color: '#10b981' },
+                                { label: 'Rata-rata Fatigue', value: historyStats.avgFatigue, icon: <TrendingUp size={20} />, color: '#f59e0b' },
+                                { label: 'Total Pelanggaran', value: historyStats.totalAlerts.toString(), icon: <AlertTriangle size={20} />, color: '#ef4444' }
                             ].map((stat) => (
                                 <div key={stat.label} className="widget-card" style={{ textAlign: 'center' }}>
                                     <div style={{ color: stat.color, marginBottom: '0.5rem', display: 'flex', justifyContent: 'center' }}>{stat.icon}</div>
-                                    <div style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>{stat.value}</div>
+                                    <div style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.25rem', color: '#1e293b' }}>{stat.value}</div>
                                     <div style={{ fontSize: '0.85rem', color: '#64748b' }}>{stat.label}</div>
                                 </div>
                             ))}
@@ -841,51 +1013,189 @@ const Dashboard = () => {
 
                         {/* Session List */}
                         <div className="widget-card">
-                            <div className="widget-title">Recent Sessions</div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                {/* Empty State with Fumorive Branding */}
-                                <div style={{
-                                    padding: '3rem 2rem',
-                                    textAlign: 'center',
-                                    color: '#64748b'
-                                }}>
+                            <div className="widget-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>Riwayat Sesi ({filteredSessions.length})</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {filteredSessions.length === 0 ? (
+                                    /* Empty State */
                                     <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '0.75rem',
-                                        marginBottom: '1.5rem'
+                                        padding: '3rem 2rem',
+                                        textAlign: 'center',
+                                        color: '#64748b'
                                     }}>
                                         <div style={{
-                                            width: '50px',
-                                            height: '50px',
-                                            borderRadius: '12px',
-                                            background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            color: 'white',
-                                            fontWeight: 'bold',
-                                            fontSize: '1.25rem'
+                                            gap: '0.75rem',
+                                            marginBottom: '1.5rem'
                                         }}>
-                                            F
+                                            <div style={{
+                                                width: '50px',
+                                                height: '50px',
+                                                borderRadius: '12px',
+                                                background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: 'white',
+                                                fontWeight: 'bold',
+                                                fontSize: '1.25rem'
+                                            }}>
+                                                F
+                                            </div>
+                                            <div style={{ textAlign: 'left' }}>
+                                                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 'bold', color: '#1e293b' }}>Fumorive</h2>
+                                                <p style={{ margin: 0, fontSize: '0.75rem', color: '#9ca3af' }}>Session History</p>
+                                            </div>
                                         </div>
-                                        <div style={{ textAlign: 'left' }}>
-                                            <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 'bold', color: '#1e293b' }}>Fumorive</h2>
-                                            <p style={{ margin: 0, fontSize: '0.75rem', color: '#9ca3af' }}>Session History</p>
-                                        </div>
+                                        <Calendar size={48} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
+                                        <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b' }}>
+                                            {searchQuery ? 'Tidak ada sesi yang cocok' : 'Belum Ada Sesi'}
+                                        </h3>
+                                        <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem' }}>
+                                            {searchQuery ? 'Coba kata kunci lain' : 'Mulai sesi baru untuk melihat data mengemudi dan fatigue Anda di sini'}
+                                        </p>
+                                        {!searchQuery && (
+                                            <button
+                                                className="btn-primary"
+                                                style={{ marginTop: '1.5rem', padding: '10px 24px' }}
+                                                onClick={() => navigate('/session')}
+                                            >
+                                                Mulai Sesi Pertama
+                                            </button>
+                                        )}
                                     </div>
-                                    <Calendar size={48} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
-                                    <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b' }}>No Sessions Yet</h3>
-                                    <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem' }}>Start a new session to see your driving and fatigue data here</p>
-                                    <button
-                                        className="btn-primary"
-                                        style={{ marginTop: '1.5rem', padding: '10px 24px' }}
-                                        onClick={() => navigate('/session')}
-                                    >
-                                        Start Your First Session
-                                    </button>
-                                </div>
+                                ) : (
+                                    /* Session Cards */
+                                    filteredSessions.map((session) => {
+                                        const startDate = new Date(session.startTime);
+                                        const duration = session.duration || session.completionTime || 0;
+                                        const durationMin = Math.floor(duration / 60);
+                                        const durationSec = Math.floor(duration % 60);
+                                        const violationCount = session.violations?.length || 0;
+                                        const violationPoints = session.totalViolationPoints || 0;
+                                        
+                                        return (
+                                            <div 
+                                                key={session.sessionId}
+                                                onClick={() => handleViewSession(session)}
+                                                style={{
+                                                    border: '1px solid #e2e8f0',
+                                                    borderRadius: '10px',
+                                                    overflow: 'hidden',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s ease',
+                                                    background: 'white'
+                                                }}
+                                                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'}
+                                                onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+                                            >
+                                                {/* Main Row */}
+                                                <div style={{ padding: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                    {/* Icon */}
+                                                    <div style={{
+                                                        width: '48px',
+                                                        height: '48px',
+                                                        borderRadius: '10px',
+                                                        background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        flexShrink: 0
+                                                    }}>
+                                                        <Flag size={24} color="white" />
+                                                    </div>
+                                                    
+                                                    {/* Info */}
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ fontWeight: 600, color: '#1e293b', fontSize: '1rem', marginBottom: '0.25rem' }}>
+                                                            {session.routeName || 'Sesi Mengemudi'}
+                                                        </div>
+                                                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.8rem', color: '#64748b' }}>
+                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                <Calendar size={14} />
+                                                                {startDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                            </span>
+                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                <Clock size={14} />
+                                                                {startDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
+                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                <Timer size={14} />
+                                                                {durationMin}:{durationSec.toString().padStart(2, '0')}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {/* Stats Badges */}
+                                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                        {session.reachedCount !== undefined && (
+                                                            <div style={{ 
+                                                                padding: '0.35rem 0.75rem', 
+                                                                background: '#f0fdf4', 
+                                                                borderRadius: '6px',
+                                                                fontSize: '0.8rem',
+                                                                fontWeight: 600,
+                                                                color: '#10b981'
+                                                            }}>
+                                                                <Target size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                                                                {session.reachedCount}/{session.totalWaypoints}
+                                                            </div>
+                                                        )}
+                                                        <div style={{ 
+                                                            padding: '0.35rem 0.75rem', 
+                                                            background: violationPoints === 0 ? '#f0fdf4' : violationPoints < 30 ? '#fef3c7' : '#fef2f2', 
+                                                            borderRadius: '6px',
+                                                            fontSize: '0.8rem',
+                                                            fontWeight: 600,
+                                                            color: violationPoints === 0 ? '#10b981' : violationPoints < 30 ? '#f59e0b' : '#ef4444'
+                                                        }}>
+                                                            <AlertTriangle size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                                                            {violationCount}x ({violationPoints} poin)
+                                                        </div>
+                                                        {session.stats?.avgFatigue && (
+                                                            <div style={{ 
+                                                                padding: '0.35rem 0.75rem', 
+                                                                background: parseFloat(session.stats.avgFatigue) < 3 ? '#eff6ff' : parseFloat(session.stats.avgFatigue) < 6 ? '#fef3c7' : '#fef2f2', 
+                                                                borderRadius: '6px',
+                                                                fontSize: '0.8rem',
+                                                                fontWeight: 600,
+                                                                color: parseFloat(session.stats.avgFatigue) < 3 ? '#3b82f6' : parseFloat(session.stats.avgFatigue) < 6 ? '#f59e0b' : '#ef4444'
+                                                            }}>
+                                                                <Brain size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
+                                                                {session.stats.avgFatigue}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    {/* Delete Button */}
+                                                    <button
+                                                        onClick={(e) => handleDeleteSession(session.sessionId, e)}
+                                                        style={{
+                                                            padding: '0.5rem',
+                                                            background: 'transparent',
+                                                            border: 'none',
+                                                            cursor: 'pointer',
+                                                            color: '#9ca3af',
+                                                            borderRadius: '6px',
+                                                            transition: 'all 0.2s'
+                                                        }}
+                                                        onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.color = '#ef4444'; }}
+                                                        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#9ca3af'; }}
+                                                        title="Hapus sesi"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                    
+                                                    {/* View indicator */}
+                                                    <ChevronRight size={20} color="#9ca3af" />
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                )}
                             </div>
                         </div>
                     </div>
