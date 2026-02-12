@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   CheckCircle,
@@ -19,6 +19,7 @@ import {
   ArrowLeft,
   Download,
   Share2,
+  Flag,
 } from "lucide-react";
 
 interface Violation {
@@ -60,15 +61,15 @@ interface SessionData {
 }
 
 // Violation type mapping
-const violationTypeMap: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-  drowsiness: { label: "Kantuk Terdeteksi", icon: <Eye className="w-4 h-4" />, color: "text-orange-400" },
-  distraction: { label: "Distraksi", icon: <AlertTriangle className="w-4 h-4" />, color: "text-yellow-400" },
-  fatigue: { label: "Kelelahan", icon: <Brain className="w-4 h-4" />, color: "text-red-400" },
-  low_attention: { label: "Perhatian Rendah", icon: <Target className="w-4 h-4" />, color: "text-purple-400" },
-  eyes_closed: { label: "Mata Tertutup", icon: <Eye className="w-4 h-4" />, color: "text-red-500" },
-  yawning: { label: "Menguap", icon: <AlertOctagon className="w-4 h-4" />, color: "text-orange-500" },
-  looking_away: { label: "Melihat ke Arah Lain", icon: <Eye className="w-4 h-4" />, color: "text-yellow-500" },
-  speed_violation: { label: "Pelanggaran Kecepatan", icon: <Zap className="w-4 h-4" />, color: "text-red-400" },
+const VIOLATION_LABELS: Record<string, { label: string; icon: string; color: string }> = {
+  drowsiness: { label: "Kantuk Terdeteksi", icon: "😴", color: "#f59e0b" },
+  distraction: { label: "Distraksi", icon: "⚠️", color: "#eab308" },
+  fatigue: { label: "Kelelahan", icon: "🧠", color: "#ef4444" },
+  low_attention: { label: "Perhatian Rendah", icon: "🎯", color: "#a855f7" },
+  eyes_closed: { label: "Mata Tertutup", icon: "👁️", color: "#dc2626" },
+  yawning: { label: "Menguap", icon: "🥱", color: "#ea580c" },
+  looking_away: { label: "Melihat ke Arah Lain", icon: "👀", color: "#eab308" },
+  speed_violation: { label: "Pelanggaran Kecepatan", icon: "⚡", color: "#ef4444" },
 };
 
 export default function SessionResults() {
@@ -76,6 +77,7 @@ export default function SessionResults() {
   const navigate = useNavigate();
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "violations" | "eeg" | "face">("overview");
+  const [savedToHistory, setSavedToHistory] = useState(false);
 
   useEffect(() => {
     const data = location.state as SessionData;
@@ -259,44 +261,11 @@ export default function SessionResults() {
     );
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate("/dashboard")}
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-gray-400 hover:text-white transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Hasil Analisis Sesi</h1>
-              <p className="text-gray-400 text-sm">{sessionData.routeName}</p>
-              <p className="text-gray-500 text-xs mt-1 flex items-center gap-2">
-                <Calendar className="w-3 h-3" />
-                {sessionData.startTime.toLocaleDateString('id-ID', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })} • {sessionData.startTime.toLocaleTimeString('id-ID', { timeStyle: 'short' })} - {sessionData.endTime.toLocaleTimeString('id-ID', { timeStyle: 'short' })}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-gray-400 hover:text-white transition-colors">
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Export</span>
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-gray-400 hover:text-white transition-colors">
-              <Share2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Bagikan</span>
-            </button>
-          </div>
-        </div>
-
+  // Calculate EEG statistics
+  const eegStats = useMemo(() => {
+    if (!sessionData?.eegData?.length) return null;
+    const eegData = sessionData.eegData;
+    
     const fatigueScores = eegData.map(d => d.eegFatigueScore || 0);
     const avgFatigue = (fatigueScores.reduce((a, b) => a + b, 0) / fatigueScores.length).toFixed(2);
     const maxFatigue = Math.max(...fatigueScores).toFixed(2);
@@ -344,13 +313,12 @@ export default function SessionResults() {
   // Auto-save to history on mount
   useEffect(() => {
     if (sessionData && !savedToHistory) {
-      // Auto-save after a brief delay
       const timer = setTimeout(() => {
         saveToHistory();
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [sessionData, savedToHistory]);
 
   const saveToHistory = () => {
     if (!sessionData || savedToHistory) return;
@@ -360,7 +328,7 @@ export default function SessionResults() {
     const newSession = {
       ...sessionData,
       savedAt: new Date().toISOString(),
-      stats: stats,
+      stats: eegStats,
       violationStats: violationStats
     };
     
@@ -386,124 +354,118 @@ export default function SessionResults() {
   };
 
   return (
-    <div style={{ 
-      background: '#f3f4f6',
-      minHeight: '100vh',
-      padding: '2rem 1rem',
-      fontFamily: 'system-ui, -apple-system, sans-serif'
-    }}>
-      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          marginBottom: '2rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate('/dashboard')}
-              style={{
-                background: 'white',
-                border: '1px solid #e5e7eb',
-                color: '#374151',
-                padding: '0.5rem 1rem',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontWeight: '500',
-                fontSize: '0.9rem'
-              }}
+              onClick={() => navigate("/dashboard")}
+              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-gray-400 hover:text-white transition-colors"
             >
-              <ArrowLeft size={18} />
-              Kembali
+              <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 style={{ margin: 0, color: '#1f2937', fontSize: '1.75rem', fontWeight: 'bold' }}>
-              Hasil Analisis Sesi
-            </h1>
+            <div>
+              <h1 className="text-2xl font-bold text-white">Hasil Analisis Sesi</h1>
+              <p className="text-gray-400 text-sm">{sessionData.routeName}</p>
+              <p className="text-gray-500 text-xs mt-1 flex items-center gap-2">
+                <Calendar className="w-3 h-3" />
+                {sessionData.startTime.toLocaleDateString('id-ID', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })} • {sessionData.startTime.toLocaleTimeString('id-ID', { timeStyle: 'short' })} - {sessionData.endTime.toLocaleTimeString('id-ID', { timeStyle: 'short' })}
+              </p>
+            </div>
           </div>
-          <button
-            onClick={() => window.print()}
-            style={{
-              background: 'white',
-              border: '1px solid #e5e7eb',
-              color: '#374151',
-              padding: '0.5rem 1rem',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              fontWeight: '500',
-              fontSize: '0.9rem'
-            }}
-          >
-            <Download size={18} />
-            Export
-          </button>
+          <div className="flex items-center gap-3">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-gray-400 hover:text-white transition-colors">
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Export</span>
+            </button>
+            <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-gray-400 hover:text-white transition-colors">
+              <Share2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Bagikan</span>
+            </button>
+          </div>
         </div>
 
-        {/* Key Metrics Cards */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '1rem',
-          marginBottom: '2rem'
-        }}>
-          <div style={{ background: 'white', padding: '1.25rem', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #3b82f6' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-              <Clock size={18} color="#3b82f6" />
-              <span style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: '500' }}>Durasi Sesi</span>
+        {/* Main Content */}
+        <div className="grid gap-6">
+          {/* Key Metrics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+              <div className="flex items-center gap-3 mb-4">
+                <Clock className="w-5 h-5 text-blue-400" />
+                <span className="text-gray-300 text-sm font-medium">Durasi Sesi</span>
+              </div>
+              <div className="text-2xl font-bold text-white">
+                {eegStats?.durationMinutes}m
+              </div>
             </div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937' }}>
-              {stats.durationMinutes}m
+
+            <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+              <div className="flex items-center gap-3 mb-4">
+                <TrendingUp className="w-5 h-5 text-yellow-400" />
+                <span className="text-gray-300 text-sm font-medium">Fatigue Rata-rata</span>
+              </div>
+              <div className="text-2xl font-bold text-white">
+                {eegStats?.avgFatigue}
+              </div>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+              <div className="flex items-center gap-3 mb-4">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+                <span className="text-gray-300 text-sm font-medium">Total Pelanggaran</span>
+              </div>
+              <div className="text-2xl font-bold text-white">
+                {violationStats.total}
+              </div>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+              <div className="flex items-center gap-3 mb-4">
+                <Target className="w-5 h-5 text-green-400" />
+                <span className="text-gray-300 text-sm font-medium">Poin Pelanggaran</span>
+              </div>
+              <div className="text-2xl font-bold text-white">
+                {violationStats.totalPoints}
+              </div>
             </div>
           </div>
 
-          <div style={{ background: 'white', padding: '1.25rem', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #f59e0b' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-              <TrendingUp size={18} color="#f59e0b" />
-              <span style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: '500' }}>Fatigue Rata-rata</span>
+          {/* EEG Status Section */}
+          <div className="bg-white p-5 rounded-xl shadow-sm border-l-4 border-red-400">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+              <span className="text-sm text-gray-600 font-medium">Status Pengamatan</span>
             </div>
-            <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937' }}>
-              {stats.avgFatigue}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.5rem' }}>
-              Min: {stats.minFatigue} | Max: {stats.maxFatigue}
-            </div>
-          </div>
-
-          <div style={{ background: 'white', padding: '1.25rem', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #ef4444' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-              <AlertTriangle size={18} color="#ef4444" />
-              <span style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: '500' }}>Status Pengamatan</span>
-            </div>
-            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.85rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '1.2rem' }}>🟢</span>
+            <div className="flex gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🟢</span>
                 <div>
-                  <div style={{ fontWeight: '600', color: '#1f2937' }}>Alert</div>
-                  <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{stats.alertCount} detik</div>
+                  <div className="font-semibold text-gray-800">Alert</div>
+                  <div className="text-xs text-gray-500">{eegStats?.alertCount} detik</div>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '1.2rem' }}>🟡</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🟡</span>
                 <div>
-                  <div style={{ fontWeight: '600', color: '#1f2937' }}>Drowsy</div>
-                  <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{stats.drowsyCount} detik</div>
+                  <div className="font-semibold text-gray-800">Drowsy</div>
+                  <div className="text-xs text-gray-500">{eegStats?.drowsyCount} detik</div>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ fontSize: '1.2rem' }}>🔴</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🔴</span>
                 <div>
-                  <div style={{ fontWeight: '600', color: '#1f2937' }}>Fatigued</div>
-                  <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{stats.fatiguedCount} detik</div>
+                  <div className="font-semibold text-gray-800">Fatigued</div>
+                  <div className="text-xs text-gray-500">{eegStats?.fatiguedCount} detik</div>
                 </div>
               </div>
             </div>
-            <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: '#6b7280', background: '#f9fafb', padding: '0.75rem', borderRadius: '6px' }}>
+            <div className="mt-4 text-xs text-gray-600 bg-gray-50 p-3 rounded-lg">
               <strong>Penjelasan:</strong> Alert = Waspada | Drowsy = Mengantuk | Fatigued = Lelah
             </div>
           </div>
@@ -511,42 +473,55 @@ export default function SessionResults() {
 
         {/* Route Completion Summary */}
         {sessionData.routeName && (
-          <div style={{ background: 'white', borderRadius: '10px', padding: '1.5rem', marginBottom: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              <Flag size={20} color="#6366f1" />
-              <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'bold', color: '#1f2937' }}>Ringkasan Rute: {sessionData.routeName}</h2>
+          <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+            <div className="flex items-center gap-3 mb-6">
+              <Flag className="w-5 h-5 text-indigo-400" />
+              <h2 className="text-lg font-bold text-white">Ringkasan Rute: {sessionData.routeName}</h2>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
-              <div style={{ padding: '1rem', background: '#f0fdf4', borderRadius: '8px', textAlign: 'center' }}>
-                <Target size={24} color="#10b981" style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.25rem' }}>Checkpoint Dicapai</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-green-500/10 rounded-lg p-4 text-center border border-green-500/20">
+                <Target className="w-6 h-6 text-green-400 mx-auto mb-2" />
+                <div className="text-xs text-gray-400 mb-1">Checkpoint Dicapai</div>
+                <div className="text-xl font-bold text-green-400">
                   {sessionData.reachedCount || 0}/{sessionData.totalWaypoints || 0}
                 </div>
               </div>
-              <div style={{ padding: '1rem', background: '#fef3c7', borderRadius: '8px', textAlign: 'center' }}>
-                <XCircle size={24} color="#f59e0b" style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.25rem' }}>Checkpoint Terlewat</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b' }}>
+              <div className="bg-yellow-500/10 rounded-lg p-4 text-center border border-yellow-500/20">
+                <XCircle className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
+                <div className="text-xs text-gray-400 mb-1">Checkpoint Terlewat</div>
+                <div className="text-xl font-bold text-yellow-400">
                   {sessionData.missedCount || 0}
                 </div>
               </div>
-              <div style={{ padding: '1rem', background: '#eff6ff', borderRadius: '8px', textAlign: 'center' }}>
-                <Clock size={24} color="#3b82f6" style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.25rem' }}>Waktu Penyelesaian</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#3b82f6' }}>
+              <div className="bg-blue-500/10 rounded-lg p-4 text-center border border-blue-500/20">
+                <Clock className="w-6 h-6 text-blue-400 mx-auto mb-2" />
+                <div className="text-xs text-gray-400 mb-1">Waktu Penyelesaian</div>
+                <div className="text-xl font-bold text-blue-400">
                   {sessionData.completionTime ? `${Math.floor(sessionData.completionTime / 60)}:${Math.floor(sessionData.completionTime % 60).toString().padStart(2, '0')}` : '--:--'}
                 </div>
               </div>
-              <div style={{ 
-                padding: '1rem', 
-                background: violationStats.totalPoints === 0 ? '#f0fdf4' : violationStats.totalPoints < 30 ? '#fef3c7' : '#fef2f2', 
-                borderRadius: '8px', 
-                textAlign: 'center' 
-              }}>
-                <AlertTriangle size={24} color={violationStats.totalPoints === 0 ? '#10b981' : violationStats.totalPoints < 30 ? '#f59e0b' : '#ef4444'} style={{ marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '0.25rem' }}>Total Pelanggaran</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: violationStats.totalPoints === 0 ? '#10b981' : violationStats.totalPoints < 30 ? '#f59e0b' : '#ef4444' }}>
+              <div className={`rounded-lg p-4 text-center border ${
+                violationStats.totalPoints === 0 
+                  ? 'bg-green-500/10 border-green-500/20' 
+                  : violationStats.totalPoints < 30 
+                  ? 'bg-yellow-500/10 border-yellow-500/20' 
+                  : 'bg-red-500/10 border-red-500/20'
+              }`}>
+                <AlertTriangle className={`w-6 h-6 mx-auto mb-2 ${
+                  violationStats.totalPoints === 0 
+                    ? 'text-green-400' 
+                    : violationStats.totalPoints < 30 
+                    ? 'text-yellow-400' 
+                    : 'text-red-400'
+                }`} />
+                <div className="text-xs text-gray-400 mb-1">Total Pelanggaran</div>
+                <div className={`text-xl font-bold ${
+                  violationStats.totalPoints === 0 
+                    ? 'text-green-400' 
+                    : violationStats.totalPoints < 30 
+                    ? 'text-yellow-400' 
+                    : 'text-red-400'
+                }`}>
                   {violationStats.totalPoints} poin
                 </div>
               </div>
@@ -556,61 +531,47 @@ export default function SessionResults() {
 
         {/* Violations Detail */}
         {sessionData.violations && sessionData.violations.length > 0 && (
-          <div style={{ background: 'white', borderRadius: '10px', padding: '1.5rem', marginBottom: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              <AlertTriangle size={20} color="#ef4444" />
-              <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'bold', color: '#1f2937' }}>Rincian Pelanggaran ({violationStats.total}x)</h2>
+          <div className="bg-white rounded-xl p-6 mb-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+              <h2 className="text-lg font-bold text-gray-800">Rincian Pelanggaran ({violationStats.total}x)</h2>
             </div>
             
             {/* Violation Type Summary */}
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+            <div className="flex gap-4 mb-6 flex-wrap">
               {Object.entries(violationStats.byType).map(([type, count]) => {
                 const config = VIOLATION_LABELS[type] || { label: type, icon: '⚠️', color: '#6b7280' };
                 return (
-                  <div key={type} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '0.5rem', 
-                    padding: '0.5rem 1rem', 
-                    background: `${config.color}15`, 
-                    borderRadius: '6px',
-                    border: `1px solid ${config.color}30`
-                  }}>
-                    <span style={{ fontSize: '1.2rem' }}>{config.icon}</span>
-                    <span style={{ fontWeight: '600', color: config.color }}>{count}x</span>
-                    <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>{config.label}</span>
+                  <div 
+                    key={type} 
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 border border-gray-200"
+                  >
+                    <span className="text-lg">{config.icon}</span>
+                    <span className="font-semibold text-gray-800">{count}x</span>
+                    <span className="text-gray-600 text-sm">{config.label}</span>
                   </div>
                 );
               })}
             </div>
 
             {/* Violation Timeline */}
-            <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+            <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
               {sessionData.violations.map((violation, idx) => {
                 const config = VIOLATION_LABELS[violation.type] || { label: violation.type, icon: '⚠️', color: '#6b7280' };
                 const timeStr = new Date(violation.timestamp).toLocaleTimeString('id-ID');
                 return (
-                  <div key={violation.id || idx} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '1rem', 
-                    padding: '0.75rem 1rem',
-                    borderBottom: idx < sessionData.violations!.length - 1 ? '1px solid #f3f4f6' : 'none',
-                    background: idx % 2 === 0 ? 'white' : '#f9fafb'
-                  }}>
-                    <span style={{ fontSize: '1.25rem' }}>{config.icon}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: '500', color: '#1f2937', fontSize: '0.9rem' }}>{violation.description}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{timeStr}</div>
+                  <div 
+                    key={violation.id || idx} 
+                    className={`flex items-center gap-4 p-3 ${
+                      idx < sessionData.violations!.length - 1 ? 'border-b border-gray-200' : ''
+                    } ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                  >
+                    <span className="text-xl">{config.icon}</span>
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-800 text-sm">{violation.description}</div>
+                      <div className="text-xs text-gray-500">{timeStr}</div>
                     </div>
-                    <div style={{ 
-                      padding: '0.25rem 0.5rem', 
-                      background: config.color, 
-                      color: 'white', 
-                      borderRadius: '4px', 
-                      fontSize: '0.75rem', 
-                      fontWeight: '600' 
-                    }}>
+                    <div className="px-2 py-1 bg-red-100 text-red-600 rounded text-xs font-semibold">
                       +{violation.points} poin
                     </div>
                   </div>
@@ -618,6 +579,8 @@ export default function SessionResults() {
               })}
             </div>
           </div>
+        )}
+
         {activeTab === "violations" && (
           <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
             <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -630,7 +593,12 @@ export default function SessionResults() {
             {sessionData.violations.length > 0 ? (
               <div className="space-y-3 max-h-[500px] overflow-y-auto">
                 {sessionData.violations.map((violation, index) => {
-                  const typeInfo = violationTypeMap[violation.type] || { label: violation.type, icon: <AlertTriangle className="w-4 h-4" />, color: "text-gray-400" };
+                  const config = VIOLATION_LABELS[violation.type] || { label: violation.type, icon: '⚠️', color: '#6b7280' };
+                  const typeInfo = { 
+                    label: config.label,
+                    icon: <span>{config.icon}</span>,
+                    color: 'text-orange-400'
+                  };
                   return (
                     <div key={index} className="flex items-center justify-between bg-slate-700/30 rounded-lg p-4 hover:bg-slate-700/50 transition-colors">
                       <div className="flex items-center gap-4">
