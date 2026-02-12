@@ -19,6 +19,7 @@ import { useGameStore } from '../../stores/gameStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useWaypointStore } from '../../stores/waypointStore'
 import { useViolationStore } from '../../stores/violationStore'
+import { Copy, Check } from 'lucide-react'
 import '../../App.css'
 
 export default function Session() {
@@ -30,6 +31,7 @@ export default function Session() {
   const [cameraEnabled, setCameraEnabled] = useState(false)
   const [eegEnabled, setEegEnabled] = useState(true)
   const [eegCognitiveState, setEegCognitiveState] = useState<'alert' | 'drowsy' | 'fatigued' | undefined>()
+  const [sessionCopied, setSessionCopied] = useState(false)
 
   // Initialize session on mount
   useEffect(() => {
@@ -53,6 +55,63 @@ export default function Session() {
 
   return (
     <div className="app">
+      {/* Session ID Banner - always visible when session exists */}
+      {sessionId && gameStarted && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 1000,
+          background: 'rgba(15, 23, 42, 0.9)',
+          backdropFilter: 'blur(8px)',
+          borderRadius: '0 0 12px 12px',
+          padding: '6px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          border: '1px solid rgba(56, 189, 248, 0.3)',
+          borderTop: 'none',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+        }}>
+          <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>SESSION ID:</span>
+          <code style={{
+            fontSize: '12px',
+            color: '#38bdf8',
+            fontFamily: 'monospace',
+            userSelect: 'all',
+            cursor: 'text',
+            letterSpacing: '0.3px',
+          }}>
+            {sessionId}
+          </code>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(sessionId)
+              setSessionCopied(true)
+              setTimeout(() => setSessionCopied(false), 2000)
+            }}
+            style={{
+              background: sessionCopied ? '#059669' : '#334155',
+              border: '1px solid ' + (sessionCopied ? '#10b981' : '#475569'),
+              borderRadius: '6px',
+              padding: '3px 10px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              color: 'white',
+              fontSize: '11px',
+              transition: 'all 0.2s',
+            }}
+            title="Copy Session ID untuk paste di terminal EEG"
+          >
+            {sessionCopied ? <Check size={12} /> : <Copy size={12} />}
+            {sessionCopied ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+      )}
+
       {/* Map Selection Screen - shown before game starts */}
       {showMapSelection && (
         <MapSelection onStartGame={handleStartGame} />

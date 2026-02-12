@@ -98,8 +98,8 @@ export function useEEGWebSocket({
         onError?.(errorMsg)
       }
 
-      wsRef.current.onclose = () => {
-        console.log('[EEG] WebSocket disconnected')
+      wsRef.current.onclose = (event) => {
+        console.log(`[EEG] WebSocket disconnected (code: ${event.code}, reason: ${event.reason || 'none'})`)
         setConnected(false)
         clearPingInterval()
         attemptReconnect()
