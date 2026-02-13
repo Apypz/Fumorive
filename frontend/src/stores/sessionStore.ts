@@ -3,12 +3,14 @@ import { sessionApi } from '../api/session'
 
 interface SessionStoreState {
   sessionId: string
+  isBackendSession: boolean
   setSessionId: (id: string) => void
   initializeSession: () => Promise<void>
 }
 
 export const useSessionStore = create<SessionStoreState>((set, get) => ({
   sessionId: '',
+  isBackendSession: false,
 
   setSessionId: (id: string) => set({ sessionId: id }),
 
@@ -27,13 +29,13 @@ export const useSessionStore = create<SessionStoreState>((set, get) => ({
       })
 
       console.log('✅ Backend session created:', session.id)
-      set({ sessionId: session.id })
+      set({ sessionId: session.id, isBackendSession: true })
     } catch (error: any) {
       console.error('❌ Failed to create backend session:', error)
-      // Fallback to client-generated ID if backend fails
-      const fallbackId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`
-      console.warn('⚠️  Using fallback session ID:', fallbackId)
-      set({ sessionId: fallbackId })
+      // Fallback to client-generated UUID if backend fails
+      const fallbackId = crypto.randomUUID()
+      console.warn('⚠️  Using fallback session ID (UUID):', fallbackId)
+      set({ sessionId: fallbackId, isBackendSession: false })
     }
   },
 }))

@@ -113,7 +113,7 @@ const Dashboard = () => {
         }
 
         return {
-            sessionId: `session_${Date.now()}`,
+            sessionId: crypto.randomUUID(),
             startTime: startTime.toISOString(),
             endTime: new Date().toISOString(),
             duration: 30 * 60, // 30 minutes in seconds
