@@ -34,6 +34,7 @@ class User(Base):
     oauth_provider = Column(String(50), nullable=True)  # 'google', 'github', etc.
     google_id = Column(String(255), nullable=True, unique=True, index=True)  # Google UID
     profile_picture = Column(String(500), nullable=True)  # Avatar URL from OAuth
+    name_manually_edited = Column(Boolean, default=False)  # Track if user manually changed their name
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, Chrome, Instagram, Youtube, Twitter, Loader2 } from 'lucide-react';
 import { useUserStore } from '../../stores/userStore';
-import { signInWithGoogle } from '../../utils/auth';
 import fumoLogo from '../../assets/fumo.png';
 import './Login.css';
 
@@ -18,7 +17,7 @@ const Login = () => {
     const [name, setName] = useState('');
 
     const navigate = useNavigate();
-    const { login, register, isLoading, error } = useUserStore();
+    const { login, loginWithGoogle, register, isLoading, error } = useUserStore();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,7 +49,8 @@ const Login = () => {
 
     const handleGoogleSignIn = async () => {
         try {
-            await signInWithGoogle();
+            // Use the store's loginWithGoogle which handles token + user state properly
+            await loginWithGoogle();
             navigate('/dashboard');
         } catch (err: any) {
             console.error("Google sign-in error:", err);

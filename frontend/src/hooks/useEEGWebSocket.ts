@@ -5,6 +5,7 @@ interface UseEEGWebSocketProps {
   sessionId: string
   backendUrl?: string
   onMetricsReceived?: (metrics: EEGMetrics) => void
+  onAlertReceived?: (alert: any) => void
   onError?: (error: string) => void
   enabled?: boolean
 }
@@ -13,6 +14,7 @@ export function useEEGWebSocket({
   sessionId,
   backendUrl = 'ws://localhost:8000',
   onMetricsReceived,
+  onAlertReceived,
   onError,
   enabled = true,
 }: UseEEGWebSocketProps) {
@@ -83,6 +85,17 @@ export function useEEGWebSocket({
             console.error('[EEG]', errorMsg)
             setConnectionError(errorMsg)
             onError?.(errorMsg)
+          } else if (data.type === 'alert') {
+            // Handle fatigue alert
+            console.log('[EEG] Alert received:', data)
+            const alert = {
+              timestamp: data.timestamp || new Date().toISOString(),
+              level: data.alert_level || 'warning',
+              fatigueScore: data.fatigue_score || 0,
+              eegContribution: data.eeg_contribution || 1.0,
+              reason: data.trigger_reason || 'Fatigue detected',
+            }
+            onAlertReceived?.(alert)
           }
         } catch (error) {
           const err = error instanceof Error ? error.message : 'Unknown error'

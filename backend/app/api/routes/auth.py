@@ -311,6 +311,9 @@ async def google_login(
             user.google_id = google_id
             user.oauth_provider = "google"
             user.profile_picture = profile_picture
+            # Only update name if user hasn't manually edited it
+            if not user.name_manually_edited:
+                user.full_name = full_name
             db.commit()
             db.refresh(user)
         elif user.google_id != google_id:
@@ -322,6 +325,9 @@ async def google_login(
         # Update profile picture if changed
         elif user.profile_picture != profile_picture:
             user.profile_picture = profile_picture
+            # Only update name if user hasn't manually edited it
+            if not user.name_manually_edited:
+                user.full_name = full_name
             db.commit()
             db.refresh(user)
     else:
