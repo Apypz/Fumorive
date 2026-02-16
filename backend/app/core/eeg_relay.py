@@ -161,7 +161,16 @@ async def relay_eeg_to_clients(session_id: str, data: Dict[str, Any]) -> int:
     
     # Return count of notified clients
     if session_id in manager.session_connections:
-        return len(manager.session_connections[session_id])
+        count = len(manager.session_connections[session_id])
+        return count
+    
+    # Log when no clients are connected (helps debug EEG not showing in game)
+    all_sessions = list(manager.session_connections.keys())
+    if all_sessions:
+        logger.warning(
+            f"EEG relay: No WebSocket clients for session '{session_id[:8]}...'. "
+            f"Connected sessions: {[s[:8]+'...' for s in all_sessions]}"
+        )
     
     return 0
 

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Zap, Gamepad2, Play, CheckCircle, TriangleAlert, Mail, Github, Linkedin, Database, Wifi, ChevronDown, Eye, Brain, Activity, ArrowRight } from 'lucide-react';
 import './LandingPage.css';
 import fumoLogo from '../../assets/fumo.png';
-import heroBg from '../../assets/tes.jpg';
+import heroBg from '../../assets/hero.jpg';
 import card6 from '../../assets/card3.jpg';
 import card5 from '../../assets/face.jpg';
 import card4 from '../../assets/muse.png';

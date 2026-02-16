@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, Chrome, Instagram, Youtube, Twitter, Loader2 } from 'lucide-react';
 import { useUserStore } from '../../stores/userStore';
 import { signInWithGoogle } from '../../utils/auth';
+import fumoLogo from '../../assets/fumo.png';
 import './Login.css';
 
 const Login = () => {

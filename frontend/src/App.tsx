@@ -5,6 +5,7 @@ import Session from './components/page/Session'
 import Login from './components/page/Login'
 import Dashboard from './components/page/Dashboard'
 import FaceRecognition from './components/page/FaceRecognition'
+import SessionResults from './components/page/SessionResults'
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/face-recognition" element={<FaceRecognition />} />
+        <Route path="/session-results" element={<SessionResults />} />
       </Routes>
     </BrowserRouter>
   )

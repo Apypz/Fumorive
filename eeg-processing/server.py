@@ -108,6 +108,8 @@ class EEGStreamingServer:
         self.samples_sent = 0
         self.errors = 0
         self.consecutive_errors = 0
+        self.last_clients_notified = 0
+        self.zero_clients_warnings = 0
         self.start_time = None
         
         # EEG Components (will be initialized on start)
@@ -296,6 +298,29 @@ class EEGStreamingServer:
             if response.status_code == 200:
                 self.samples_sent += 1
                 self.consecutive_errors = 0
+                
+                # Check how many WebSocket clients received the data
+                try:
+                    resp_data = response.json()
+                    self.last_clients_notified = resp_data.get("clients_notified", 0)
+                    if self.last_clients_notified == 0:
+                        self.zero_clients_warnings += 1
+                        if self.zero_clients_warnings == 1:
+                            logger.warning("⚠️  clients_notified=0 - Browser belum terhubung via WebSocket!")
+                            logger.warning("   Pastikan:")
+                            logger.warning("   1. Browser sudah buka game (http://localhost:3000)")
+                            logger.warning("   2. Sudah login dan session aktif")
+                            logger.warning("   3. Sudah klik 'Start' di map selection (game harus 'playing')")
+                            logger.warning(f"   4. Session ID yang dipakai: {self.session_id}")
+                        elif self.zero_clients_warnings % 20 == 0:
+                            logger.warning(f"⚠️  Still no WebSocket clients ({self.zero_clients_warnings}x) - session: {self.session_id}")
+                    else:
+                        if self.zero_clients_warnings > 0:
+                            logger.info(f"✅ Frontend connected! clients_notified={self.last_clients_notified}")
+                        self.zero_clients_warnings = 0
+                except Exception:
+                    pass  # Response parsing failed, ignore
+                
                 return True
             else:
                 self.errors += 1
@@ -396,10 +421,11 @@ class EEGStreamingServer:
                         fatigue = payload['processed']['eeg_fatigue_score']
                         signal_quality = payload['processed']['signal_quality']
                         
+                        clients_str = f"Clients: {self.last_clients_notified}" if self.last_clients_notified > 0 else "Clients: 0 ⚠️"
                         logger.info(
                             f"[{elapsed:.0f}s] Fatigue: {fatigue:.0f}% | "
-                            f"Signal Quality: {signal_quality:.2f} | "
-                            f"Sent: {self.samples_sent} | Errors: {self.errors}"
+                            f"Quality: {signal_quality:.2f} | "
+                            f"Sent: {self.samples_sent} | {clients_str} | Errors: {self.errors}"
                         )
                         last_log = now
                 

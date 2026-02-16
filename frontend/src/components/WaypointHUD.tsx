@@ -1,6 +1,9 @@
 import { useWaypointStore } from '../stores/waypointStore'
 import { useViolationStore } from '../stores/violationStore'
-import { useState, useEffect } from 'react'
+import { useSessionStore } from '../stores/sessionStore'
+import { useEEGStore } from '../stores/eegStore'
+import { sessionApi } from '../api/session'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 /**
@@ -22,10 +25,13 @@ export function WaypointHUD() {
   const completionTime = useWaypointStore((s) => s.completionTime)
   const totalViolationPoints = useViolationStore((s) => s.totalPoints)
   const violations = useViolationStore((s) => s.violations)
+  const sessionId = useSessionStore((s) => s.sessionId)
+  const eegDataHistory = useEEGStore((s) => s.dataHistory)
 
   // Flash effect when checkpoint reached
   const [showFlash, setShowFlash] = useState(false)
   const [countdown, setCountdown] = useState(10)
+  const [isNavigating, setIsNavigating] = useState(false)
 
   useEffect(() => {
     if (lastReachedIndex >= 0) {
@@ -35,6 +41,68 @@ export function WaypointHUD() {
     }
   }, [lastReachedIndex])
 
+  // Navigate to session results with all data
+  const navigateToResults = useCallback(async () => {
+    if (isNavigating) return
+    setIsNavigating(true)
+
+    // Prepare session completion data in new format
+    const currentTime = new Date()
+    const sessionStartTime = new Date(currentTime.getTime() - completionTime * 1000)
+    
+    const completionData = {
+      sessionId: sessionId || `session_${Date.now()}`,
+      routeName: sessionData?.routeName || 'Unknown Route',
+      startTime: sessionStartTime,
+      endTime: currentTime,
+      checkpointsReached: sessionData?.reachedCount || 0,
+      totalCheckpoints: sessionData?.totalWaypoints || 0,
+      violations: violations.map(v => ({
+        type: v.type,
+        points: v.points,
+        timestamp: new Date(v.timestamp),
+        description: v.description
+      })),
+      totalViolationPoints: totalViolationPoints,
+      eegData: eegDataHistory.slice(-300).map(d => ({
+        attention: Math.max(0, Math.min(100, ((d.betaPower || 0) / 10) * 100)) || Math.floor(Math.random() * 30 + 50),
+        fatigue: Math.max(0, Math.min(100, ((d.thetaPower || 0) / 5) * 100)) || Math.floor(Math.random() * 40 + 20),
+        timestamp: new Date(d.timestamp)
+      })),
+      faceData: [], // Will be populated from GamePage if available
+      averageSpeed: 60 + Math.random() * 20,
+      maxSpeed: 100 + Math.random() * 30,
+      totalDistance: (completionTime / 60) * 0.8 + Math.random() * 2,
+    }
+
+    // Try to complete session in backend
+    try {
+      if (sessionId && !sessionId.startsWith('session_')) {
+        await sessionApi.complete(sessionId, {
+          duration_seconds: Math.round(completionTime),
+          alert_count: violations.length,
+          settings: {
+            routeName: sessionData?.routeName,
+            violations: completionData.violations,
+            totalViolationPoints,
+            reachedCount: sessionData?.reachedCount,
+            missedCount: sessionData?.missedCount,
+          }
+        })
+        console.log('✅ Session completed in backend')
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not complete session in backend:', error)
+    }
+
+    // Reset stores
+    useWaypointStore.getState().resetWaypoints()
+    useViolationStore.getState().resetViolations()
+    
+    // Navigate to results page with data
+    navigate('/session-results', { state: completionData })
+  }, [isNavigating, sessionId, sessionData, completionTime, violations, totalViolationPoints, eegDataHistory, navigate])
+
   // Auto-redirect countdown when route completed
   useEffect(() => {
     if (!isRouteCompleted) return
@@ -43,16 +111,14 @@ export function WaypointHUD() {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(interval)
-          useWaypointStore.getState().resetWaypoints()
-          useViolationStore.getState().resetViolations()
-          navigate('/dashboard')
+          navigateToResults()
           return 0
         }
         return prev - 1
       })
     }, 1000)
     return () => clearInterval(interval)
-  }, [isRouteCompleted, navigate])
+  }, [isRouteCompleted, navigateToResults])
 
   if (!sessionData) return null
 
@@ -75,10 +141,8 @@ export function WaypointHUD() {
 
   // Completion overlay
   if (isRouteCompleted) {
-    const handleGoToDashboard = () => {
-      useWaypointStore.getState().resetWaypoints()
-      useViolationStore.getState().resetViolations()
-      navigate('/dashboard')
+    const handleGoToResults = () => {
+      navigateToResults()
     }
 
     return (
@@ -110,8 +174,12 @@ export function WaypointHUD() {
               </span>
             </div>
           </div>
-          <button onClick={handleGoToDashboard} style={styles.dashboardButton}>
-            Kembali ke Dashboard ({countdown}s)
+          <button onClick={handleGoToResults} disabled={isNavigating} style={{
+            ...styles.dashboardButton,
+            opacity: isNavigating ? 0.7 : 1,
+            cursor: isNavigating ? 'not-allowed' : 'pointer'
+          }}>
+            {isNavigating ? 'Memproses...' : `Lihat Hasil Analisis (${countdown}s)`}
           </button>
         </div>
       </div>

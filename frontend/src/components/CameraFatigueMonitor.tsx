@@ -39,8 +39,9 @@ export function CameraFatigueMonitor({ isEnabled, onToggle }: CameraFatigueMonit
     const [fatigueScore, setFatigueScore] = useState(0);
     const [blinkRate, setBlinkRate] = useState(0);
 
-    // Position state (default: top-left)
-    const [position, setPosition] = useState({ x: 20, y: 20 });
+    // Position state (default: top-right, below EEG widget)
+    const [position, setPosition] = useState({ x: window.innerWidth - 280, y: 420 });
+    const [isDragging, setIsDragging] = useState(false);
     const isDraggingRef = useRef(false);
     const dragStartRef = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
 
@@ -56,6 +57,19 @@ export function CameraFatigueMonitor({ isEnabled, onToggle }: CameraFatigueMonit
 
     // Session ID
     const sessionId = useRef<string | null>(null);
+
+    // Handle window resize to keep position at top-right
+    useEffect(() => {
+        const handleResize = () => {
+            setPosition(prev => ({ 
+                x: Math.min(prev.x, window.innerWidth - 280), 
+                y: prev.y 
+            }));
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Auto start/stop based on isEnabled
     useEffect(() => {
@@ -306,6 +320,8 @@ export function CameraFatigueMonitor({ isEnabled, onToggle }: CameraFatigueMonit
     const fatigueLevel = getFatigueLevel(fatigueScore);
 
     const handleMouseDown = (e: React.MouseEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
         isDraggingRef.current = true;
         dragStartRef.current = {
             x: e.clientX,
@@ -322,26 +338,32 @@ export function CameraFatigueMonitor({ isEnabled, onToggle }: CameraFatigueMonit
             const deltaX = e.clientX - dragStartRef.current.x;
             const deltaY = e.clientY - dragStartRef.current.y;
 
+            const newX = dragStartRef.current.posX + deltaX;
+            const newY = dragStartRef.current.posY + deltaY;
+
+            // Keep widget within viewport bounds
+            const maxX = window.innerWidth - 240;
+            const maxY = window.innerHeight - 100;
+
             setPosition({
-                x: dragStartRef.current.posX + deltaX,
-                y: dragStartRef.current.posY + deltaY,
+                x: Math.max(0, Math.min(newX, maxX)),
+                y: Math.max(0, Math.min(newY, maxY)),
             });
         };
 
         const handleMouseUp = () => {
+            setIsDragging(false);
             isDraggingRef.current = false;
         };
 
-        if (isDraggingRef.current) {
-            document.addEventListener('mousemove', handleMouseMove);
-            document.addEventListener('mouseup', handleMouseUp);
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
 
-            return () => {
-                document.removeEventListener('mousemove', handleMouseMove);
-                document.removeEventListener('mouseup', handleMouseUp);
-            };
-        }
-    }, [position]);
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, []);
 
     if (!isEnabled) {
         return (
@@ -366,7 +388,7 @@ export function CameraFatigueMonitor({ isEnabled, onToggle }: CameraFatigueMonit
             <div 
                 className="monitor-header"
                 onMouseDown={handleMouseDown}
-                style={{ cursor: 'grab' }}
+                style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
             >
                 <div className="monitor-title">
                     <GripVertical size={14} className="grip-icon" />
