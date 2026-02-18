@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { ChevronDown, ChevronUp, Maximize2, Minimize2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Maximize2, Minimize2, Copy, Check } from 'lucide-react'
 import { useEEGStore } from '../stores/eegStore'
 import { useEEGWebSocket } from '../hooks/useEEGWebSocket'
 import './EEGMonitoringWidget.css'
@@ -28,6 +28,7 @@ export const EEGMonitoringWidget: React.FC<EEGMonitoringWidgetProps> = ({
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [position, setPosition] = useState(getDefaultPosition(defaultPosition))
   const [isDragging, setIsDragging] = useState(false)
+  const [copied, setCopied] = useState(false)
   const dragStartRef = useRef({ x: 0, y: 0, posX: 0, posY: 0 })
 
   // EEG Store
@@ -159,6 +160,59 @@ export const EEGMonitoringWidget: React.FC<EEGMonitoringWidgetProps> = ({
                   ? `🔴 Error: ${connectionError.substring(0, 30)}...`
                   : '🔴 Connecting...'}
             </span>
+          </div>
+
+          {/* Session ID - copyable for EEG terminal */}
+          <div style={{
+            margin: '4px 8px 8px',
+            padding: '6px 8px',
+            background: '#1e293b',
+            borderRadius: '6px',
+            border: '1px solid #334155',
+          }}>
+            <div style={{ fontSize: '9px', color: '#94a3b8', marginBottom: '3px', fontWeight: 600, letterSpacing: '0.5px' }}>SESSION ID (copy ke terminal EEG)</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <code style={{
+                flex: 1,
+                fontSize: '10px',
+                color: '#38bdf8',
+                fontFamily: 'monospace',
+                wordBreak: 'break-all',
+                userSelect: 'all',
+                cursor: 'text',
+                lineHeight: '1.3',
+              }}>
+                {sessionId || 'Belum ada session'}
+              </code>
+              {sessionId && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    navigator.clipboard.writeText(sessionId)
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 2000)
+                  }}
+                  style={{
+                    background: copied ? '#059669' : '#334155',
+                    border: 'none',
+                    borderRadius: '4px',
+                    padding: '3px 6px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                    color: 'white',
+                    fontSize: '9px',
+                    flexShrink: 0,
+                    transition: 'background 0.2s',
+                  }}
+                  title="Copy Session ID"
+                >
+                  {copied ? <Check size={10} /> : <Copy size={10} />}
+                  {copied ? 'OK!' : 'Copy'}
+                </button>
+              )}
+            </div>
           </div>
 
           {currentMetrics ? (

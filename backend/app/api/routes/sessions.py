@@ -84,6 +84,32 @@ async def list_sessions(
     }
 
 
+@router.get("/latest-active", response_model=SessionResponse)
+async def get_latest_active_session(
+    db: Session = Depends(get_db)
+):
+    """
+    Get the most recently created active session (no auth required).
+    
+    Used by EEG processing script to auto-detect the current session.
+    Only works on localhost for development.
+    """
+    session = (
+        db.query(DBSession)
+        .filter(DBSession.session_status == "active")
+        .order_by(DBSession.started_at.desc())
+        .first()
+    )
+    
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No active session found"
+        )
+    
+    return session
+
+
 @router.get("/{session_id}", response_model=SessionResponse)
 async def get_session(
     session_id: UUID,
