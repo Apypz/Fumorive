@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useUserStore } from '../../stores/userStore';
 import { useEEGStore } from '../../stores/eegStore';
+import { useSessionStore } from '../../stores/sessionStore';
 import './Dashboard.css';
 
 type TabView = 'overview' | 'history' | 'profile' | 'settings';
@@ -73,6 +74,10 @@ const Dashboard = () => {
     const currentMetrics = useEEGStore((state) => state.currentMetrics);
     const dataHistory = useEEGStore((state) => state.dataHistory);
     const getAverageMetrics = useEEGStore((state) => state.getAverageMetrics);
+
+    // Session Store
+    const sessionId = useSessionStore((state) => state.sessionId);
+    const [sessionIdCopied, setSessionIdCopied] = useState(false);
     
     // Average metrics state
     const [avgMetrics, setAvgMetrics] = useState<any>(null);
@@ -378,6 +383,78 @@ const Dashboard = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Active Session ID Card */}
+                        {sessionId && (
+                            <div className="widget-card" style={{ gridColumn: 'span 3', background: '#0f172a', border: '2px solid #1e40af', marginBottom: '0.5rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+                                    <div style={{
+                                        width: '44px',
+                                        height: '44px',
+                                        borderRadius: '12px',
+                                        background: '#1e3a5f',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '1.3rem'
+                                    }}>
+                                        🧠
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600 }}>ACTIVE SESSION ID</div>
+                                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Copy ID ini dan paste ke terminal EEG untuk menghubungkan Muse 2</div>
+                                    </div>
+                                </div>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    padding: '12px 14px',
+                                    background: '#1e293b',
+                                    borderRadius: '8px',
+                                    border: '1px solid #334155'
+                                }}>
+                                    <code style={{
+                                        flex: 1,
+                                        fontSize: '1rem',
+                                        color: '#38bdf8',
+                                        fontFamily: '"Cascadia Code", "Fira Code", monospace',
+                                        wordBreak: 'break-all',
+                                        userSelect: 'all',
+                                        cursor: 'text',
+                                        letterSpacing: '0.5px',
+                                        lineHeight: '1.5'
+                                    }}>
+                                        {sessionId}
+                                    </code>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(sessionId);
+                                            setSessionIdCopied(true);
+                                            setTimeout(() => setSessionIdCopied(false), 2000);
+                                        }}
+                                        style={{
+                                            background: sessionIdCopied ? '#059669' : '#3b82f6',
+                                            color: 'white',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            padding: '8px 16px',
+                                            cursor: 'pointer',
+                                            fontWeight: 600,
+                                            fontSize: '0.85rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            transition: 'all 0.2s',
+                                            flexShrink: 0
+                                        }}
+                                        title="Copy Session ID"
+                                    >
+                                        {sessionIdCopied ? '✓ Copied!' : '📋 Copy ID'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {/* System Status Cards */}
                         <div className="widget-card">
