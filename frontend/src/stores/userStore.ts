@@ -70,6 +70,9 @@ export const useUserStore = create<UserState>()(
             loginWithGoogle: async () => {
                 set({ isLoading: true, error: null });
                 try {
+                    // Clear any persisted user data to force fresh load from JWT
+                    localStorage.removeItem('user-storage');
+
                     // Sign in with Google (saves tokens to localStorage)
                     const result = await signInWithGoogle();
 

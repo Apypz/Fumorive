@@ -52,6 +52,8 @@ async def update_user_me(
     # Update fields
     if user_update.full_name is not None:
         user.full_name = user_update.full_name
+        # Mark that user has manually edited their name
+        user.name_manually_edited = True
         
     if user_update.profile_picture is not None:
         user.profile_picture = user_update.profile_picture

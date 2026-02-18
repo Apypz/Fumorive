@@ -1,0 +1,106 @@
+======================================================================
+Fumorive Backend Load Testing
+======================================================================
+
+Configuration:
+   Base URL: http://localhost:8000/api/v1
+   Concurrent Users: 15
+   Requests per User: 10
+   Total Requests: 150
+
+Running load test...
+[OK] Logged in as loadtest@fumorive.com
+[OK] Logged in as loadtest@fumorive.com
+[OK] Logged in as loadtest@fumorive.com
+[OK] Logged in as loadtest@fumorive.com
+[OK] Logged in as loadtest@fumorive.com
+[OK] Logged in as loadtest@fumorive.com
+[OK] Logged in as loadtest@fumorive.com
+[OK] Logged in as loadtest@fumorive.com
+[OK] Logged in as loadtest@fumorive.com
+[OK] Logged in as loadtest@fumorive.com
+[OK] Logged in as loadtest@fumorive.com
+[OK] Logged in as loadtest@fumorive.com
+[OK] Logged in as loadtest@fumorive.com
+[OK] Logged in as loadtest@fumorive.com
+[OK] Logged in as loadtest@fumorive.com
+
+======================================================================
+LOAD TEST RESULTS
+======================================================================
+
+[Create Session Results]
+   Total Requests: 150
+   [OK] Success: 150
+   [ERR] Errors: 0
+   Response Times:
+      Min: 0.081s
+      Max: 1.208s
+      Mean: 0.249s
+      Median: 0.177s
+
+[Get Sessions Results]
+   Total Requests: 150
+   [OK] Success: 150
+   [ERR] Errors: 0
+   Response Times:
+      Min: 0.078s
+      Max: 0.266s
+      Mean: 0.158s
+      Median: 0.150s
+
+[Update Session Results]
+   Total Requests: 150
+   [OK] Success: 150
+   [ERR] Errors: 0
+   Response Times:
+      Min: 0.105s
+      Max: 0.318s
+      Mean: 0.187s
+      Median: 0.183s
+
+[Create Alert Results]
+   Total Requests: 150
+   [OK] Success: 150
+   [ERR] Errors: 0
+   Response Times:
+      Min: 0.195s
+      Max: 0.432s
+      Mean: 0.284s
+      Median: 0.273s
+
+[Get Alerts Results]
+   Total Requests: 150
+   [OK] Success: 150
+   [ERR] Errors: 0
+   Response Times:
+      Min: 0.130s
+      Max: 0.356s
+      Mean: 0.213s
+      Median: 0.204s
+
+[Get Eeg Results]
+   Total Requests: 150
+   [OK] Success: 150
+   [ERR] Errors: 0
+   Response Times:
+      Min: 0.079s
+      Max: 0.428s
+      Mean: 0.193s
+      Median: 0.180s
+
+[Delete Session Results]
+   Total Requests: 150
+   [OK] Success: 150
+   [ERR] Errors: 0
+   Response Times:
+      Min: 0.034s
+      Max: 0.372s
+      Mean: 0.181s
+      Median: 0.169s
+
+Total Duration: 20.65s
+Throughput: 50.84 req/s
+
+======================================================================
+
