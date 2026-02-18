@@ -1,28 +1,23 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  CheckCircle,
-  XCircle,
   Clock,
   AlertTriangle,
   TrendingUp,
   Brain,
-  Eye,
-  Activity,
-  BarChart3,
-  Target,
-  Zap,
-  AlertOctagon,
-  Timer,
-  Route,
-  Calendar,
+  CheckCircle2,
+  Lightbulb,
+  Car,
   ArrowLeft,
   Download,
-  Share2,
-  Flag,
+  BarChart3,
+  Activity,
+  Gauge,
+  Navigation,
 } from "lucide-react";
 
 interface Violation {
+  id?: string;
   type: string;
   points: number;
   timestamp: Date;
@@ -33,6 +28,12 @@ interface EEGData {
   attention: number;
   fatigue: number;
   timestamp?: Date;
+  eegFatigueScore?: number;
+  alphaPower?: number;
+  thetaPower?: number;
+  betaPower?: number;
+  deltaPower?: number;
+  gammaPower?: number;
 }
 
 interface FaceRecognitionData {
@@ -58,31 +59,27 @@ interface SessionData {
   averageSpeed?: number;
   maxSpeed?: number;
   totalDistance?: number;
+  duration?: number;
+  completionTime?: number;
+  reachedCount?: number;
+  totalWaypoints?: number;
+  missedCount?: number;
+  collisions?: number;
+  laneDeviations?: number;
 }
-
-// Violation type mapping
-const VIOLATION_LABELS: Record<string, { label: string; icon: string; color: string }> = {
-  drowsiness: { label: "Kantuk Terdeteksi", icon: "😴", color: "#f59e0b" },
-  distraction: { label: "Distraksi", icon: "⚠️", color: "#eab308" },
-  fatigue: { label: "Kelelahan", icon: "🧠", color: "#ef4444" },
-  low_attention: { label: "Perhatian Rendah", icon: "🎯", color: "#a855f7" },
-  eyes_closed: { label: "Mata Tertutup", icon: "👁️", color: "#dc2626" },
-  yawning: { label: "Menguap", icon: "🥱", color: "#ea580c" },
-  looking_away: { label: "Melihat ke Arah Lain", icon: "👀", color: "#eab308" },
-  speed_violation: { label: "Pelanggaran Kecepatan", icon: "⚡", color: "#ef4444" },
-};
 
 export default function SessionResults() {
   const location = useLocation();
   const navigate = useNavigate();
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "violations" | "eeg" | "face">("overview");
   const [savedToHistory, setSavedToHistory] = useState(false);
 
+  // --- ALL HOOKS MUST BE BEFORE ANY EARLY RETURN ---
+
+  // Parse incoming session data
   useEffect(() => {
     const data = location.state as SessionData;
     if (data) {
-      // Ensure dates are Date objects
       const processedData: SessionData = {
         ...data,
         startTime: new Date(data.startTime),
@@ -95,204 +92,69 @@ export default function SessionResults() {
         faceData: data.faceData || [],
       };
       setSessionData(processedData);
-      saveSessionToHistory(processedData);
     }
   }, [location.state]);
 
-  const saveSessionToHistory = (data: SessionData) => {
-    try {
-      const existingSessions = JSON.parse(localStorage.getItem("drivingSessionHistory") || "[]");
-      const sessionExists = existingSessions.some((s: SessionData) => s.sessionId === data.sessionId);
-      
-      if (!sessionExists) {
-        const updatedSessions = [data, ...existingSessions].slice(0, 50);
-        localStorage.setItem("drivingSessionHistory", JSON.stringify(updatedSessions));
-      }
-    } catch (error) {
-      console.error("Failed to save session:", error);
-    }
-  };
-
-  if (!sessionData) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
-          <p className="text-gray-400">Memuat hasil sesi...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Calculate statistics with fallback to 0
-  const duration = Math.floor((sessionData.endTime.getTime() - sessionData.startTime.getTime()) / 1000);
-  const minutes = Math.floor(duration / 60);
-  const seconds = duration % 60;
-  const completionRate = sessionData.totalCheckpoints > 0 ? Math.round((sessionData.checkpointsReached / sessionData.totalCheckpoints) * 100) : 0;
-  
-  // EEG Statistics with fallback to 0
-  const avgAttention = sessionData.eegData.length > 0
-    ? Math.round(sessionData.eegData.reduce((sum, d) => sum + (d.attention || 0), 0) / sessionData.eegData.length)
-    : 0;
-  const avgFatigue = sessionData.eegData.length > 0
-    ? Math.round(sessionData.eegData.reduce((sum, d) => sum + (d.fatigue || 0), 0) / sessionData.eegData.length)
-    : 0;
-  const maxFatigue = sessionData.eegData.length > 0
-    ? Math.max(...sessionData.eegData.map(d => d.fatigue || 0))
-    : 0;
-  const minAttention = sessionData.eegData.length > 0
-    ? Math.min(...sessionData.eegData.map(d => d.attention || 0))
-    : 0;
-
-  // Face Recognition Statistics with fallback to 0
-  const avgDrowsiness = sessionData.faceData.length > 0
-    ? Math.round(sessionData.faceData.reduce((sum, d) => sum + (d.drowsiness || 0), 0) / sessionData.faceData.length)
-    : 0;
-  const avgDistraction = sessionData.faceData.length > 0
-    ? Math.round(sessionData.faceData.reduce((sum, d) => sum + (d.distraction || 0), 0) / sessionData.faceData.length)
-    : 0;
-  const eyesClosedEvents = sessionData.faceData.length > 0 ? sessionData.faceData.filter(d => (d.eyesClosed || 0) > 50).length : 0;
-  const yawningEvents = sessionData.faceData.length > 0 ? sessionData.faceData.filter(d => (d.yawning || 0) > 50).length : 0;
-  const lookingAwayEvents = sessionData.faceData.length > 0 ? sessionData.faceData.filter(d => (d.lookingAway || 0) > 50).length : 0;
-
-  // Violation Statistics by Type
-  const violationsByType = sessionData.violations.reduce((acc, v) => {
-    acc[v.type] = (acc[v.type] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  // Performance Score Calculation
-  const calculatePerformanceScore = (): number => {
-    let score = 100;
-    score -= (sessionData.totalViolationPoints || 0) * 2;
-    score -= (100 - avgAttention) * 0.3;
-    score -= avgFatigue * 0.3;
-    score -= avgDrowsiness * 0.2;
-    score -= avgDistraction * 0.2;
-    score += completionRate * 0.1;
-    return Math.max(0, Math.min(100, Math.round(score)));
-  };
-
-  const performanceScore = calculatePerformanceScore();
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-green-400";
-    if (score >= 60) return "text-yellow-400";
-    if (score >= 40) return "text-orange-400";
-    return "text-red-400";
-  };
-
-  const getScoreLabel = (score: number) => {
-    if (score >= 80) return "Sangat Baik";
-    if (score >= 60) return "Baik";
-    if (score >= 40) return "Perlu Perbaikan";
-    return "Kurang Baik";
-  };
-
-  const StatCard = ({ icon, label, value, subvalue, color = "cyan" }: { 
-    icon: React.ReactNode; 
-    label: string; 
-    value: string | number; 
-    subvalue?: string;
-    color?: string;
-  }) => (
-    <div className={`bg-slate-800/50 backdrop-blur-sm rounded-xl p-4 border border-slate-700/50 hover:border-${color}-500/30 transition-all`}>
-      <div className="flex items-center gap-3 mb-2">
-        <div className={`p-2 rounded-lg bg-${color}-500/20 text-${color}-400`}>
-          {icon}
-        </div>
-        <span className="text-gray-400 text-sm">{label}</span>
-      </div>
-      <div className={`text-2xl font-bold text-${color}-400`}>{value}</div>
-      {subvalue && <div className="text-xs text-gray-500 mt-1">{subvalue}</div>}
-    </div>
-  );
-
-  const ProgressBar = ({ value, max = 100, color = "cyan", label }: { 
-    value: number; 
-    max?: number; 
-    color?: string;
-    label?: string;
-  }) => (
-    <div className="w-full">
-      {label && <div className="flex justify-between text-sm mb-1">
-        <span className="text-gray-400">{label}</span>
-        <span className={`text-${color}-400`}>{value}%</span>
-      </div>}
-      <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-        <div 
-          className={`h-full bg-gradient-to-r from-${color}-500 to-${color}-400 transition-all duration-500`}
-          style={{ width: `${Math.min((value / max) * 100, 100)}%` }}
-        />
-      </div>
-    </div>
-  );
-
-  // Mini Chart Component for real data visualization
-  const MiniChart = ({ data, color, label, height = 40 }: { 
-    data: number[]; 
-    color: string; 
-    label: string; 
-    height?: number;
-  }) => {
-    const maxValue = Math.max(...data, 1);
-    const minValue = Math.min(...data, 0);
-    const range = maxValue - minValue || 1;
-    
-    return (
-      <div className="bg-slate-700/30 rounded-lg p-3">
-        <div className="text-sm text-gray-400 mb-2">{label}</div>
-        <div className="flex items-end gap-1" style={{ height: `${height}px` }}>
-          {data.slice(-20).map((value, index) => (
-            <div
-              key={index}
-              className={`bg-${color}-400 rounded-t`}
-              style={{ 
-                width: '3px',
-                height: `${((value - minValue) / range) * height || 2}px`,
-                minHeight: '2px'
-              }}
-            />
-          ))}
-        </div>
-        <div className="text-xs text-gray-500 mt-1">
-          Average: {data.length > 0 ? Math.round(data.reduce((a, b) => a + b, 0) / data.length) : 0}%
-        </div>
-      </div>
-    );
-  };
-
   // Calculate EEG statistics
   const eegStats = useMemo(() => {
-    if (!sessionData?.eegData?.length) return null;
+    if (!sessionData?.eegData?.length) {
+      return {
+        avgFatigue: 0,
+        maxFatigue: 0,
+        minFatigue: 0,
+        alertCount: 0,
+        drowsyCount: 0,
+        fatiguedCount: 0,
+        avgAlpha: 0,
+        avgTheta: 0,
+        avgBeta: 0,
+        avgDelta: 0,
+        avgGamma: 0,
+        durationMinutes: 0,
+        fatigueTimeline: [] as { value: number; status: 'alert' | 'drowsy' | 'fatigued' }[]
+      };
+    }
+
     const eegData = sessionData.eegData;
-    
-    const fatigueScores = eegData.map(d => d.eegFatigueScore || 0);
-    const avgFatigue = (fatigueScores.reduce((a, b) => a + b, 0) / fatigueScores.length).toFixed(2);
-    const maxFatigue = Math.max(...fatigueScores).toFixed(2);
-    const minFatigue = Math.min(...fatigueScores).toFixed(2);
-    
+    const fatigueScores = eegData.map(d => d.eegFatigueScore ?? d.fatigue ?? 0);
+    const avgFatigue = fatigueScores.reduce((a, b) => a + b, 0) / fatigueScores.length;
+    const maxFatigue = Math.max(...fatigueScores);
+    const minFatigue = Math.min(...fatigueScores);
+
     const alertCount = fatigueScores.filter(f => f < 3).length;
     const drowsyCount = fatigueScores.filter(f => f >= 3 && f < 6).length;
     const fatiguedCount = fatigueScores.filter(f => f >= 6).length;
 
-    const avgAlpha = (eegData.reduce((a, d) => a + (d.alphaPower || 0), 0) / eegData.length).toFixed(2);
-    const avgTheta = (eegData.reduce((a, d) => a + (d.thetaPower || 0), 0) / eegData.length).toFixed(2);
-    const avgBeta = (eegData.reduce((a, d) => a + (d.betaPower || 0), 0) / eegData.length).toFixed(2);
+    const avgAlpha = eegData.reduce((a, d) => a + (d.alphaPower || 0), 0) / eegData.length;
+    const avgTheta = eegData.reduce((a, d) => a + (d.thetaPower || 0), 0) / eegData.length;
+    const avgBeta = eegData.reduce((a, d) => a + (d.betaPower || 0), 0) / eegData.length;
+    const avgDelta = eegData.reduce((a, d) => a + (d.deltaPower || 0), 0) / eegData.length;
+    const avgGamma = eegData.reduce((a, d) => a + (d.gammaPower || 0), 0) / eegData.length;
 
-    const durationMinutes = sessionData?.duration ? ((sessionData.duration / 60).toFixed(1)) : 
-                           sessionData?.completionTime ? ((sessionData.completionTime / 60).toFixed(1)) : '0';
+    const duration = sessionData.duration || sessionData.completionTime || 
+      Math.floor((sessionData.endTime.getTime() - sessionData.startTime.getTime()) / 1000);
+    const durationMinutes = duration / 60;
+
+    // Timeline data for chart
+    const fatigueTimeline = fatigueScores.map(f => ({
+      value: f,
+      status: (f < 3 ? 'alert' : f < 6 ? 'drowsy' : 'fatigued') as 'alert' | 'drowsy' | 'fatigued'
+    }));
 
     return {
-      avgFatigue,
-      maxFatigue,
-      minFatigue,
+      avgFatigue: Number(avgFatigue.toFixed(2)),
+      maxFatigue: Number(maxFatigue.toFixed(2)),
+      minFatigue: Number(minFatigue.toFixed(2)),
       alertCount,
       drowsyCount,
       fatiguedCount,
-      avgAlpha,
-      avgTheta,
-      avgBeta,
-      durationMinutes
+      avgAlpha: Number(avgAlpha.toFixed(2)),
+      avgTheta: Number(avgTheta.toFixed(2)),
+      avgBeta: Number(avgBeta.toFixed(2)),
+      avgDelta: Number(avgDelta.toFixed(2)),
+      avgGamma: Number(avgGamma.toFixed(2)),
+      durationMinutes: Number(durationMinutes.toFixed(1)),
+      fatigueTimeline
     };
   }, [sessionData]);
 
@@ -310,572 +172,585 @@ export default function SessionResults() {
     };
   }, [sessionData]);
 
-  // Auto-save to history on mount
+  // Save session to history function
+  const saveToHistory = useCallback(() => {
+    if (!sessionData || savedToHistory) return;
+
+    try {
+      const existingSessions = JSON.parse(localStorage.getItem('sessionHistory') || '[]');
+      const newSession = {
+        ...sessionData,
+        savedAt: new Date().toISOString(),
+        stats: eegStats,
+        violationStats
+      };
+
+      const exists = existingSessions.some((s: SessionData) => s.sessionId === sessionData.sessionId);
+      if (!exists) {
+        existingSessions.unshift(newSession);
+        if (existingSessions.length > 50) existingSessions.pop();
+        localStorage.setItem('sessionHistory', JSON.stringify(existingSessions));
+      }
+      setSavedToHistory(true);
+    } catch (error) {
+      console.error("Failed to save session:", error);
+    }
+  }, [sessionData, savedToHistory, eegStats, violationStats]);
+
+  // Auto-save to history
   useEffect(() => {
     if (sessionData && !savedToHistory) {
-      const timer = setTimeout(() => {
-        saveToHistory();
-      }, 1000);
+      const timer = setTimeout(saveToHistory, 1000);
       return () => clearTimeout(timer);
     }
-  }, [sessionData, savedToHistory]);
+  }, [sessionData, savedToHistory, saveToHistory]);
 
-  const saveToHistory = () => {
-    if (!sessionData || savedToHistory) return;
-    
-    // Save session to local storage
-    const existingSessions = JSON.parse(localStorage.getItem('sessionHistory') || '[]');
-    const newSession = {
-      ...sessionData,
-      savedAt: new Date().toISOString(),
-      stats: eegStats,
-      violationStats: violationStats
-    };
-    
-    // Avoid duplicates
-    const exists = existingSessions.some((s: any) => s.sessionId === sessionData.sessionId);
-    if (!exists) {
-      existingSessions.unshift(newSession); // Add to beginning
-      // Keep only last 50 sessions
-      if (existingSessions.length > 50) {
-        existingSessions.pop();
+  // Export handler
+  const handleExport = useCallback(() => {
+    if (!sessionData) return;
+
+    const exportData = {
+      sessionId: sessionData.sessionId,
+      routeName: sessionData.routeName,
+      startTime: sessionData.startTime.toISOString(),
+      endTime: sessionData.endTime.toISOString(),
+      duration: `${eegStats.durationMinutes} menit`,
+      eegStats,
+      violationStats,
+      metrics: {
+        averageSpeed: sessionData.averageSpeed || 0,
+        collisions: sessionData.collisions || violationStats.byType['collision'] || 0,
+        laneDeviations: sessionData.laneDeviations || violationStats.byType['lane_deviation'] || 0,
+        totalDistance: sessionData.totalDistance || 0
       }
-      localStorage.setItem('sessionHistory', JSON.stringify(existingSessions));
-    }
-    
-    setSavedToHistory(true);
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `session-${sessionData.sessionId}-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [sessionData, eegStats, violationStats]);
+
+  // --- ALL HOOKS ABOVE, EARLY RETURN BELOW ---
+
+  if (!sessionData) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ 
+            width: 48, height: 48, border: '3px solid #e2e8f0', borderTopColor: '#3b82f6', 
+            borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 16px'
+          }} />
+          <p style={{ color: '#64748b' }}>Memuat hasil sesi...</p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      </div>
+    );
+  }
+
+  // Generate analysis summary text
+  const generateSummary = () => {
+    const fatigueLevel = eegStats.avgFatigue < 3 ? 'sangat baik' : eegStats.avgFatigue < 5 ? 'cukup baik' : 'perlu diperbaiki';
+    const dominantWave = [
+      { name: 'Alpha', value: eegStats.avgAlpha },
+      { name: 'Beta', value: eegStats.avgBeta },
+      { name: 'Theta', value: eegStats.avgTheta },
+      { name: 'Delta', value: eegStats.avgDelta },
+      { name: 'Gamma', value: eegStats.avgGamma }
+    ].sort((a, b) => b.value - a.value)[0];
+
+    const waveAnalysis = dominantWave.name === 'Beta' ? 'mengindikasikan konsentrasi tinggi' :
+                        dominantWave.name === 'Alpha' ? 'mengindikasikan ketenangan' :
+                        dominantWave.name === 'Theta' ? 'mengindikasikan kantuk' : 
+                        'perlu perhatian lebih';
+
+    return `Sesi Anda menunjukkan tingkat kewaspadaan yang ${fatigueLevel} dengan rata-rata fatigue score ${eegStats.avgFatigue}. Anda mampu mempertahankan fokus sepanjang ${eegStats.durationMinutes} menit bermain. Status Brain Wave menunjukkan aktivitas ${dominantWave.name} yang dominan, ${waveAnalysis}.`;
   };
 
-  const handleSaveToHistory = () => {
-    saveToHistory();
-    setTimeout(() => {
-      navigate('/dashboard', { state: { tab: 'history' } });
-    }, 1000);
-  };
+  // Get drowsy detection status
+  const hasDrowsiness = eegStats.drowsyCount > 0 || eegStats.fatiguedCount > 0;
+  const collisionCount = sessionData.collisions || violationStats.byType['collision'] || 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div style={{ 
+      minHeight: '100vh', 
+      background: 'linear-gradient(180deg, #f0f9ff 0%, #f8fafc 100%)',
+      padding: '24px'
+    }}>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button
               onClick={() => navigate("/dashboard")}
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-gray-400 hover:text-white transition-colors"
+              style={{ 
+                display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px',
+                background: 'transparent', border: 'none', color: '#64748b', 
+                cursor: 'pointer', fontSize: 14
+              }}
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft size={16} />
+              Kembali
             </button>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Hasil Analisis Sesi</h1>
-              <p className="text-gray-400 text-sm">{sessionData.routeName}</p>
-              <p className="text-gray-500 text-xs mt-1 flex items-center gap-2">
-                <Calendar className="w-3 h-3" />
-                {sessionData.startTime.toLocaleDateString('id-ID', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })} • {sessionData.startTime.toLocaleTimeString('id-ID', { timeStyle: 'short' })} - {sessionData.endTime.toLocaleTimeString('id-ID', { timeStyle: 'short' })}
-              </p>
-            </div>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1e293b', margin: 0 }}>
+              Hasil Analisis Sesi
+            </h1>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-gray-400 hover:text-white transition-colors">
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Export</span>
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-gray-400 hover:text-white transition-colors">
-              <Share2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Bagikan</span>
-            </button>
-          </div>
+          <button
+            onClick={handleExport}
+            style={{ 
+              display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
+              background: 'white', border: '1px solid #e2e8f0', borderRadius: 8,
+              color: '#475569', cursor: 'pointer', fontSize: 14
+            }}
+          >
+            <Download size={16} />
+            Export
+          </button>
         </div>
 
-        {/* Main Content */}
-        <div className="grid gap-6">
-          {/* Key Metrics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
-              <div className="flex items-center gap-3 mb-4">
-                <Clock className="w-5 h-5 text-blue-400" />
-                <span className="text-gray-300 text-sm font-medium">Durasi Sesi</span>
-              </div>
-              <div className="text-2xl font-bold text-white">
-                {eegStats?.durationMinutes}m
-              </div>
+        {/* Top Cards Row */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+          {/* Durasi Sesi */}
+          <div style={{ 
+            background: 'white', borderRadius: 16, padding: 20,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #3b82f6'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <Clock size={18} color="#3b82f6" />
+              <span style={{ fontSize: 13, color: '#64748b' }}>Durasi Sesi</span>
             </div>
-
-            <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
-              <div className="flex items-center gap-3 mb-4">
-                <TrendingUp className="w-5 h-5 text-yellow-400" />
-                <span className="text-gray-300 text-sm font-medium">Fatigue Rata-rata</span>
-              </div>
-              <div className="text-2xl font-bold text-white">
-                {eegStats?.avgFatigue}
-              </div>
-            </div>
-
-            <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
-              <div className="flex items-center gap-3 mb-4">
-                <AlertTriangle className="w-5 h-5 text-red-400" />
-                <span className="text-gray-300 text-sm font-medium">Total Pelanggaran</span>
-              </div>
-              <div className="text-2xl font-bold text-white">
-                {violationStats.total}
-              </div>
-            </div>
-
-            <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
-              <div className="flex items-center gap-3 mb-4">
-                <Target className="w-5 h-5 text-green-400" />
-                <span className="text-gray-300 text-sm font-medium">Poin Pelanggaran</span>
-              </div>
-              <div className="text-2xl font-bold text-white">
-                {violationStats.totalPoints}
-              </div>
+            <div style={{ fontSize: 32, fontWeight: 700, color: '#1e293b' }}>
+              {eegStats.durationMinutes}m
             </div>
           </div>
 
-          {/* EEG Status Section */}
-          <div className="bg-white p-5 rounded-xl shadow-sm border-l-4 border-red-400">
-            <div className="flex items-center gap-3 mb-4">
-              <AlertTriangle className="w-5 h-5 text-red-400" />
-              <span className="text-sm text-gray-600 font-medium">Status Pengamatan</span>
+          {/* Fatigue Rata-rata */}
+          <div style={{ 
+            background: 'white', borderRadius: 16, padding: 20,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #f59e0b'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <TrendingUp size={18} color="#f59e0b" />
+              <span style={{ fontSize: 13, color: '#64748b' }}>Fatigue Rata-rata</span>
             </div>
-            <div className="flex gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🟢</span>
-                <div>
-                  <div className="font-semibold text-gray-800">Alert</div>
-                  <div className="text-xs text-gray-500">{eegStats?.alertCount} detik</div>
-                </div>
+            <div style={{ fontSize: 32, fontWeight: 700, color: '#1e293b' }}>
+              {eegStats.avgFatigue}
+            </div>
+            <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
+              Min: {eegStats.minFatigue} | Max: {eegStats.maxFatigue}
+            </div>
+          </div>
+
+          {/* Status Pengamatan */}
+          <div style={{ 
+            background: 'white', borderRadius: 16, padding: 20,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)', borderLeft: '4px solid #ef4444'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <AlertTriangle size={18} color="#ef4444" />
+              <span style={{ fontSize: 13, color: '#64748b' }}>Status Pengamatan</span>
+            </div>
+            <div style={{ display: 'flex', gap: 16 }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ width: 12, height: 12, background: '#22c55e', borderRadius: '50%', margin: '0 auto 4px' }} />
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#1e293b' }}>Alert</div>
+                <div style={{ fontSize: 11, color: '#64748b' }}>{eegStats.alertCount} detik</div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🟡</span>
-                <div>
-                  <div className="font-semibold text-gray-800">Drowsy</div>
-                  <div className="text-xs text-gray-500">{eegStats?.drowsyCount} detik</div>
-                </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ width: 12, height: 12, background: '#f59e0b', borderRadius: '50%', margin: '0 auto 4px' }} />
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#1e293b' }}>Drowsy</div>
+                <div style={{ fontSize: 11, color: '#64748b' }}>{eegStats.drowsyCount} detik</div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🔴</span>
-                <div>
-                  <div className="font-semibold text-gray-800">Fatigued</div>
-                  <div className="text-xs text-gray-500">{eegStats?.fatiguedCount} detik</div>
-                </div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ width: 12, height: 12, background: '#ef4444', borderRadius: '50%', margin: '0 auto 4px' }} />
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#1e293b' }}>Fatigued</div>
+                <div style={{ fontSize: 11, color: '#64748b' }}>{eegStats.fatiguedCount} detik</div>
               </div>
             </div>
-            <div className="mt-4 text-xs text-gray-600 bg-gray-50 p-3 rounded-lg">
+            <div style={{ fontSize: 11, color: '#64748b', marginTop: 12, background: '#f8fafc', padding: 8, borderRadius: 6 }}>
               <strong>Penjelasan:</strong> Alert = Waspada | Drowsy = Mengantuk | Fatigued = Lelah
             </div>
           </div>
         </div>
 
-        {/* Route Completion Summary */}
-        {sessionData.routeName && (
-          <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
-            <div className="flex items-center gap-3 mb-6">
-              <Flag className="w-5 h-5 text-indigo-400" />
-              <h2 className="text-lg font-bold text-white">Ringkasan Rute: {sessionData.routeName}</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-green-500/10 rounded-lg p-4 text-center border border-green-500/20">
-                <Target className="w-6 h-6 text-green-400 mx-auto mb-2" />
-                <div className="text-xs text-gray-400 mb-1">Checkpoint Dicapai</div>
-                <div className="text-xl font-bold text-green-400">
-                  {sessionData.reachedCount || 0}/{sessionData.totalWaypoints || 0}
-                </div>
-              </div>
-              <div className="bg-yellow-500/10 rounded-lg p-4 text-center border border-yellow-500/20">
-                <XCircle className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
-                <div className="text-xs text-gray-400 mb-1">Checkpoint Terlewat</div>
-                <div className="text-xl font-bold text-yellow-400">
-                  {sessionData.missedCount || 0}
-                </div>
-              </div>
-              <div className="bg-blue-500/10 rounded-lg p-4 text-center border border-blue-500/20">
-                <Clock className="w-6 h-6 text-blue-400 mx-auto mb-2" />
-                <div className="text-xs text-gray-400 mb-1">Waktu Penyelesaian</div>
-                <div className="text-xl font-bold text-blue-400">
-                  {sessionData.completionTime ? `${Math.floor(sessionData.completionTime / 60)}:${Math.floor(sessionData.completionTime % 60).toString().padStart(2, '0')}` : '--:--'}
-                </div>
-              </div>
-              <div className={`rounded-lg p-4 text-center border ${
-                violationStats.totalPoints === 0 
-                  ? 'bg-green-500/10 border-green-500/20' 
-                  : violationStats.totalPoints < 30 
-                  ? 'bg-yellow-500/10 border-yellow-500/20' 
-                  : 'bg-red-500/10 border-red-500/20'
-              }`}>
-                <AlertTriangle className={`w-6 h-6 mx-auto mb-2 ${
-                  violationStats.totalPoints === 0 
-                    ? 'text-green-400' 
-                    : violationStats.totalPoints < 30 
-                    ? 'text-yellow-400' 
-                    : 'text-red-400'
-                }`} />
-                <div className="text-xs text-gray-400 mb-1">Total Pelanggaran</div>
-                <div className={`text-xl font-bold ${
-                  violationStats.totalPoints === 0 
-                    ? 'text-green-400' 
-                    : violationStats.totalPoints < 30 
-                    ? 'text-yellow-400' 
-                    : 'text-red-400'
-                }`}>
-                  {violationStats.totalPoints} poin
-                </div>
-              </div>
-            </div>
+        {/* Timeline Skor Fatigue */}
+        <div style={{ 
+          background: 'white', borderRadius: 16, padding: 24, marginBottom: 24,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <BarChart3 size={20} color="#6366f1" />
+            <span style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}>Timeline Skor Fatigue</span>
           </div>
-        )}
-
-        {/* Violations Detail */}
-        {sessionData.violations && sessionData.violations.length > 0 && (
-          <div className="bg-white rounded-xl p-6 mb-8 shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <AlertTriangle className="w-5 h-5 text-red-400" />
-              <h2 className="text-lg font-bold text-gray-800">Rincian Pelanggaran ({violationStats.total}x)</h2>
-            </div>
-            
-            {/* Violation Type Summary */}
-            <div className="flex gap-4 mb-6 flex-wrap">
-              {Object.entries(violationStats.byType).map(([type, count]) => {
-                const config = VIOLATION_LABELS[type] || { label: type, icon: '⚠️', color: '#6b7280' };
+          
+          {/* Chart */}
+          <div style={{ 
+            background: '#f8fafc', borderRadius: 12, padding: 16, marginBottom: 16,
+            height: 120, display: 'flex', alignItems: 'flex-end', gap: 2, overflow: 'hidden',
+            position: 'relative'
+          }}>
+            {/* Flat baseline line */}
+            <div style={{
+              position: 'absolute', bottom: 16, left: 16, right: 16,
+              height: 1, background: '#e2e8f0', pointerEvents: 'none'
+            }} />
+            {eegStats.fatigueTimeline.length > 0 ? (
+              eegStats.fatigueTimeline.slice(-100).map((item, idx) => {
+                const color = item.status === 'alert' ? '#22c55e' : 
+                              item.status === 'drowsy' ? '#f59e0b' : '#ef4444';
+                // If value is 0 or near-zero, show a tiny flat bar (4px) in gray
+                const hasValue = item.value > 0.05;
+                const height = hasValue ? Math.max(8, (item.value / 10) * 100) : 4;
                 return (
-                  <div 
-                    key={type} 
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 border border-gray-200"
-                  >
-                    <span className="text-lg">{config.icon}</span>
-                    <span className="font-semibold text-gray-800">{count}x</span>
-                    <span className="text-gray-600 text-sm">{config.label}</span>
-                  </div>
+                  <div
+                    key={idx}
+                    style={{
+                      flex: 1,
+                      minWidth: 3,
+                      maxWidth: 8,
+                      height: `${height}%`,
+                      background: hasValue ? color : '#cbd5e1',
+                      borderRadius: '2px 2px 0 0',
+                      transition: 'height 0.3s'
+                    }}
+                  />
                 );
-              })}
-            </div>
-
-            {/* Violation Timeline */}
-            <div className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
-              {sessionData.violations.map((violation, idx) => {
-                const config = VIOLATION_LABELS[violation.type] || { label: violation.type, icon: '⚠️', color: '#6b7280' };
-                const timeStr = new Date(violation.timestamp).toLocaleTimeString('id-ID');
-                return (
-                  <div 
-                    key={violation.id || idx} 
-                    className={`flex items-center gap-4 p-3 ${
-                      idx < sessionData.violations!.length - 1 ? 'border-b border-gray-200' : ''
-                    } ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
-                  >
-                    <span className="text-xl">{config.icon}</span>
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-800 text-sm">{violation.description}</div>
-                      <div className="text-xs text-gray-500">{timeStr}</div>
-                    </div>
-                    <div className="px-2 py-1 bg-red-100 text-red-600 rounded text-xs font-semibold">
-                      +{violation.points} poin
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {activeTab === "violations" && (
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-orange-400" />
-              Detail Pelanggaran ({sessionData.violations.length}) 
-              <span className="text-sm text-gray-400 ml-2">
-                - Real Data Session {sessionData.startTime.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-              </span>
-            </h3>
-            {sessionData.violations.length > 0 ? (
-              <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                {sessionData.violations.map((violation, index) => {
-                  const config = VIOLATION_LABELS[violation.type] || { label: violation.type, icon: '⚠️', color: '#6b7280' };
-                  const typeInfo = { 
-                    label: config.label,
-                    icon: <span>{config.icon}</span>,
-                    color: 'text-orange-400'
-                  };
-                  return (
-                    <div key={index} className="flex items-center justify-between bg-slate-700/30 rounded-lg p-4 hover:bg-slate-700/50 transition-colors">
-                      <div className="flex items-center gap-4">
-                        <div className={`p-2 rounded-lg bg-slate-600/50 ${typeInfo.color}`}>
-                          {typeInfo.icon}
-                        </div>
-                        <div>
-                          <div className={`font-medium ${typeInfo.color}`}>{typeInfo.label}</div>
-                          <div className="text-sm text-gray-500">
-                            {violation.timestamp.toLocaleTimeString('id-ID', { timeStyle: 'medium' })}
-                          </div>
-                          {violation.description && (
-                            <div className="text-xs text-gray-400 mt-1">{violation.description}</div>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-red-400">-{violation.points}</div>
-                        <div className="text-xs text-gray-500">poin</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              })
             ) : (
-              <div className="text-center py-12">
-                <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                <p className="text-green-400 font-medium text-lg">Tidak ada pelanggaran!</p>
-                <p className="text-gray-500">Sesi mengemudi berjalan dengan sempurna</p>
-              </div>
+              /* No data: show 60 flat gray bars as baseline */
+              Array.from({ length: 60 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    flex: 1,
+                    minWidth: 3,
+                    maxWidth: 8,
+                    height: '4%',
+                    background: '#cbd5e1',
+                    borderRadius: '2px 2px 0 0'
+                  }}
+                />
+              ))
             )}
           </div>
+          {eegStats.fatigueTimeline.length === 0 && (
+            <div style={{ textAlign: 'center', fontSize: 12, color: '#94a3b8', marginBottom: 8 }}>
+              Tidak ada data EEG — grafik menampilkan baseline kosong
+            </div>
+          )}
+
+          {/* Legend */}
+          <div style={{ display: 'flex', gap: 24, justifyContent: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 12, height: 12, background: '#22c55e', borderRadius: 2 }} />
+              <span style={{ fontSize: 12, color: '#64748b' }}>Alert (0-3)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 12, height: 12, background: '#f59e0b', borderRadius: 2 }} />
+              <span style={{ fontSize: 12, color: '#64748b' }}>Drowsy (3-6)</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 12, height: 12, background: '#ef4444', borderRadius: 2 }} />
+              <span style={{ fontSize: 12, color: '#64748b' }}>Fatigued (6-10)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Analisis Brain Wave */}
+        <div style={{ 
+          background: 'white', borderRadius: 16, padding: 24, marginBottom: 24,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+            <Activity size={20} color="#8b5cf6" />
+            <span style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}>Analisis Brain Wave</span>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+            {[
+              { name: 'Delta', hz: '0-4 Hz', value: eegStats.avgDelta, color: '#ef4444' },
+              { name: 'Theta', hz: '4-8 Hz', value: eegStats.avgTheta, color: '#f59e0b' },
+              { name: 'Alpha', hz: '8-12 Hz', value: eegStats.avgAlpha, color: '#22c55e' },
+              { name: 'Beta', hz: '12-30 Hz', value: eegStats.avgBeta, color: '#3b82f6' },
+              { name: 'Gamma', hz: '30-100 Hz', value: eegStats.avgGamma, color: '#8b5cf6' }
+            ].map((wave) => (
+              <div key={wave.name} style={{ 
+                background: '#f8fafc', borderRadius: 12, padding: 16, textAlign: 'center'
+              }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#374151' }}>{wave.name}</div>
+                <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 8 }}>{wave.hz}</div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: wave.color }}>{wave.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Ringkasan Analisis */}
+        <div style={{ 
+          background: 'white', borderRadius: 16, padding: 24, marginBottom: 24,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <CheckCircle2 size={20} color="#22c55e" />
+            <span style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}>Ringkasan Analisis</span>
+          </div>
+          <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.6, margin: '0 0 20px' }}>
+            {generateSummary()}
+          </p>
+
+          {/* Performance Grade */}
+          {(() => {
+            const hasEEG = sessionData.eegData.length > 0;
+            const fatiguePenalty = eegStats.avgFatigue > 5 ? 20 : eegStats.avgFatigue > 3 ? 10 : 0;
+            const collisionPenalty = (sessionData.collisions || violationStats.byType['collision'] || 0) * 8;
+            const drowsyPenalty = eegStats.fatiguedCount * 0.5;
+            const score = hasEEG ? Math.max(0, Math.min(100, Math.round(100 - fatiguePenalty - collisionPenalty - drowsyPenalty))) : null;
+            const grade = score === null ? null : score >= 85 ? { label: 'A', color: '#22c55e', bg: '#f0fdf4', text: 'Sangat Baik' } :
+                          score >= 70 ? { label: 'B', color: '#3b82f6', bg: '#eff6ff', text: 'Baik' } :
+                          score >= 55 ? { label: 'C', color: '#f59e0b', bg: '#fffbeb', text: 'Cukup' } :
+                          { label: 'D', color: '#ef4444', bg: '#fef2f2', text: 'Perlu Perbaikan' };
+            if (!grade) return null;
+            return (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20, background: grade.bg, borderRadius: 12, padding: 16 }}>
+                <div style={{ 
+                  width: 56, height: 56, borderRadius: 12, background: grade.color,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 28, fontWeight: 800, color: 'white', flexShrink: 0
+                }}>{grade.label}</div>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#1e293b' }}>Nilai Performa: {score}/100 — {grade.text}</div>
+                  <div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>
+                    Berdasarkan skor fatigue, jumlah tabrakan, dan durasi kondisi mengantuk selama sesi.
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* Analisis Pelanggaran */}
+        {violationStats.total > 0 && (
+        <div style={{ 
+          background: 'white', borderRadius: 16, padding: 24, marginBottom: 24,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <AlertTriangle size={20} color="#ef4444" />
+            <span style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}>Analisis Pelanggaran</span>
+            <span style={{ marginLeft: 'auto', fontSize: 13, color: '#ef4444', fontWeight: 600 }}>
+              {violationStats.total} pelanggaran · {violationStats.totalPoints} poin
+            </span>
+          </div>
+
+          {/* Violation bars */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {Object.entries(violationStats.byType).sort((a, b) => b[1] - a[1]).map(([type, count]) => {
+              const labels: Record<string, { label: string; color: string }> = {
+                collision: { label: 'Tabrakan', color: '#ef4444' },
+                lane_deviation: { label: 'Penyimpangan Jalur', color: '#f59e0b' },
+                drowsiness: { label: 'Mengantuk', color: '#f59e0b' },
+                fatigue: { label: 'Kelelahan', color: '#ef4444' },
+                distraction: { label: 'Distraksi', color: '#eab308' },
+                eyes_closed: { label: 'Mata Tertutup', color: '#dc2626' },
+                yawning: { label: 'Menguap', color: '#ea580c' },
+                looking_away: { label: 'Melihat Arah Lain', color: '#eab308' },
+                speed_violation: { label: 'Pelanggaran Kecepatan', color: '#ef4444' },
+                low_attention: { label: 'Perhatian Rendah', color: '#a855f7' },
+              };
+              const info = labels[type] || { label: type, color: '#6b7280' };
+              const pct = Math.round((count / violationStats.total) * 100);
+              return (
+                <div key={type}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+                    <span style={{ color: '#374151', fontWeight: 500 }}>{info.label}</span>
+                    <span style={{ color: info.color, fontWeight: 600 }}>{count}x ({pct}%)</span>
+                  </div>
+                  <div style={{ height: 8, background: '#f1f5f9', borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{ 
+                      height: '100%', width: `${pct}%`, background: info.color,
+                      borderRadius: 4, transition: 'width 0.5s'
+                    }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Insight */}
+          <div style={{ marginTop: 16, background: '#fef2f2', borderRadius: 10, padding: 12, fontSize: 13, color: '#7f1d1d' }}>
+            ⚠️ <strong>Insight:</strong>{' '}
+            {(() => {
+              const topType = Object.entries(violationStats.byType).sort((a, b) => b[1] - a[1])[0];
+              const insights: Record<string, string> = {
+                collision: 'Frekuensi tabrakan tinggi — pertimbangkan untuk mengurangi kecepatan dan tingkatkan fokus pada lingkungan.',
+                lane_deviation: 'Sering keluar jalur — pastikan kondisi tubuh prima sebelum berkendara.',
+                drowsiness: 'Kondisi mengantuk terdeteksi dominan — istirahat cukup sebelum berkendara.',
+                fatigue: 'Kelelahan mendominasi sesi — hindari berkendara jarak jauh tanpa istirahat.',
+                distraction: 'Distraksi sering terjadi — minimalisir gangguan selama berkendara.',
+                eyes_closed: 'Mata sering tertutup — waspadai microsleep.',
+                low_attention: 'Tingkat perhatian rendah dominan — hindari berkendara saat kurang tidur.',
+              };
+              return insights[topType?.[0]] || `Pelanggaran terbanyak adalah ${topType?.[0]} sebanyak ${topType?.[1]}x — perhatikan faktor ini untuk sesi berikutnya.`;
+            })()}
+          </div>
+        </div>
         )}
 
-        {activeTab === "eeg" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* EEG Overview */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Brain className="w-5 h-5 text-purple-400" />
-                Statistik EEG Real Data
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <StatCard 
-                  icon={<Target className="w-5 h-5" />}
-                  label="Rata-rata Perhatian"
-                  value={`${avgAttention}%`}
-                  subvalue={sessionData.eegData.length > 0 ? `Min: ${minAttention}%` : "Tidak ada data"}
-                  color="cyan"
-                />
-                <StatCard 
-                  icon={<Zap className="w-5 h-5" />}
-                  label="Rata-rata Kelelahan"
-                  value={`${avgFatigue}%`}
-                  subvalue={sessionData.eegData.length > 0 ? `Max: ${maxFatigue}%` : "Tidak ada data"}
-                  color="orange"
-                />
+        {/* Rekomendasi & Tips */}
+        <div style={{ 
+          background: 'white', borderRadius: 16, padding: 24, marginBottom: 24,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <Lightbulb size={20} color="#f59e0b" />
+            <span style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}>Rekomendasi & Tips</span>
+          </div>
+          
+          {hasDrowsiness && (
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <span style={{ background: '#fef3c7', color: '#d97706', padding: '2px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600 }}>
+                  ⚠️ Status Mengantuk Terdeteksi
+                </span>
               </div>
-              <div className="mt-6 space-y-4">
-                <ProgressBar value={avgAttention} color="cyan" label="Level Perhatian" />
-                <ProgressBar value={Math.max(0, 100 - avgFatigue)} color="green" label="Level Energi" />
+              <ul style={{ margin: 0, paddingLeft: 20, color: '#475569', fontSize: 14, lineHeight: 1.8 }}>
+                <li>Lakukan aktivitas ringan seperti berjalan atau minum air dingin saat merasa mengantuk</li>
+                <li>Kurangi durasi perjalanan dan ambil istirahat setiap 2 jam berkendara</li>
+                <li>Pastikan posisi berkendara ergonomis untuk menghindari ketegangan otot yang menyebabkan kantuk</li>
+              </ul>
+            </div>
+          )}
+
+          {collisionCount > 0 && (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <span style={{ background: '#fee2e2', color: '#dc2626', padding: '2px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600 }}>
+                  ⚠️ Keselamatan Berkendara
+                </span>
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 20, color: '#475569', fontSize: 14, lineHeight: 1.8 }}>
+                <li>Tabrakan terdeteksi {collisionCount}x - tingkatkan awareness terhadap lingkungan sekitar</li>
+                <li>Fokus pada prediksi dan antisipasi pergerakan kendaraan lain</li>
+                <li>Kurangi kecepatan saat kondisi fatigue meningkat untuk menjaga keselamatan</li>
+              </ul>
+            </div>
+          )}
+
+          {!hasDrowsiness && collisionCount === 0 && (
+            <div style={{ color: '#22c55e', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <CheckCircle2 size={18} />
+              <span style={{ fontSize: 14 }}>Performa mengemudi Anda sudah baik! Pertahankan kebiasaan ini.</span>
+            </div>
+          )}
+        </div>
+
+        {/* Metrik Kendaraan */}
+        <div style={{ 
+          background: 'white', borderRadius: 16, padding: 24, marginBottom: 32,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+            <Car size={20} color="#6366f1" />
+            <span style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}>Metrik Kendaraan</span>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+            <div style={{ 
+              background: '#f0fdf4', borderRadius: 12, padding: 16, 
+              borderLeft: '3px solid #22c55e'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <Gauge size={16} color="#22c55e" />
+                <span style={{ fontSize: 12, color: '#64748b' }}>Kecepatan Rata-rata</span>
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: '#1e293b' }}>
+                {(sessionData.averageSpeed || 0).toFixed(1)} km/h
               </div>
             </div>
 
-            {/* EEG Real Time Chart */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Activity className="w-5 h-5 text-cyan-400" />
-                Grafik EEG Real Time
-              </h3>
-              {sessionData.eegData.length > 0 ? (
-                <div className="space-y-4">
-                  <MiniChart 
-                    data={sessionData.eegData.map(d => d.attention || 0)}
-                    color="cyan"
-                    label="Attention Level"
-                    height={60}
-                  />
-                  <MiniChart 
-                    data={sessionData.eegData.map(d => d.fatigue || 0)}
-                    color="orange"
-                    label="Fatigue Level"
-                    height={60}
-                  />
-                  <div className="text-xs text-gray-500 text-center mt-2">
-                    Data dari {sessionData.eegData.length} pengukuran selama sesi
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Brain className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                  <p className="text-gray-500">Tidak ada data EEG real tersedia</p>
-                  <p className="text-gray-600 text-sm">Pastikan device EEG terhubung</p>
-                </div>
-              )}
+            <div style={{ 
+              background: '#fef2f2', borderRadius: 12, padding: 16, 
+              borderLeft: '3px solid #ef4444'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <AlertTriangle size={16} color="#ef4444" />
+                <span style={{ fontSize: 12, color: '#64748b' }}>Tabrakan</span>
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: '#ef4444' }}>
+                {collisionCount}x
+              </div>
             </div>
 
-            {/* EEG Analysis */}
-            <div className="lg:col-span-2 bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-400" />
-                Analisis EEG Real
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className={`p-4 rounded-lg ${sessionData.eegData.length === 0 ? 'bg-slate-500/10 border border-slate-500/30' : avgAttention >= 70 ? 'bg-green-500/10 border border-green-500/30' : avgAttention >= 50 ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
-                  <div className={`font-medium ${sessionData.eegData.length === 0 ? 'text-slate-400' : avgAttention >= 70 ? 'text-green-400' : avgAttention >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
-                    Level Perhatian: {sessionData.eegData.length === 0 ? 'Tidak Ada Data' : avgAttention >= 70 ? 'Baik' : avgAttention >= 50 ? 'Sedang' : 'Rendah'}
-                  </div>
-                  <p className="text-sm text-gray-400 mt-1">
-                    {sessionData.eegData.length === 0 ? 'Tidak ada data EEG yang dideteksi selama sesi.' :
-                      avgAttention >= 70 
-                      ? 'Anda mempertahankan fokus dengan baik selama sesi.' 
-                      : avgAttention >= 50 
-                      ? 'Perhatian Anda cukup baik, namun bisa ditingkatkan.' 
-                      : 'Perhatian Anda rendah, pertimbangkan untuk istirahat.'}
-                  </p>
-                </div>
-                <div className={`p-4 rounded-lg ${sessionData.eegData.length === 0 ? 'bg-slate-500/10 border border-slate-500/30' : avgFatigue <= 30 ? 'bg-green-500/10 border border-green-500/30' : avgFatigue <= 60 ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
-                  <div className={`font-medium ${sessionData.eegData.length === 0 ? 'text-slate-400' : avgFatigue <= 30 ? 'text-green-400' : avgFatigue <= 60 ? 'text-yellow-400' : 'text-red-400'}`}>
-                    Level Kelelahan: {sessionData.eegData.length === 0 ? 'Tidak Ada Data' : avgFatigue <= 30 ? 'Rendah' : avgFatigue <= 60 ? 'Sedang' : 'Tinggi'}
-                  </div>
-                  <p className="text-sm text-gray-400 mt-1">
-                    {sessionData.eegData.length === 0 ? 'Tidak ada data kelelahan yang dideteksi.' :
-                      avgFatigue <= 30 
-                      ? 'Tingkat energi Anda baik selama sesi.' 
-                      : avgFatigue <= 60 
-                      ? 'Mulai terdeteksi kelelahan, istirahatlah jika perlu.' 
-                      : 'Kelelahan tinggi terdeteksi, sangat disarankan untuk istirahat.'}
-                  </p>
-                </div>
+            <div style={{ 
+              background: '#fffbeb', borderRadius: 12, padding: 16, 
+              borderLeft: '3px solid #f59e0b'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <Navigation size={16} color="#f59e0b" />
+                <span style={{ fontSize: 12, color: '#64748b' }}>Penyimpangan Jalur</span>
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: '#f59e0b' }}>
+                {sessionData.laneDeviations || violationStats.byType['lane_deviation'] || 0}x
+              </div>
+            </div>
+
+            <div style={{ 
+              background: '#f0f9ff', borderRadius: 12, padding: 16, 
+              borderLeft: '3px solid #3b82f6'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <Brain size={16} color="#3b82f6" />
+                <span style={{ fontSize: 12, color: '#64748b' }}>Total Jarak</span>
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: '#1e293b' }}>
+                {(sessionData.totalDistance || 0).toFixed(1)} km
               </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {activeTab === "face" && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Face Recognition Overview */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Eye className="w-5 h-5 text-blue-400" />
-                Statistik Face Recognition Real Data
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <StatCard 
-                  icon={<Eye className="w-5 h-5" />}
-                  label="Rata-rata Kantuk"
-                  value={`${avgDrowsiness}%`}
-                  subvalue={sessionData.faceData.length > 0 ? "Data real" : "Tidak ada data"}
-                  color="yellow"
-                />
-                <StatCard 
-                  icon={<AlertTriangle className="w-5 h-5" />}
-                  label="Rata-rata Distraksi"
-                  value={`${avgDistraction}%`}
-                  subvalue={sessionData.faceData.length > 0 ? "Data real" : "Tidak ada data"}
-                  color="red"
-                />
-              </div>
-              <div className="mt-6 space-y-4">
-                <ProgressBar value={Math.max(0, 100 - avgDrowsiness)} color="green" label="Level Kesadaran" />
-                <ProgressBar value={Math.max(0, 100 - avgDistraction)} color="cyan" label="Level Fokus" />
-              </div>
-            </div>
-
-            {/* Face Recognition Real Time Chart */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Activity className="w-5 h-5 text-blue-400" />
-                Grafik Face Real Time
-              </h3>
-              {sessionData.faceData.length > 0 ? (
-                <div className="space-y-4">
-                  <MiniChart 
-                    data={sessionData.faceData.map(d => d.drowsiness || 0)}
-                    color="yellow"
-                    label="Drowsiness Level"
-                    height={60}
-                  />
-                  <MiniChart 
-                    data={sessionData.faceData.map(d => d.distraction || 0)}
-                    color="red"
-                    label="Distraction Level"
-                    height={60}
-                  />
-                  <div className="text-xs text-gray-500 text-center mt-2">
-                    Data dari {sessionData.faceData.length} deteksi wajah selama sesi
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Eye className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                  <p className="text-gray-500">Tidak ada data face recognition real</p>
-                  <p className="text-gray-600 text-sm">Pastikan kamera terhubung dan face detection aktif</p>
-                </div>
-              )}
-            </div>
-
-            {/* Detection Events Real Data */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <AlertOctagon className="w-5 h-5 text-orange-400" />
-                Event Terdeteksi (Real Data)
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between bg-slate-700/30 rounded-lg p-4">
-                  <div className="flex items-center gap-3">
-                    <Eye className="w-5 h-5 text-red-400" />
-                    <span className="text-gray-300">Mata Tertutup</span>
-                  </div>
-                  <span className="text-xl font-bold text-red-400">{eyesClosedEvents}x</span>
-                </div>
-                <div className="flex items-center justify-between bg-slate-700/30 rounded-lg p-4">
-                  <div className="flex items-center gap-3">
-                    <AlertOctagon className="w-5 h-5 text-orange-400" />
-                    <span className="text-gray-300">Menguap</span>
-                  </div>
-                  <span className="text-xl font-bold text-orange-400">{yawningEvents}x</span>
-                </div>
-                <div className="flex items-center justify-between bg-slate-700/30 rounded-lg p-4">
-                  <div className="flex items-center gap-3">
-                    <Eye className="w-5 h-5 text-yellow-400" />
-                    <span className="text-gray-300">Melihat ke Arah Lain</span>
-                  </div>
-                  <span className="text-xl font-bold text-yellow-400">{lookingAwayEvents}x</span>
-                </div>
-              </div>
-              {sessionData.faceData.length === 0 && (
-                <div className="text-center text-gray-500 text-sm mt-4">
-                  Semua nilai menunjukkan 0 karena tidak ada data face recognition yang terdeteksi
-                </div>
-              )}
-            </div>
-
-            {/* Face Analysis Real Data */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50">
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-400" />
-                Analisis Face Recognition Real
-              </h3>
-              <div className="space-y-4">
-                <div className={`p-4 rounded-lg ${sessionData.faceData.length === 0 ? 'bg-slate-500/10 border border-slate-500/30' : avgDrowsiness <= 20 ? 'bg-green-500/10 border border-green-500/30' : avgDrowsiness <= 50 ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
-                  <div className={`font-medium ${sessionData.faceData.length === 0 ? 'text-slate-400' : avgDrowsiness <= 20 ? 'text-green-400' : avgDrowsiness <= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
-                    Level Kantuk: {sessionData.faceData.length === 0 ? 'Tidak Ada Data' : avgDrowsiness <= 20 ? 'Rendah' : avgDrowsiness <= 50 ? 'Sedang' : 'Tinggi'}
-                  </div>
-                  <p className="text-sm text-gray-400 mt-1">
-                    {sessionData.faceData.length === 0 ? 'Tidak ada data face recognition yang dideteksi selama sesi.' :
-                      avgDrowsiness <= 20 
-                      ? 'Anda tetap terjaga dengan baik selama sesi.' 
-                      : avgDrowsiness <= 50 
-                      ? 'Kantuk mulai terdeteksi, pertimbangkan untuk istirahat.' 
-                      : 'Kantuk tinggi terdeteksi, sangat berbahaya untuk berkendara.'}
-                  </p>
-                </div>
-                <div className={`p-4 rounded-lg ${sessionData.faceData.length === 0 ? 'bg-slate-500/10 border border-slate-500/30' : avgDistraction <= 20 ? 'bg-green-500/10 border border-green-500/30' : avgDistraction <= 50 ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
-                  <div className={`font-medium ${sessionData.faceData.length === 0 ? 'text-slate-400' : avgDistraction <= 20 ? 'text-green-400' : avgDistraction <= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
-                    Level Distraksi: {sessionData.faceData.length === 0 ? 'Tidak Ada Data' : avgDistraction <= 20 ? 'Rendah' : avgDistraction <= 50 ? 'Sedang' : 'Tinggi'}
-                  </div>
-                  <p className="text-sm text-gray-400 mt-1">
-                    {sessionData.faceData.length === 0 ? 'Tidak ada data distraksi yang dideteksi.' :
-                      avgDistraction <= 20 
-                      ? 'Fokus Anda tetap pada jalan dengan baik.' 
-                      : avgDistraction <= 50 
-                      ? 'Beberapa distraksi terdeteksi, tetap fokus pada jalan.' 
-                      : 'Distraksi tinggi terdeteksi, sangat berbahaya.'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Back to Dashboard Button */}
-        <div className="mt-8 text-center">
+        {/* Bottom Buttons */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
           <button
-            onClick={() => navigate("/dashboard")}
-            className="px-8 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium hover:from-cyan-600 hover:to-blue-600 transition-all shadow-lg shadow-cyan-500/25"
+            onClick={() => {
+              saveToHistory();
+              navigate('/dashboard', { state: { tab: 'history' } });
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px',
+              background: '#22c55e', border: 'none', borderRadius: 12,
+              color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer'
+            }}
+          >
+            <CheckCircle2 size={18} />
+            {savedToHistory ? '✓ Tersimpan di History' : 'Tersimpan di History'}
+          </button>
+
+          <button
+            onClick={() => navigate('/game')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px',
+              background: '#3b82f6', border: 'none', borderRadius: 12,
+              color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer'
+            }}
+          >
+            Main Lagi
+          </button>
+
+          <button
+            onClick={() => navigate('/dashboard')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px',
+              background: 'white', border: '2px solid #e2e8f0', borderRadius: 12,
+              color: '#475569', fontSize: 14, fontWeight: 600, cursor: 'pointer'
+            }}
           >
             Kembali ke Dashboard
           </button>
