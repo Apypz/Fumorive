@@ -42,7 +42,7 @@ def _get_user_session(session_id: UUID, current_user: User, db: Session) -> Sess
     return session
 
 
-# ── EEG column definitions ──────────────────────────
+# -- EEG column definitions --------------------------
 EEG_COLUMNS = [
     "id", "timestamp", "delta_power", "theta_power", "alpha_power",
     "beta_power", "gamma_power", "theta_alpha_ratio", "beta_alpha_ratio",
@@ -133,7 +133,7 @@ async def export_session_data(
     session_obj = _get_user_session(session_id, current_user, db)
     session_name = session_obj.session_name.replace(" ", "_")
 
-    # ── Gather requested data ────────────────────────
+    # -- Gather requested data ------------------------
     export_data = {}
 
     if data_type in ("eeg", "all"):
@@ -152,7 +152,7 @@ async def export_session_data(
         rows = _query_data(db, Alert, session_id, start_time, end_time)
         export_data["alert"] = _rows_to_dicts(rows, ALERT_COLUMNS)
 
-    # ── Format and return ────────────────────────────
+    # -- Format and return ----------------------------
     if format == "json":
         content = json.dumps(
             {

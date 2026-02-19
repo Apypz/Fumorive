@@ -1,0 +1,2458 @@
+============================================================
+[START] Fumorive Backend API Starting...
+[ENV] Environment: development
+[CORS] Origins: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173']
+
+[REDIS] Initializing Redis...
+[OK] Redis connected: redis://localhost:6379/0
+
+[FIREBASE] Initializing Firebase...
+
+[EEG] Starting EEG data buffer...
+[EEG] Buffer started successfully
+
+[DOCS] Documentation: /api/docs
+[WS]   WebSocket: /api/v1/ws/session/{session_id}
+============================================================
+2026-02-19 11:11:43,050 INFO sqlalchemy.engine.Engine select pg_catalog.version()
+2026-02-19 11:11:43,051 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-02-19 11:11:43,055 INFO sqlalchemy.engine.Engine select current_schema()
+2026-02-19 11:11:43,056 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-02-19 11:11:43,058 INFO sqlalchemy.engine.Engine show standard_conforming_strings
+2026-02-19 11:11:43,058 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-02-19 11:11:43,060 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:43,063 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.hashed_password AS users_hashed_password, users.full_name AS users_full_name, users.role AS users_role, users.is_active AS users_is_active, users.oauth_provider AS users_oauth_provider, users.google_id AS users_google_id, users.profile_picture AS users_profile_picture, users.name_manually_edited AS users_name_manually_edited, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users 
+WHERE users.email = %(email_1)s 
+ LIMIT %(param_1)s
+2026-02-19 11:11:43,064 INFO sqlalchemy.engine.Engine [generated in 0.00051s] {'email_1': 'loadtest@fumorive.com', 'param_1': 1}
+2026-02-19 11:11:43,305 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:43,306 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.hashed_password AS users_hashed_password, users.full_name AS users_full_name, users.role AS users_role, users.is_active AS users_is_active, users.oauth_provider AS users_oauth_provider, users.google_id AS users_google_id, users.profile_picture AS users_profile_picture, users.name_manually_edited AS users_name_manually_edited, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users 
+WHERE users.email = %(email_1)s 
+ LIMIT %(param_1)s
+2026-02-19 11:11:43,307 INFO sqlalchemy.engine.Engine [cached since 0.2438s ago] {'email_1': 'loadtest@fumorive.com', 'param_1': 1}
+2026-02-19 11:11:43,518 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:43,557 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:43,558 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.hashed_password AS users_hashed_password, users.full_name AS users_full_name, users.role AS users_role, users.is_active AS users_is_active, users.oauth_provider AS users_oauth_provider, users.google_id AS users_google_id, users.profile_picture AS users_profile_picture, users.name_manually_edited AS users_name_manually_edited, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users 
+WHERE users.email = %(email_1)s 
+ LIMIT %(param_1)s
+2026-02-19 11:11:43,558 INFO sqlalchemy.engine.Engine [cached since 0.4955s ago] {'email_1': 'loadtest@fumorive.com', 'param_1': 1}
+2026-02-19 11:11:43,770 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:43,772 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.hashed_password AS users_hashed_password, users.full_name AS users_full_name, users.role AS users_role, users.is_active AS users_is_active, users.oauth_provider AS users_oauth_provider, users.google_id AS users_google_id, users.profile_picture AS users_profile_picture, users.name_manually_edited AS users_name_manually_edited, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users 
+WHERE users.email = %(email_1)s 
+ LIMIT %(param_1)s
+2026-02-19 11:11:43,772 INFO sqlalchemy.engine.Engine [cached since 0.7092s ago] {'email_1': 'loadtest@fumorive.com', 'param_1': 1}
+2026-02-19 11:11:43,973 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:44,001 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,003 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.hashed_password AS users_hashed_password, users.full_name AS users_full_name, users.role AS users_role, users.is_active AS users_is_active, users.oauth_provider AS users_oauth_provider, users.google_id AS users_google_id, users.profile_picture AS users_profile_picture, users.name_manually_edited AS users_name_manually_edited, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users 
+WHERE users.email = %(email_1)s 
+ LIMIT %(param_1)s
+2026-02-19 11:11:44,004 INFO sqlalchemy.engine.Engine [cached since 0.9405s ago] {'email_1': 'loadtest@fumorive.com', 'param_1': 1}
+2026-02-19 11:11:44,212 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:44,212 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:44,214 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:44,227 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,229 INFO sqlalchemy.engine.Engine INSERT INTO sessions (id, user_id, session_name, device_type, session_status, calibration_data, settings, ended_at, duration_seconds, avg_fatigue_score, max_fatigue_score, alert_count) VALUES (%(id)s::UUID, %(user_id)s::UUID, %(session_name)s, %(device_type)s, %(session_status)s, %(calibration_data)s, %(settings)s, %(ended_at)s, %(duration_seconds)s, %(avg_fatigue_score)s, %(max_fatigue_score)s, %(alert_count)s) RETURNING sessions.started_at
+2026-02-19 11:11:44,230 INFO sqlalchemy.engine.Engine [generated in 0.00065s] {'id': UUID('d7c23691-fa03-49b5-8068-fc130ac6cf4b'), 'user_id': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'session_name': 'UAT-A-user3-175', 'device_type': 'Muse 2', 'session_status': 'active', 'calibration_data': '{}', 'settings': '{}', 'ended_at': None, 'duration_seconds': None, 'avg_fatigue_score': None, 'max_fatigue_score': None, 'alert_count': 0}
+2026-02-19 11:11:44,241 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,246 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,248 INFO sqlalchemy.engine.Engine SELECT sessions.id, sessions.user_id, sessions.session_name, sessions.device_type, sessions.session_status, sessions.calibration_data, sessions.settings, sessions.started_at, sessions.ended_at, sessions.duration_seconds, sessions.avg_fatigue_score, sessions.max_fatigue_score, sessions.alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:11:44,248 INFO sqlalchemy.engine.Engine [generated in 0.00049s] {'pk_1': UUID('d7c23691-fa03-49b5-8068-fc130ac6cf4b')}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:44,257 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,259 INFO sqlalchemy.engine.Engine INSERT INTO sessions (id, user_id, session_name, device_type, session_status, calibration_data, settings, ended_at, duration_seconds, avg_fatigue_score, max_fatigue_score, alert_count) VALUES (%(id)s::UUID, %(user_id)s::UUID, %(session_name)s, %(device_type)s, %(session_status)s, %(calibration_data)s, %(settings)s, %(ended_at)s, %(duration_seconds)s, %(avg_fatigue_score)s, %(max_fatigue_score)s, %(alert_count)s) RETURNING sessions.started_at
+2026-02-19 11:11:44,260 INFO sqlalchemy.engine.Engine [cached since 0.0306s ago] {'id': UUID('73ff87ff-fca0-466c-85f0-8070395c0fe1'), 'user_id': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'session_name': 'UAT-A-user4-373', 'device_type': 'Muse 2', 'session_status': 'active', 'calibration_data': '{}', 'settings': '{}', 'ended_at': None, 'duration_seconds': None, 'avg_fatigue_score': None, 'max_fatigue_score': None, 'alert_count': 0}
+2026-02-19 11:11:44,264 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,267 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,267 INFO sqlalchemy.engine.Engine SELECT sessions.id, sessions.user_id, sessions.session_name, sessions.device_type, sessions.session_status, sessions.calibration_data, sessions.settings, sessions.started_at, sessions.ended_at, sessions.duration_seconds, sessions.avg_fatigue_score, sessions.max_fatigue_score, sessions.alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:11:44,268 INFO sqlalchemy.engine.Engine [cached since 0.01995s ago] {'pk_1': UUID('73ff87ff-fca0-466c-85f0-8070395c0fe1')}
+2026-02-19 11:11:44,271 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:44,271 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:44,276 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,277 INFO sqlalchemy.engine.Engine INSERT INTO sessions (id, user_id, session_name, device_type, session_status, calibration_data, settings, ended_at, duration_seconds, avg_fatigue_score, max_fatigue_score, alert_count) VALUES (%(id)s::UUID, %(user_id)s::UUID, %(session_name)s, %(device_type)s, %(session_status)s, %(calibration_data)s, %(settings)s, %(ended_at)s, %(duration_seconds)s, %(avg_fatigue_score)s, %(max_fatigue_score)s, %(alert_count)s) RETURNING sessions.started_at
+2026-02-19 11:11:44,277 INFO sqlalchemy.engine.Engine [cached since 0.04805s ago] {'id': UUID('89c90814-176a-4e77-b9ba-f1974be403ca'), 'user_id': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'session_name': 'UAT-A-user2-834', 'device_type': 'Muse 2', 'session_status': 'active', 'calibration_data': '{}', 'settings': '{}', 'ended_at': None, 'duration_seconds': None, 'avg_fatigue_score': None, 'max_fatigue_score': None, 'alert_count': 0}
+2026-02-19 11:11:44,279 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,282 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,283 INFO sqlalchemy.engine.Engine SELECT sessions.id, sessions.user_id, sessions.session_name, sessions.device_type, sessions.session_status, sessions.calibration_data, sessions.settings, sessions.started_at, sessions.ended_at, sessions.duration_seconds, sessions.avg_fatigue_score, sessions.max_fatigue_score, sessions.alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:11:44,283 INFO sqlalchemy.engine.Engine [cached since 0.03527s ago] {'pk_1': UUID('89c90814-176a-4e77-b9ba-f1974be403ca')}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:44,288 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,288 INFO sqlalchemy.engine.Engine INSERT INTO sessions (id, user_id, session_name, device_type, session_status, calibration_data, settings, ended_at, duration_seconds, avg_fatigue_score, max_fatigue_score, alert_count) VALUES (%(id)s::UUID, %(user_id)s::UUID, %(session_name)s, %(device_type)s, %(session_status)s, %(calibration_data)s, %(settings)s, %(ended_at)s, %(duration_seconds)s, %(avg_fatigue_score)s, %(max_fatigue_score)s, %(alert_count)s) RETURNING sessions.started_at
+2026-02-19 11:11:44,288 INFO sqlalchemy.engine.Engine [cached since 0.05923s ago] {'id': UUID('e5220223-6d68-44b0-9a5c-7c71b08656cc'), 'user_id': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'session_name': 'UAT-A-user0-181', 'device_type': 'Muse 2', 'session_status': 'active', 'calibration_data': '{}', 'settings': '{}', 'ended_at': None, 'duration_seconds': None, 'avg_fatigue_score': None, 'max_fatigue_score': None, 'alert_count': 0}
+2026-02-19 11:11:44,291 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,293 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,294 INFO sqlalchemy.engine.Engine SELECT sessions.id, sessions.user_id, sessions.session_name, sessions.device_type, sessions.session_status, sessions.calibration_data, sessions.settings, sessions.started_at, sessions.ended_at, sessions.duration_seconds, sessions.avg_fatigue_score, sessions.max_fatigue_score, sessions.alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:11:44,294 INFO sqlalchemy.engine.Engine [cached since 0.0468s ago] {'pk_1': UUID('e5220223-6d68-44b0-9a5c-7c71b08656cc')}
+2026-02-19 11:11:44,297 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:44,297 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476104, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:44,300 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,301 INFO sqlalchemy.engine.Engine INSERT INTO sessions (id, user_id, session_name, device_type, session_status, calibration_data, settings, ended_at, duration_seconds, avg_fatigue_score, max_fatigue_score, alert_count) VALUES (%(id)s::UUID, %(user_id)s::UUID, %(session_name)s, %(device_type)s, %(session_status)s, %(calibration_data)s, %(settings)s, %(ended_at)s, %(duration_seconds)s, %(avg_fatigue_score)s, %(max_fatigue_score)s, %(alert_count)s) RETURNING sessions.started_at
+2026-02-19 11:11:44,301 INFO sqlalchemy.engine.Engine [cached since 0.07203s ago] {'id': UUID('cc652334-ee06-40d8-9de8-4c689d41cad5'), 'user_id': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'session_name': 'UAT-A-user1-409', 'device_type': 'Muse 2', 'session_status': 'active', 'calibration_data': '{}', 'settings': '{}', 'ended_at': None, 'duration_seconds': None, 'avg_fatigue_score': None, 'max_fatigue_score': None, 'alert_count': 0}
+2026-02-19 11:11:44,303 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,307 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,308 INFO sqlalchemy.engine.Engine SELECT sessions.id, sessions.user_id, sessions.session_name, sessions.device_type, sessions.session_status, sessions.calibration_data, sessions.settings, sessions.started_at, sessions.ended_at, sessions.duration_seconds, sessions.avg_fatigue_score, sessions.max_fatigue_score, sessions.alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:11:44,308 INFO sqlalchemy.engine.Engine [cached since 0.06022s ago] {'pk_1': UUID('cc652334-ee06-40d8-9de8-4c689d41cad5')}
+2026-02-19 11:11:44,310 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476104, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:44,354 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,355 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(id_1)s::UUID 
+ LIMIT %(param_1)s
+2026-02-19 11:11:44,356 INFO sqlalchemy.engine.Engine [generated in 0.00047s] {'id_1': UUID('73ff87ff-fca0-466c-85f0-8070395c0fe1'), 'param_1': 1}
+2026-02-19 11:11:44,358 INFO sqlalchemy.engine.Engine INSERT INTO alerts (session_id, timestamp, alert_level, fatigue_score, eeg_contribution, face_contribution, trigger_reason, acknowledged) VALUES (%(session_id)s::UUID, %(timestamp)s, %(alert_level)s, %(fatigue_score)s, %(eeg_contribution)s, %(face_contribution)s, %(trigger_reason)s, %(acknowledged)s) RETURNING alerts.id
+2026-02-19 11:11:44,360 INFO sqlalchemy.engine.Engine [generated in 0.00067s] {'session_id': UUID('73ff87ff-fca0-466c-85f0-8070395c0fe1'), 'timestamp': datetime.datetime(2026, 2, 19, 4, 11, 44, 332197), 'alert_level': 'warning', 'fatigue_score': 72.5, 'eeg_contribution': 0.6, 'face_contribution': 0.4, 'trigger_reason': 'high_theta_alpha', 'acknowledged': False}
+2026-02-19 11:11:44,458 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,468 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,470 INFO sqlalchemy.engine.Engine SELECT alerts.id, alerts.session_id, alerts.timestamp, alerts.alert_level, alerts.fatigue_score, alerts.eeg_contribution, alerts.face_contribution, alerts.trigger_reason, alerts.acknowledged 
+FROM alerts 
+WHERE alerts.id = %(pk_1)s
+2026-02-19 11:11:44,471 INFO sqlalchemy.engine.Engine [generated in 0.00091s] {'pk_1': 303}
+2026-02-19 11:11:44,489 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:11:44,490 INFO sqlalchemy.engine.Engine [generated in 0.00060s] {'pk_1': UUID('73ff87ff-fca0-466c-85f0-8070395c0fe1')}
+2026-02-19 11:11:44,493 INFO sqlalchemy.engine.Engine UPDATE sessions SET alert_count=%(alert_count)s WHERE sessions.id = %(sessions_id)s::UUID
+2026-02-19 11:11:44,493 INFO sqlalchemy.engine.Engine [generated in 0.00053s] {'alert_count': 1, 'sessions_id': UUID('73ff87ff-fca0-466c-85f0-8070395c0fe1')}
+2026-02-19 11:11:44,496 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,502 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,503 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts 
+WHERE alerts.id = %(pk_1)s
+2026-02-19 11:11:44,504 INFO sqlalchemy.engine.Engine [generated in 0.00056s] {'pk_1': 303}
+2026-02-19 11:11:44,511 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:44,517 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,518 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(id_1)s::UUID 
+ LIMIT %(param_1)s
+2026-02-19 11:11:44,518 INFO sqlalchemy.engine.Engine [cached since 0.1635s ago] {'id_1': UUID('d7c23691-fa03-49b5-8068-fc130ac6cf4b'), 'param_1': 1}
+2026-02-19 11:11:44,521 INFO sqlalchemy.engine.Engine INSERT INTO alerts (session_id, timestamp, alert_level, fatigue_score, eeg_contribution, face_contribution, trigger_reason, acknowledged) VALUES (%(session_id)s::UUID, %(timestamp)s, %(alert_level)s, %(fatigue_score)s, %(eeg_contribution)s, %(face_contribution)s, %(trigger_reason)s, %(acknowledged)s) RETURNING alerts.id
+2026-02-19 11:11:44,521 INFO sqlalchemy.engine.Engine [cached since 0.1622s ago] {'session_id': UUID('d7c23691-fa03-49b5-8068-fc130ac6cf4b'), 'timestamp': datetime.datetime(2026, 2, 19, 4, 11, 44, 336868), 'alert_level': 'warning', 'fatigue_score': 72.5, 'eeg_contribution': 0.6, 'face_contribution': 0.4, 'trigger_reason': 'high_theta_alpha', 'acknowledged': False}
+2026-02-19 11:11:44,524 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,527 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,527 INFO sqlalchemy.engine.Engine SELECT alerts.id, alerts.session_id, alerts.timestamp, alerts.alert_level, alerts.fatigue_score, alerts.eeg_contribution, alerts.face_contribution, alerts.trigger_reason, alerts.acknowledged 
+FROM alerts 
+WHERE alerts.id = %(pk_1)s
+2026-02-19 11:11:44,527 INFO sqlalchemy.engine.Engine [cached since 0.0575s ago] {'pk_1': 304}
+2026-02-19 11:11:44,531 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:11:44,532 INFO sqlalchemy.engine.Engine [cached since 0.0432s ago] {'pk_1': UUID('d7c23691-fa03-49b5-8068-fc130ac6cf4b')}
+2026-02-19 11:11:44,534 INFO sqlalchemy.engine.Engine UPDATE sessions SET alert_count=%(alert_count)s WHERE sessions.id = %(sessions_id)s::UUID
+2026-02-19 11:11:44,534 INFO sqlalchemy.engine.Engine [cached since 0.04143s ago] {'alert_count': 1, 'sessions_id': UUID('d7c23691-fa03-49b5-8068-fc130ac6cf4b')}
+2026-02-19 11:11:44,536 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,540 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,540 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts 
+WHERE alerts.id = %(pk_1)s
+2026-02-19 11:11:44,540 INFO sqlalchemy.engine.Engine [cached since 0.03715s ago] {'pk_1': 304}
+2026-02-19 11:11:44,543 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:44,547 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,548 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(id_1)s::UUID 
+ LIMIT %(param_1)s
+2026-02-19 11:11:44,548 INFO sqlalchemy.engine.Engine [cached since 0.1935s ago] {'id_1': UUID('89c90814-176a-4e77-b9ba-f1974be403ca'), 'param_1': 1}
+2026-02-19 11:11:44,550 INFO sqlalchemy.engine.Engine INSERT INTO alerts (session_id, timestamp, alert_level, fatigue_score, eeg_contribution, face_contribution, trigger_reason, acknowledged) VALUES (%(session_id)s::UUID, %(timestamp)s, %(alert_level)s, %(fatigue_score)s, %(eeg_contribution)s, %(face_contribution)s, %(trigger_reason)s, %(acknowledged)s) RETURNING alerts.id
+2026-02-19 11:11:44,550 INFO sqlalchemy.engine.Engine [cached since 0.1921s ago] {'session_id': UUID('89c90814-176a-4e77-b9ba-f1974be403ca'), 'timestamp': datetime.datetime(2026, 2, 19, 4, 11, 44, 337868), 'alert_level': 'warning', 'fatigue_score': 72.5, 'eeg_contribution': 0.6, 'face_contribution': 0.4, 'trigger_reason': 'high_theta_alpha', 'acknowledged': False}
+2026-02-19 11:11:44,552 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,555 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,556 INFO sqlalchemy.engine.Engine SELECT alerts.id, alerts.session_id, alerts.timestamp, alerts.alert_level, alerts.fatigue_score, alerts.eeg_contribution, alerts.face_contribution, alerts.trigger_reason, alerts.acknowledged 
+FROM alerts 
+WHERE alerts.id = %(pk_1)s
+2026-02-19 11:11:44,556 INFO sqlalchemy.engine.Engine [cached since 0.08626s ago] {'pk_1': 305}
+2026-02-19 11:11:44,559 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:11:44,559 INFO sqlalchemy.engine.Engine [cached since 0.07053s ago] {'pk_1': UUID('89c90814-176a-4e77-b9ba-f1974be403ca')}
+2026-02-19 11:11:44,561 INFO sqlalchemy.engine.Engine UPDATE sessions SET alert_count=%(alert_count)s WHERE sessions.id = %(sessions_id)s::UUID
+2026-02-19 11:11:44,561 INFO sqlalchemy.engine.Engine [cached since 0.06899s ago] {'alert_count': 1, 'sessions_id': UUID('89c90814-176a-4e77-b9ba-f1974be403ca')}
+2026-02-19 11:11:44,564 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,566 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,567 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts 
+WHERE alerts.id = %(pk_1)s
+2026-02-19 11:11:44,567 INFO sqlalchemy.engine.Engine [cached since 0.06441s ago] {'pk_1': 305}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:44,573 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,573 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(id_1)s::UUID 
+ LIMIT %(param_1)s
+2026-02-19 11:11:44,573 INFO sqlalchemy.engine.Engine [cached since 0.2186s ago] {'id_1': UUID('e5220223-6d68-44b0-9a5c-7c71b08656cc'), 'param_1': 1}
+2026-02-19 11:11:44,574 INFO sqlalchemy.engine.Engine INSERT INTO alerts (session_id, timestamp, alert_level, fatigue_score, eeg_contribution, face_contribution, trigger_reason, acknowledged) VALUES (%(session_id)s::UUID, %(timestamp)s, %(alert_level)s, %(fatigue_score)s, %(eeg_contribution)s, %(face_contribution)s, %(trigger_reason)s, %(acknowledged)s) RETURNING alerts.id
+2026-02-19 11:11:44,575 INFO sqlalchemy.engine.Engine [cached since 0.2165s ago] {'session_id': UUID('e5220223-6d68-44b0-9a5c-7c71b08656cc'), 'timestamp': datetime.datetime(2026, 2, 19, 4, 11, 44, 337868), 'alert_level': 'warning', 'fatigue_score': 72.5, 'eeg_contribution': 0.6, 'face_contribution': 0.4, 'trigger_reason': 'high_theta_alpha', 'acknowledged': False}
+2026-02-19 11:11:44,577 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,580 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,581 INFO sqlalchemy.engine.Engine SELECT alerts.id, alerts.session_id, alerts.timestamp, alerts.alert_level, alerts.fatigue_score, alerts.eeg_contribution, alerts.face_contribution, alerts.trigger_reason, alerts.acknowledged 
+FROM alerts 
+WHERE alerts.id = %(pk_1)s
+2026-02-19 11:11:44,582 INFO sqlalchemy.engine.Engine [cached since 0.112s ago] {'pk_1': 306}
+2026-02-19 11:11:44,583 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:11:44,583 INFO sqlalchemy.engine.Engine [cached since 0.09511s ago] {'pk_1': UUID('e5220223-6d68-44b0-9a5c-7c71b08656cc')}
+2026-02-19 11:11:44,585 INFO sqlalchemy.engine.Engine UPDATE sessions SET alert_count=%(alert_count)s WHERE sessions.id = %(sessions_id)s::UUID
+2026-02-19 11:11:44,585 INFO sqlalchemy.engine.Engine [cached since 0.09322s ago] {'alert_count': 1, 'sessions_id': UUID('e5220223-6d68-44b0-9a5c-7c71b08656cc')}
+2026-02-19 11:11:44,588 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,591 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,591 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts 
+WHERE alerts.id = %(pk_1)s
+2026-02-19 11:11:44,591 INFO sqlalchemy.engine.Engine [cached since 0.08856s ago] {'pk_1': 306}
+2026-02-19 11:11:44,593 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:44,595 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476104, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:44,598 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,599 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(id_1)s::UUID 
+ LIMIT %(param_1)s
+2026-02-19 11:11:44,599 INFO sqlalchemy.engine.Engine [cached since 0.2441s ago] {'id_1': UUID('cc652334-ee06-40d8-9de8-4c689d41cad5'), 'param_1': 1}
+2026-02-19 11:11:44,600 INFO sqlalchemy.engine.Engine INSERT INTO alerts (session_id, timestamp, alert_level, fatigue_score, eeg_contribution, face_contribution, trigger_reason, acknowledged) VALUES (%(session_id)s::UUID, %(timestamp)s, %(alert_level)s, %(fatigue_score)s, %(eeg_contribution)s, %(face_contribution)s, %(trigger_reason)s, %(acknowledged)s) RETURNING alerts.id
+2026-02-19 11:11:44,600 INFO sqlalchemy.engine.Engine [cached since 0.2423s ago] {'session_id': UUID('cc652334-ee06-40d8-9de8-4c689d41cad5'), 'timestamp': datetime.datetime(2026, 2, 19, 4, 11, 44, 339376), 'alert_level': 'warning', 'fatigue_score': 72.5, 'eeg_contribution': 0.6, 'face_contribution': 0.4, 'trigger_reason': 'high_theta_alpha', 'acknowledged': False}
+2026-02-19 11:11:44,602 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,605 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,605 INFO sqlalchemy.engine.Engine SELECT alerts.id, alerts.session_id, alerts.timestamp, alerts.alert_level, alerts.fatigue_score, alerts.eeg_contribution, alerts.face_contribution, alerts.trigger_reason, alerts.acknowledged 
+FROM alerts 
+WHERE alerts.id = %(pk_1)s
+2026-02-19 11:11:44,605 INFO sqlalchemy.engine.Engine [cached since 0.1354s ago] {'pk_1': 307}
+2026-02-19 11:11:44,607 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:11:44,607 INFO sqlalchemy.engine.Engine [cached since 0.1185s ago] {'pk_1': UUID('cc652334-ee06-40d8-9de8-4c689d41cad5')}
+2026-02-19 11:11:44,609 INFO sqlalchemy.engine.Engine UPDATE sessions SET alert_count=%(alert_count)s WHERE sessions.id = %(sessions_id)s::UUID
+2026-02-19 11:11:44,609 INFO sqlalchemy.engine.Engine [cached since 0.1161s ago] {'alert_count': 1, 'sessions_id': UUID('cc652334-ee06-40d8-9de8-4c689d41cad5')}
+2026-02-19 11:11:44,610 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,613 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,613 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts 
+WHERE alerts.id = %(pk_1)s
+2026-02-19 11:11:44,613 INFO sqlalchemy.engine.Engine [cached since 0.1109s ago] {'pk_1': 307}
+2026-02-19 11:11:44,616 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:44,625 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,625 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(id_1)s::UUID 
+ LIMIT %(param_1)s
+2026-02-19 11:11:44,625 INFO sqlalchemy.engine.Engine [cached since 0.2706s ago] {'id_1': UUID('73ff87ff-fca0-466c-85f0-8070395c0fe1'), 'param_1': 1}
+2026-02-19 11:11:44,627 INFO sqlalchemy.engine.Engine UPDATE sessions SET session_status=%(session_status)s WHERE sessions.id = %(sessions_id)s::UUID
+2026-02-19 11:11:44,628 INFO sqlalchemy.engine.Engine [generated in 0.00056s] {'session_status': 'completed', 'sessions_id': UUID('73ff87ff-fca0-466c-85f0-8070395c0fe1')}
+2026-02-19 11:11:44,629 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,632 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,632 INFO sqlalchemy.engine.Engine SELECT sessions.id, sessions.user_id, sessions.session_name, sessions.device_type, sessions.session_status, sessions.calibration_data, sessions.settings, sessions.started_at, sessions.ended_at, sessions.duration_seconds, sessions.avg_fatigue_score, sessions.max_fatigue_score, sessions.alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:11:44,632 INFO sqlalchemy.engine.Engine [cached since 0.3847s ago] {'pk_1': UUID('73ff87ff-fca0-466c-85f0-8070395c0fe1')}
+2026-02-19 11:11:44,636 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:44,639 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,640 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(id_1)s::UUID 
+ LIMIT %(param_1)s
+2026-02-19 11:11:44,640 INFO sqlalchemy.engine.Engine [cached since 0.2849s ago] {'id_1': UUID('d7c23691-fa03-49b5-8068-fc130ac6cf4b'), 'param_1': 1}
+2026-02-19 11:11:44,642 INFO sqlalchemy.engine.Engine UPDATE sessions SET session_status=%(session_status)s WHERE sessions.id = %(sessions_id)s::UUID
+2026-02-19 11:11:44,642 INFO sqlalchemy.engine.Engine [cached since 0.01422s ago] {'session_status': 'completed', 'sessions_id': UUID('d7c23691-fa03-49b5-8068-fc130ac6cf4b')}
+2026-02-19 11:11:44,643 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,645 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,645 INFO sqlalchemy.engine.Engine SELECT sessions.id, sessions.user_id, sessions.session_name, sessions.device_type, sessions.session_status, sessions.calibration_data, sessions.settings, sessions.started_at, sessions.ended_at, sessions.duration_seconds, sessions.avg_fatigue_score, sessions.max_fatigue_score, sessions.alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:11:44,646 INFO sqlalchemy.engine.Engine [cached since 0.3985s ago] {'pk_1': UUID('d7c23691-fa03-49b5-8068-fc130ac6cf4b')}
+2026-02-19 11:11:44,648 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:44,651 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,652 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(id_1)s::UUID 
+ LIMIT %(param_1)s
+2026-02-19 11:11:44,652 INFO sqlalchemy.engine.Engine [cached since 0.2978s ago] {'id_1': UUID('e5220223-6d68-44b0-9a5c-7c71b08656cc'), 'param_1': 1}
+2026-02-19 11:11:44,654 INFO sqlalchemy.engine.Engine UPDATE sessions SET session_status=%(session_status)s WHERE sessions.id = %(sessions_id)s::UUID
+2026-02-19 11:11:44,654 INFO sqlalchemy.engine.Engine [cached since 0.02743s ago] {'session_status': 'completed', 'sessions_id': UUID('e5220223-6d68-44b0-9a5c-7c71b08656cc')}
+2026-02-19 11:11:44,655 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,658 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,659 INFO sqlalchemy.engine.Engine SELECT sessions.id, sessions.user_id, sessions.session_name, sessions.device_type, sessions.session_status, sessions.calibration_data, sessions.settings, sessions.started_at, sessions.ended_at, sessions.duration_seconds, sessions.avg_fatigue_score, sessions.max_fatigue_score, sessions.alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:11:44,659 INFO sqlalchemy.engine.Engine [cached since 0.4114s ago] {'pk_1': UUID('e5220223-6d68-44b0-9a5c-7c71b08656cc')}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:44,664 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,666 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(id_1)s::UUID 
+ LIMIT %(param_1)s
+2026-02-19 11:11:44,666 INFO sqlalchemy.engine.Engine [cached since 0.311s ago] {'id_1': UUID('89c90814-176a-4e77-b9ba-f1974be403ca'), 'param_1': 1}
+2026-02-19 11:11:44,668 INFO sqlalchemy.engine.Engine UPDATE sessions SET session_status=%(session_status)s WHERE sessions.id = %(sessions_id)s::UUID
+2026-02-19 11:11:44,668 INFO sqlalchemy.engine.Engine [cached since 0.04068s ago] {'session_status': 'completed', 'sessions_id': UUID('89c90814-176a-4e77-b9ba-f1974be403ca')}
+2026-02-19 11:11:44,669 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,672 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,673 INFO sqlalchemy.engine.Engine SELECT sessions.id, sessions.user_id, sessions.session_name, sessions.device_type, sessions.session_status, sessions.calibration_data, sessions.settings, sessions.started_at, sessions.ended_at, sessions.duration_seconds, sessions.avg_fatigue_score, sessions.max_fatigue_score, sessions.alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:11:44,673 INFO sqlalchemy.engine.Engine [cached since 0.4249s ago] {'pk_1': UUID('89c90814-176a-4e77-b9ba-f1974be403ca')}
+2026-02-19 11:11:44,674 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:44,676 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476104, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:44,680 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,681 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(id_1)s::UUID 
+ LIMIT %(param_1)s
+2026-02-19 11:11:44,681 INFO sqlalchemy.engine.Engine [cached since 0.3258s ago] {'id_1': UUID('cc652334-ee06-40d8-9de8-4c689d41cad5'), 'param_1': 1}
+2026-02-19 11:11:44,683 INFO sqlalchemy.engine.Engine UPDATE sessions SET session_status=%(session_status)s WHERE sessions.id = %(sessions_id)s::UUID
+2026-02-19 11:11:44,683 INFO sqlalchemy.engine.Engine [cached since 0.05515s ago] {'session_status': 'completed', 'sessions_id': UUID('cc652334-ee06-40d8-9de8-4c689d41cad5')}
+2026-02-19 11:11:44,684 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:11:44,686 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,687 INFO sqlalchemy.engine.Engine SELECT sessions.id, sessions.user_id, sessions.session_name, sessions.device_type, sessions.session_status, sessions.calibration_data, sessions.settings, sessions.started_at, sessions.ended_at, sessions.duration_seconds, sessions.avg_fatigue_score, sessions.max_fatigue_score, sessions.alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:11:44,687 INFO sqlalchemy.engine.Engine [cached since 0.4393s ago] {'pk_1': UUID('cc652334-ee06-40d8-9de8-4c689d41cad5')}
+2026-02-19 11:11:44,690 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:44,700 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:44,703 INFO sqlalchemy.engine.Engine SELECT count(sessions.id) AS total_sessions, count(sessions.id) FILTER (WHERE sessions.session_status = %(session_status_1)s) AS completed, count(sessions.id) FILTER (WHERE sessions.session_status = %(session_status_2)s) AS active, count(sessions.id) FILTER (WHERE sessions.session_status = %(session_status_3)s) AS failed, avg(sessions.duration_seconds) AS avg_duration_s, sum(sessions.duration_seconds) AS total_duration_s, avg(sessions.avg_fatigue_score) AS avg_fatigue, max(sessions.max_fatigue_score) AS peak_fatigue, sum(sessions.alert_count) AS total_alerts 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID AND sessions.started_at >= %(started_at_1)s
+2026-02-19 11:11:44,703 INFO sqlalchemy.engine.Engine [generated in 0.00041s] {'session_status_1': 'completed', 'session_status_2': 'active', 'session_status_3': 'failed', 'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'started_at_1': datetime.datetime(2026, 2, 18, 4, 11, 44, 699876, tzinfo=datetime.timezone.utc)}
+2026-02-19 11:11:44,712 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476103, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476104, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:46,802 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:46,805 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.hashed_password AS users_hashed_password, users.full_name AS users_full_name, users.role AS users_role, users.is_active AS users_is_active, users.oauth_provider AS users_oauth_provider, users.google_id AS users_google_id, users.profile_picture AS users_profile_picture, users.name_manually_edited AS users_name_manually_edited, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users 
+WHERE users.email = %(email_1)s 
+ LIMIT %(param_1)s
+2026-02-19 11:11:46,806 INFO sqlalchemy.engine.Engine [cached since 3.743s ago] {'email_1': 'loadtest@fumorive.com', 'param_1': 1}
+2026-02-19 11:11:47,008 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:47,010 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.hashed_password AS users_hashed_password, users.full_name AS users_full_name, users.role AS users_role, users.is_active AS users_is_active, users.oauth_provider AS users_oauth_provider, users.google_id AS users_google_id, users.profile_picture AS users_profile_picture, users.name_manually_edited AS users_name_manually_edited, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users 
+WHERE users.email = %(email_1)s 
+ LIMIT %(param_1)s
+2026-02-19 11:11:47,010 INFO sqlalchemy.engine.Engine [cached since 3.948s ago] {'email_1': 'loadtest@fumorive.com', 'param_1': 1}
+2026-02-19 11:11:47,211 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:47,212 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.hashed_password AS users_hashed_password, users.full_name AS users_full_name, users.role AS users_role, users.is_active AS users_is_active, users.oauth_provider AS users_oauth_provider, users.google_id AS users_google_id, users.profile_picture AS users_profile_picture, users.name_manually_edited AS users_name_manually_edited, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users 
+WHERE users.email = %(email_1)s 
+ LIMIT %(param_1)s
+2026-02-19 11:11:47,213 INFO sqlalchemy.engine.Engine [cached since 4.15s ago] {'email_1': 'loadtest@fumorive.com', 'param_1': 1}
+2026-02-19 11:11:47,410 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:47,411 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:47,412 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:47,413 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:47,413 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.hashed_password AS users_hashed_password, users.full_name AS users_full_name, users.role AS users_role, users.is_active AS users_is_active, users.oauth_provider AS users_oauth_provider, users.google_id AS users_google_id, users.profile_picture AS users_profile_picture, users.name_manually_edited AS users_name_manually_edited, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users 
+WHERE users.email = %(email_1)s 
+ LIMIT %(param_1)s
+2026-02-19 11:11:47,414 INFO sqlalchemy.engine.Engine [cached since 4.351s ago] {'email_1': 'loadtest@fumorive.com', 'param_1': 1}
+2026-02-19 11:11:47,611 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:47,617 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:47,617 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.hashed_password AS users_hashed_password, users.full_name AS users_full_name, users.role AS users_role, users.is_active AS users_is_active, users.oauth_provider AS users_oauth_provider, users.google_id AS users_google_id, users.profile_picture AS users_profile_picture, users.name_manually_edited AS users_name_manually_edited, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users 
+WHERE users.email = %(email_1)s 
+ LIMIT %(param_1)s
+2026-02-19 11:11:47,618 INFO sqlalchemy.engine.Engine [cached since 4.555s ago] {'email_1': 'loadtest@fumorive.com', 'param_1': 1}
+2026-02-19 11:11:47,818 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:47,823 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:47,826 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:47,826 INFO sqlalchemy.engine.Engine [generated in 0.00048s] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:47,828 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY sessions.started_at DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:47,829 INFO sqlalchemy.engine.Engine [generated in 0.00036s] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 10, 'param_2': 0}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:47,833 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:47,834 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:47,834 INFO sqlalchemy.engine.Engine [cached since 0.008746s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:47,836 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY sessions.started_at DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:47,837 INFO sqlalchemy.engine.Engine [cached since 0.008679s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 10, 'param_2': 0}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:47,841 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:47,842 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:47,842 INFO sqlalchemy.engine.Engine [cached since 0.01695s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:47,843 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY sessions.started_at DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:47,844 INFO sqlalchemy.engine.Engine [cached since 0.01587s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 10, 'param_2': 0}
+2026-02-19 11:11:47,848 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:47,848 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:47,848 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:47,856 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:47,856 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:47,856 INFO sqlalchemy.engine.Engine [cached since 0.03173s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:47,859 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY sessions.started_at DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:47,859 INFO sqlalchemy.engine.Engine [cached since 0.03147s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 10, 'param_2': 0}
+2026-02-19 11:11:47,863 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:47,866 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:47,867 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:47,867 INFO sqlalchemy.engine.Engine [cached since 0.04158s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:47,869 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY sessions.started_at DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:47,870 INFO sqlalchemy.engine.Engine [cached since 0.04147s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 10, 'param_2': 0}
+2026-02-19 11:11:47,872 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:47,895 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:47,897 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:47,897 INFO sqlalchemy.engine.Engine [generated in 0.00040s] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:47,902 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY alerts.timestamp DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:47,903 INFO sqlalchemy.engine.Engine [generated in 0.00046s] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 20, 'param_2': 0}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:47,909 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:47,910 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:47,910 INFO sqlalchemy.engine.Engine [cached since 0.01352s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:47,912 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY alerts.timestamp DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:47,912 INFO sqlalchemy.engine.Engine [cached since 0.0101s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 20, 'param_2': 0}
+2026-02-19 11:11:47,914 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:47,917 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:47,918 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:47,918 INFO sqlalchemy.engine.Engine [cached since 0.02227s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:47,921 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY alerts.timestamp DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:47,921 INFO sqlalchemy.engine.Engine [cached since 0.01911s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 20, 'param_2': 0}
+2026-02-19 11:11:47,923 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:47,924 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:47,928 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:47,929 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:47,929 INFO sqlalchemy.engine.Engine [cached since 0.03307s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:47,931 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY alerts.timestamp DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:47,931 INFO sqlalchemy.engine.Engine [cached since 0.02971s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 20, 'param_2': 0}
+2026-02-19 11:11:47,935 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:47,941 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:47,941 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:47,942 INFO sqlalchemy.engine.Engine [cached since 0.04534s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:47,943 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY alerts.timestamp DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:47,944 INFO sqlalchemy.engine.Engine [cached since 0.04199s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 20, 'param_2': 0}
+2026-02-19 11:11:47,946 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:47,951 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:47,952 INFO sqlalchemy.engine.Engine 
+        SELECT
+            time_bucket(%(bucket)s, a.bucket)  AS period,
+            AVG(a.avg_fatigue_score)        AS avg_fatigue,
+            AVG(a.avg_theta_alpha_ratio)    AS avg_theta_alpha,
+            COUNT(DISTINCT a.session_id)    AS session_count
+        FROM eeg_1min_agg a
+        JOIN sessions s ON s.id = a.session_id
+        WHERE a.bucket >= %(since)s
+          AND s.user_id = %(user_id)s
+        GROUP BY period
+        ORDER BY period ASC
+    
+2026-02-19 11:11:47,952 INFO sqlalchemy.engine.Engine [generated in 0.00032s] {'bucket': '1 day', 'since': datetime.datetime(2026, 2, 12, 4, 11, 47, 950847, tzinfo=datetime.timezone.utc), 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'}
+2026-02-19 11:11:47,957 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:47,980 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:47,981 INFO sqlalchemy.engine.Engine SELECT count(sessions.id) AS total_sessions, count(sessions.id) FILTER (WHERE sessions.session_status = %(session_status_1)s) AS completed, count(sessions.id) FILTER (WHERE sessions.session_status = %(session_status_2)s) AS active, count(sessions.id) FILTER (WHERE sessions.session_status = %(session_status_3)s) AS failed, avg(sessions.duration_seconds) AS avg_duration_s, sum(sessions.duration_seconds) AS total_duration_s, avg(sessions.avg_fatigue_score) AS avg_fatigue, max(sessions.max_fatigue_score) AS peak_fatigue, sum(sessions.alert_count) AS total_alerts 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID AND sessions.started_at >= %(started_at_1)s
+2026-02-19 11:11:47,981 INFO sqlalchemy.engine.Engine [cached since 3.278s ago] {'session_status_1': 'completed', 'session_status_2': 'active', 'session_status_3': 'failed', 'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'started_at_1': datetime.datetime(2026, 1, 20, 4, 11, 47, 979031, tzinfo=datetime.timezone.utc)}
+2026-02-19 11:11:47,984 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,108 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,111 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,111 INFO sqlalchemy.engine.Engine [cached since 0.2863s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,115 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY sessions.started_at DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,115 INFO sqlalchemy.engine.Engine [cached since 0.2868s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 10, 'param_2': 0}
+2026-02-19 11:11:48,120 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,123 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,124 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,125 INFO sqlalchemy.engine.Engine [cached since 0.2993s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,126 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY sessions.started_at DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,127 INFO sqlalchemy.engine.Engine [cached since 0.2984s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 10, 'param_2': 0}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,130 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,131 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,131 INFO sqlalchemy.engine.Engine [cached since 0.3058s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,133 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY sessions.started_at DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,133 INFO sqlalchemy.engine.Engine [cached since 0.3048s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 10, 'param_2': 0}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,138 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,138 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,139 INFO sqlalchemy.engine.Engine [cached since 0.3137s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,141 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY sessions.started_at DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,141 INFO sqlalchemy.engine.Engine [cached since 0.3128s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 10, 'param_2': 0}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,146 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,146 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,147 INFO sqlalchemy.engine.Engine [cached since 0.321s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,148 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY sessions.started_at DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,148 INFO sqlalchemy.engine.Engine [cached since 0.3199s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 10, 'param_2': 0}
+2026-02-19 11:11:48,150 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:48,150 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:48,150 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:48,150 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,166 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,167 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,167 INFO sqlalchemy.engine.Engine [cached since 0.2714s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,170 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY alerts.timestamp DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,170 INFO sqlalchemy.engine.Engine [cached since 0.2685s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 20, 'param_2': 0}
+2026-02-19 11:11:48,175 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,178 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,179 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,179 INFO sqlalchemy.engine.Engine [cached since 0.2827s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,181 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY alerts.timestamp DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,181 INFO sqlalchemy.engine.Engine [cached since 0.2792s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 20, 'param_2': 0}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+2026-02-19 11:11:48,184 INFO sqlalchemy.engine.Engine ROLLBACK
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,188 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,189 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,189 INFO sqlalchemy.engine.Engine [cached since 0.293s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,191 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY alerts.timestamp DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,191 INFO sqlalchemy.engine.Engine [cached since 0.2893s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 20, 'param_2': 0}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,195 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,196 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,196 INFO sqlalchemy.engine.Engine [cached since 0.3004s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,198 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY alerts.timestamp DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,199 INFO sqlalchemy.engine.Engine [cached since 0.2969s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 20, 'param_2': 0}
+2026-02-19 11:11:48,202 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:48,202 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,206 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,207 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,207 INFO sqlalchemy.engine.Engine [cached since 0.3114s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,209 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY alerts.timestamp DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,209 INFO sqlalchemy.engine.Engine [cached since 0.308s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 20, 'param_2': 0}
+2026-02-19 11:11:48,212 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,370 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,371 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,371 INFO sqlalchemy.engine.Engine [cached since 0.5465s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,375 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY sessions.started_at DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,376 INFO sqlalchemy.engine.Engine [cached since 0.5474s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 10, 'param_2': 0}
+2026-02-19 11:11:48,380 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,385 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,386 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,386 INFO sqlalchemy.engine.Engine [cached since 0.5604s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,388 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY sessions.started_at DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,388 INFO sqlalchemy.engine.Engine [cached since 0.5605s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 10, 'param_2': 0}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,393 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,394 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,394 INFO sqlalchemy.engine.Engine [cached since 0.5685s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,396 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY sessions.started_at DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,396 INFO sqlalchemy.engine.Engine [cached since 0.5677s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 10, 'param_2': 0}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,400 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,401 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,401 INFO sqlalchemy.engine.Engine [cached since 0.5755s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,403 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY sessions.started_at DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,403 INFO sqlalchemy.engine.Engine [cached since 0.5748s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 10, 'param_2': 0}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,409 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,409 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,409 INFO sqlalchemy.engine.Engine [cached since 0.5845s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,412 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY sessions.started_at DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,412 INFO sqlalchemy.engine.Engine [cached since 0.5841s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 10, 'param_2': 0}
+2026-02-19 11:11:48,415 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:48,415 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:48,415 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:48,415 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,431 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,432 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,432 INFO sqlalchemy.engine.Engine [cached since 0.5363s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,434 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY alerts.timestamp DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,435 INFO sqlalchemy.engine.Engine [cached since 0.5329s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 20, 'param_2': 0}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,442 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,443 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,443 INFO sqlalchemy.engine.Engine [cached since 0.5471s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,445 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY alerts.timestamp DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,446 INFO sqlalchemy.engine.Engine [cached since 0.5437s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 20, 'param_2': 0}
+2026-02-19 11:11:48,447 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:48,450 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,454 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,454 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,455 INFO sqlalchemy.engine.Engine [cached since 0.559s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,457 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY alerts.timestamp DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,457 INFO sqlalchemy.engine.Engine [cached since 0.5557s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 20, 'param_2': 0}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,462 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,463 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,464 INFO sqlalchemy.engine.Engine [cached since 0.5673s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,466 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY alerts.timestamp DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,466 INFO sqlalchemy.engine.Engine [cached since 0.5642s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 20, 'param_2': 0}
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:11:48,474 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:11:48,475 INFO sqlalchemy.engine.Engine SELECT count(*) AS count_1 
+FROM (SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID) AS anon_1
+2026-02-19 11:11:48,475 INFO sqlalchemy.engine.Engine [cached since 0.5788s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5')}
+2026-02-19 11:11:48,477 INFO sqlalchemy.engine.Engine SELECT alerts.id AS alerts_id, alerts.session_id AS alerts_session_id, alerts.timestamp AS alerts_timestamp, alerts.alert_level AS alerts_alert_level, alerts.fatigue_score AS alerts_fatigue_score, alerts.eeg_contribution AS alerts_eeg_contribution, alerts.face_contribution AS alerts_face_contribution, alerts.trigger_reason AS alerts_trigger_reason, alerts.acknowledged AS alerts_acknowledged 
+FROM alerts JOIN sessions ON alerts.session_id = sessions.id 
+WHERE sessions.user_id = %(user_id_1)s::UUID ORDER BY alerts.timestamp DESC 
+ LIMIT %(param_1)s OFFSET %(param_2)s
+2026-02-19 11:11:48,478 INFO sqlalchemy.engine.Engine [cached since 0.5761s ago] {'user_id_1': UUID('e2ca2ff9-450d-4c6d-9a95-64068ab97ab5'), 'param_1': 20, 'param_2': 0}
+2026-02-19 11:11:48,480 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:48,480 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:11:48,480 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'loadtest@fumorive.com', 'user_id': 'e2ca2ff9-450d-4c6d-9a95-64068ab97ab5', 'email': 'loadtest@fumorive.com', 'full_name': 'Load Test User', 'role': 'student', 'exp': 1771476107, 'type': 'access'}
+[LOG] User ID from token: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[OK] User UUID: e2ca2ff9-450d-4c6d-9a95-64068ab97ab5
+[LOG] Checking cache for user e2ca2ff9-450d-4c6d-9a95-64068ab97ab5...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:13:46,603 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:13:46,606 INFO sqlalchemy.engine.Engine SELECT 1
+2026-02-19 11:13:46,607 INFO sqlalchemy.engine.Engine [generated in 0.00101s] {}
+2026-02-19 11:13:46,611 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:27:50,471 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:27:50,473 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.hashed_password AS users_hashed_password, users.full_name AS users_full_name, users.role AS users_role, users.is_active AS users_is_active, users.oauth_provider AS users_oauth_provider, users.google_id AS users_google_id, users.profile_picture AS users_profile_picture, users.name_manually_edited AS users_name_manually_edited, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users 
+WHERE users.email = %(email_1)s 
+ LIMIT %(param_1)s
+2026-02-19 11:27:50,475 INFO sqlalchemy.engine.Engine [cached since 967.4s ago] {'email_1': 'asam@gmail.com', 'param_1': 1}
+2026-02-19 11:27:50,968 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:28:11,154 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:28:11,158 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.hashed_password AS users_hashed_password, users.full_name AS users_full_name, users.role AS users_role, users.is_active AS users_is_active, users.oauth_provider AS users_oauth_provider, users.google_id AS users_google_id, users.profile_picture AS users_profile_picture, users.name_manually_edited AS users_name_manually_edited, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users 
+WHERE users.email = %(email_1)s OR users.google_id = %(google_id_1)s 
+ LIMIT %(param_1)s
+2026-02-19 11:28:11,158 INFO sqlalchemy.engine.Engine [generated in 0.00104s] {'email_1': 'someb350@gmail.com', 'google_id_1': 'pv2nxGxlA7SNoxAwVu9KMOFJLuo1', 'param_1': 1}
+2026-02-19 11:28:11,165 INFO sqlalchemy.engine.Engine ROLLBACK

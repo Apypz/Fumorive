@@ -1,0 +1,37 @@
+{"time": "2026-02-18 16:01:10,087", "level": "WARNING", "logger": "fumorive", "message": "prometheus-fastapi-instrumentator not installed — metrics disabled"}
+C:\Users\User\Fumorive\backend\main.py:289: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+C:\Users\User\Fumorive\backend\main.py:320: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("shutdown")
+INFO:     Will watch for changes in these directories: ['C:\\Users\\User\\Fumorive\\backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [71624] using WatchFiles
+{"time": "2026-02-18 16:01:11,342", "level": "WARNING", "logger": "fumorive", "message": "prometheus-fastapi-instrumentator not installed — metrics disabled"}
+{"time": "2026-02-18 16:01:11,442", "level": "WARNING", "logger": "fumorive", "message": "prometheus-fastapi-instrumentator not installed — metrics disabled"}
+INFO:     Started server process [56944]
+INFO:     Waiting for application startup.
+{"time": "2026-02-18 16:01:11,491", "level": "INFO", "logger": "app.core.firebase", "message": "[OK] Firebase Admin SDK initialized successfully"}
+{"time": "2026-02-18 16:01:11,492", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Initialized with max_size=100, max_time=1.0s"}
+{"time": "2026-02-18 16:01:11,493", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Created global EEG data buffer"}
+{"time": "2026-02-18 16:01:11,493", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker started"}
+{"time": "2026-02-18 16:01:11,493", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Started EEG data buffer background worker"}
+{"time": "2026-02-18 16:01:11,493", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker running"}
+INFO:     Application startup complete.
+{"time": "2026-02-18 16:01:15,917", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 16:01:16,282", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 16:05:17,649", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 16:05:18,016", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 16:06:46,464", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 16:06:46,822", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 16:13:47,631", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 16:13:47,993", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}

@@ -46,10 +46,10 @@ def init_firebase() -> None:
         cred = credentials.Certificate(service_account_path)
         _firebase_app = initialize_app(cred)
         
-        logger.info(f"✅ Firebase Admin SDK initialized successfully")
+        logger.info(f"[OK] Firebase Admin SDK initialized successfully")
         
     except Exception as e:
-        logger.error(f"❌ Failed to initialize Firebase Admin SDK: {e}")
+        logger.error(f"[ERR] Failed to initialize Firebase Admin SDK: {e}")
         logger.warning("OAuth authentication will not be available")
 
 
@@ -94,19 +94,19 @@ def verify_firebase_token(id_token: str) -> Optional[Dict[str, Any]]:
             'email_verified': decoded_token.get('email_verified', False)
         }
         
-        logger.info(f"✅ Firebase token verified for user: {user_info['email']}")
+        logger.info(f"[OK] Firebase token verified for user: {user_info['email']}")
         return user_info
         
     except auth.ExpiredIdTokenError as e:
-        logger.warning(f"⚠️ Firebase token EXPIRED: {e}")
+        logger.warning(f"[WARN] Firebase token EXPIRED: {e}")
         return None
         
     except auth.RevokedIdTokenError as e:
-        logger.warning(f"⚠️ Firebase token REVOKED: {e}")
+        logger.warning(f"[WARN] Firebase token REVOKED: {e}")
         return None
         
     except auth.InvalidIdTokenError as e:
-        logger.warning(f"❌ INVALID Firebase token: {e}")
+        logger.warning(f"[ERR] INVALID Firebase token: {e}")
         return None
         
     except FirebaseError as e:
@@ -114,7 +114,7 @@ def verify_firebase_token(id_token: str) -> Optional[Dict[str, Any]]:
         return None
         
     except Exception as e:
-        logger.error(f"❌ Unexpected error verifying Firebase token: {type(e).__name__}: {e}")
+        logger.error(f"[ERR] Unexpected error verifying Firebase token: {type(e).__name__}: {e}")
         return None
 
 

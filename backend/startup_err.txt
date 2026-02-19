@@ -1,0 +1,365 @@
+{"time": "2026-02-18 15:41:01,494", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+C:\Users\User\Fumorive\backend\main.py:289: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+C:\Users\User\Fumorive\backend\main.py:320: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("shutdown")
+INFO:     Will watch for changes in these directories: ['C:\\Users\\User\\Fumorive\\backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [29532] using WatchFiles
+{"time": "2026-02-18 15:41:03,013", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+{"time": "2026-02-18 15:41:03,125", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+INFO:     Started server process [61480]
+INFO:     Waiting for application startup.
+ERROR:    Traceback (most recent call last):
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\routing.py", line 738, in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\routing.py", line 610, in __aenter__
+    await self._router.startup()
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\routing.py", line 715, in startup
+    await handler()
+  File "C:\Users\User\Fumorive\backend\main.py", line 293, in startup_event
+    print("\U0001f680 Fumorive Backend API Starting...")
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f680' in position 0: character maps to <undefined>
+
+ERROR:    Application startup failed. Exiting.
+{"time": "2026-02-18 15:41:06,088", "level": "INFO", "logger": "watchfiles.main", "message": "2 changes detected"}
+{"time": "2026-02-18 15:41:06,451", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 15:41:27,614", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+{"time": "2026-02-18 15:41:29,262", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+{"time": "2026-02-18 15:41:29,383", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+INFO:     Started server process [22076]
+INFO:     Waiting for application startup.
+{"time": "2026-02-18 15:41:29,394", "level": "INFO", "logger": "watchfiles.main", "message": "5 changes detected"}
+ERROR:    Traceback (most recent call last):
+  File "C:\Users\User\Fumorive\backend\app\core\redis.py", line 42, in init_redis
+    print(f"\u2705 Redis connected: {settings.REDIS_URL}")
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 0: character maps to <undefined>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\routing.py", line 738, in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\routing.py", line 610, in __aenter__
+    await self._router.startup()
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\routing.py", line 715, in startup
+    await handler()
+  File "C:\Users\User\Fumorive\backend\main.py", line 299, in startup_event
+    init_redis()
+  File "C:\Users\User\Fumorive\backend\app\core\redis.py", line 51, in init_redis
+    print(f"\u26a0\ufe0f  Redis initialization error: {e}")
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-1: character maps to <undefined>
+
+ERROR:    Application startup failed. Exiting.
+{"time": "2026-02-18 15:41:45,306", "level": "INFO", "logger": "watchfiles.main", "message": "2 changes detected"}
+{"time": "2026-02-18 15:41:52,371", "level": "INFO", "logger": "watchfiles.main", "message": "2 changes detected"}
+{"time": "2026-02-18 15:41:52,729", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 15:42:15,306", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 15:42:15,663", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 15:42:32,222", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+WARNING:  WatchFiles detected changes in 'scan_emoji.py'. Reloading...
+{"time": "2026-02-18 15:42:33,041", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+WARNING:  WatchFiles detected changes in 'scan_emoji.py'. Reloading...
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 131, in _main
+    prepare(preparation_data)
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 246, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 297, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 287, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\User\Fumorive\backend\main.py", line 17, in <module>
+    from app.core.error_handlers import register_exception_handlers
+  File "C:\Users\User\Fumorive\backend\app\core\error_handlers.py", line 14, in <module>
+    from sqlalchemy.exc import SQLAlchemyError
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\__init__.py", line 12, in <module>
+    from . import util as _util
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\util\__init__.py", line 15, in <module>
+    from ._collections import coerce_generator_arg as coerce_generator_arg
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\util\_collections.py", line 37, in <module>
+    from ._has_cy import HAS_CYEXTENSION
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\util\_has_cy.py", line 32, in <module>
+    _import_cy_extensions()
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\util\_has_cy.py", line 20, in _import_cy_extensions
+    from ..cyextension import util
+  File "lib\\sqlalchemy\\cyextension\\util.pyx", line 9, in init sqlalchemy.cyextension.util
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\exc.py", line 26, in <module>
+    from .util import compat
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\util\compat.py", line 45, in <module>
+    arm = "aarch" in platform.machine().lower()
+                     ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\platform.py", line 1023, in machine
+    return uname().machine
+           ^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\platform.py", line 921, in uname
+    release, version, csd, ptype = win32_ver()
+                                   ^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\platform.py", line 449, in win32_ver
+    version, csd, ptype, is_client = _win32_ver(version, csd, ptype)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\platform.py", line 387, in _win32_ver
+    (version, product_type, ptype, spmajor, spminor)  = _wmi_query(
+                                                        ^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\platform.py", line 327, in _wmi_query
+    data = _wmi.exec_query("SELECT {} FROM {}".format(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+{"time": "2026-02-18 15:42:35,413", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+{"time": "2026-02-18 15:42:35,548", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+INFO:     Started server process [47392]
+INFO:     Waiting for application startup.
+ERROR:    Traceback (most recent call last):
+  File "C:\Users\User\Fumorive\backend\app\core\redis.py", line 42, in init_redis
+    print(f"\u2705 Redis connected: {settings.REDIS_URL}")
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 0: character maps to <undefined>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\routing.py", line 738, in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\routing.py", line 610, in __aenter__
+    await self._router.startup()
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\routing.py", line 715, in startup
+    await handler()
+  File "C:\Users\User\Fumorive\backend\main.py", line 299, in startup_event
+    init_redis()
+  File "C:\Users\User\Fumorive\backend\app\core\redis.py", line 51, in init_redis
+    print(f"\u26a0\ufe0f  Redis initialization error: {e}")
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-1: character maps to <undefined>
+
+ERROR:    Application startup failed. Exiting.
+{"time": "2026-02-18 15:42:43,756", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 15:42:44,163", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 15:44:06,433", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+WARNING:  WatchFiles detected changes in 'strip_emoji.py'. Reloading...
+{"time": "2026-02-18 15:44:07,614", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+WARNING:  WatchFiles detected changes in 'strip_emoji.py'. Reloading...
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 131, in _main
+    prepare(preparation_data)
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 246, in prepare
+    _fixup_main_from_path(data['init_main_from_path'])
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\spawn.py", line 297, in _fixup_main_from_path
+    main_content = runpy.run_path(main_path,
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 287, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\User\Fumorive\backend\main.py", line 17, in <module>
+    from app.core.error_handlers import register_exception_handlers
+  File "C:\Users\User\Fumorive\backend\app\core\error_handlers.py", line 14, in <module>
+    from sqlalchemy.exc import SQLAlchemyError
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\__init__.py", line 12, in <module>
+    from . import util as _util
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\util\__init__.py", line 15, in <module>
+    from ._collections import coerce_generator_arg as coerce_generator_arg
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\util\_collections.py", line 37, in <module>
+    from ._has_cy import HAS_CYEXTENSION
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\util\_has_cy.py", line 32, in <module>
+    _import_cy_extensions()
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\util\_has_cy.py", line 20, in _import_cy_extensions
+    from ..cyextension import util
+  File "lib\\sqlalchemy\\cyextension\\util.pyx", line 9, in init sqlalchemy.cyextension.util
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\exc.py", line 26, in <module>
+    from .util import compat
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\sqlalchemy\util\compat.py", line 45, in <module>
+    arm = "aarch" in platform.machine().lower()
+                     ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\platform.py", line 1023, in machine
+    return uname().machine
+           ^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\platform.py", line 921, in uname
+    release, version, csd, ptype = win32_ver()
+                                   ^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\platform.py", line 449, in win32_ver
+    version, csd, ptype, is_client = _win32_ver(version, csd, ptype)
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\platform.py", line 387, in _win32_ver
+    (version, product_type, ptype, spmajor, spminor)  = _wmi_query(
+                                                        ^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\platform.py", line 327, in _wmi_query
+    data = _wmi.exec_query("SELECT {} FROM {}".format(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+{"time": "2026-02-18 15:44:09,679", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+{"time": "2026-02-18 15:44:09,795", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+INFO:     Started server process [68512]
+INFO:     Waiting for application startup.
+ERROR:    Traceback (most recent call last):
+  File "C:\Users\User\Fumorive\backend\app\core\redis.py", line 42, in init_redis
+    print(f"\u2705 Redis connected: {settings.REDIS_URL}")
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 0: character maps to <undefined>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\routing.py", line 738, in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\routing.py", line 610, in __aenter__
+    await self._router.startup()
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\starlette\routing.py", line 715, in startup
+    await handler()
+  File "C:\Users\User\Fumorive\backend\main.py", line 299, in startup_event
+    init_redis()
+  File "C:\Users\User\Fumorive\backend\app\core\redis.py", line 51, in init_redis
+    print(f"\u26a0\ufe0f  Redis initialization error: {e}")
+  File "C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-1: character maps to <undefined>
+
+ERROR:    Application startup failed. Exiting.
+{"time": "2026-02-18 15:44:23,479", "level": "INFO", "logger": "watchfiles.main", "message": "13 changes detected"}
+WARNING:  WatchFiles detected changes in 'app\core\security.py', 'app\api\routes\reporting.py', 'app\core\redis.py', 'main.py', 'app\api\dependencies.py', 'app\api\routes\export.py', 'load_test.py', 'app\db\init_timescaledb.py', 'app\core\firebase.py', 'app\core\security_headers.py', 'app\core\cache.py', 'app\db\init_db.py'. Reloading...
+{"time": "2026-02-18 15:44:24,297", "level": "INFO", "logger": "watchfiles.main", "message": "5 changes detected"}
+{"time": "2026-02-18 15:44:24,650", "level": "INFO", "logger": "watchfiles.main", "message": "5 changes detected"}
+{"time": "2026-02-18 15:44:25,210", "level": "INFO", "logger": "watchfiles.main", "message": "5 changes detected"}
+{"time": "2026-02-18 15:44:25,612", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+{"time": "2026-02-18 15:44:25,615", "level": "INFO", "logger": "watchfiles.main", "message": "23 changes detected"}
+{"time": "2026-02-18 15:44:25,785", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+INFO:     Started server process [72436]
+INFO:     Waiting for application startup.
+{"time": "2026-02-18 15:44:25,869", "level": "INFO", "logger": "app.core.firebase", "message": "[OK] Firebase Admin SDK initialized successfully"}
+{"time": "2026-02-18 15:44:25,869", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Initialized with max_size=100, max_time=1.0s"}
+{"time": "2026-02-18 15:44:25,869", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Created global EEG data buffer"}
+{"time": "2026-02-18 15:44:25,869", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker started"}
+{"time": "2026-02-18 15:44:25,869", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Started EEG data buffer background worker"}
+{"time": "2026-02-18 15:44:25,869", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker running"}
+INFO:     Application startup complete.
+{"time": "2026-02-18 15:44:25,997", "level": "INFO", "logger": "watchfiles.main", "message": "7 changes detected"}
+{"time": "2026-02-18 15:44:50,949", "level": "INFO", "logger": "watchfiles.main", "message": "2 changes detected"}
+{"time": "2026-02-18 15:44:58,966", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 15:45:23,321", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 15:45:29,849", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 15:48:21,657", "level": "INFO", "logger": "watchfiles.main", "message": "285 changes detected"}
+WARNING:  WatchFiles detected changes in 'venv\Lib\site-packages\limits\aio\storage\memcached\bridge.py', 'venv\Lib\site-packages\limits\aio\storage\base.py', 'venv\Lib\site-packages\limits\__init__.py', 'venv\Lib\site-packages\limits\storage\redis_sentinel.py', 'venv\Lib\site-packages\wrapt\arguments.py', 'venv\Lib\site-packages\wrapt\__wrapt__.py', 'venv\Lib\site-packages\limits\aio\storage\memcached\memcachio.py', 'venv\Lib\site-packages\limits\storage\__init__.py', 'venv\Lib\site-packages\limits\typing.py', 'venv\Lib\site-packages\limits\aio\__init__.py', 'venv\Lib\site-packages\limits\aio\storage\redis\valkey.py', 'venv\Lib\site-packages\deprecated\sphinx.py', 'venv\Lib\site-packages\wrapt\proxies.py', 'venv\Lib\site-packages\deprecated\classic.py', 'venv\Lib\site-packages\limits\_version.py', 'venv\Lib\site-packages\slowapi\util.py', 'venv\Lib\site-packages\limits\aio\strategies.py', 'venv\Lib\site-packages\limits\_storage_scheme.py', 'venv\Lib\site-packages\limits\storage\memcached.py', 'venv\Lib\site-packages\slowapi\middleware.py', 'venv\Lib\site-packages\limits\storage\memory.py', 'venv\Lib\site-packages\limits\util.py', 'venv\Lib\site-packages\limits\storage\redis_cluster.py', 'venv\Lib\site-packages\limits\aio\storage\memcached\emcache.py', 'venv\Lib\site-packages\wrapt\weakrefs.py', 'venv\Lib\site-packages\wrapt\decorators.py', 'venv\Lib\site-packages\limits\aio\storage\redis\__init__.py', 'venv\Lib\site-packages\limits\aio\storage\__init__.py', 'venv\Lib\site-packages\deprecated\__init__.py', 'venv\Lib\site-packages\slowapi\__init__.py', 'venv\Lib\site-packages\limits\errors.py', 'venv\Lib\site-packages\limits\storage\mongodb.py', 'venv\Lib\site-packages\deprecated\params.py', 'venv\Lib\site-packages\limits\storage\redis.py', 'venv\Lib\site-packages\slowapi\extension.py', 'venv\Lib\site-packages\limits\aio\storage\redis\coredis.py', 'venv\Lib\site-packages\wrapt\patches.py', 'venv\Lib\site-packages\limits\aio\storage\redis\bridge.py', 'venv\Lib\site-packages\limits\strategies.py', 'venv\Lib\site-packages\slowapi\errors.py', 'venv\Lib\site-packages\wrapt\importer.py', 'venv\Lib\site-packages\limits\limits.py', 'venv\Lib\site-packages\wrapt\wrappers.py', 'venv\Lib\site-packages\limits\aio\storage\redis\redispy.py', 'venv\Lib\site-packages\limits\aio\storage\mongodb.py', 'venv\Lib\site-packages\limits\aio\storage\memcached\__init__.py', 'venv\Lib\site-packages\slowapi\wrappers.py', 'venv\Lib\site-packages\limits\storage\base.py', 'venv\Lib\site-packages\limits\aio\storage\memory.py', 'venv\Lib\site-packages\wrapt\__init__.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"time": "2026-02-18 15:49:23,695", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Stopped and flushed remaining data"}
+{"time": "2026-02-18 15:49:23,696", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Stopped EEG data buffer"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [72436]
+{"time": "2026-02-18 15:49:25,654", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+{"time": "2026-02-18 15:49:25,765", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+INFO:     Started server process [73780]
+INFO:     Waiting for application startup.
+{"time": "2026-02-18 15:49:25,806", "level": "INFO", "logger": "app.core.firebase", "message": "[OK] Firebase Admin SDK initialized successfully"}
+{"time": "2026-02-18 15:49:25,808", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Initialized with max_size=100, max_time=1.0s"}
+{"time": "2026-02-18 15:49:25,808", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Created global EEG data buffer"}
+{"time": "2026-02-18 15:49:25,808", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker started"}
+{"time": "2026-02-18 15:49:25,808", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Started EEG data buffer background worker"}
+{"time": "2026-02-18 15:49:25,808", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker running"}
+INFO:     Application startup complete.
+{"time": "2026-02-18 15:55:02,945", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+WARNING:  WatchFiles detected changes in 'load_test.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"time": "2026-02-18 15:55:28,434", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Stopped and flushed remaining data"}
+{"time": "2026-02-18 15:55:28,435", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Stopped EEG data buffer"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [73780]
+{"time": "2026-02-18 15:55:30,866", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+{"time": "2026-02-18 15:55:30,995", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+INFO:     Started server process [19616]
+INFO:     Waiting for application startup.
+{"time": "2026-02-18 15:55:31,045", "level": "INFO", "logger": "app.core.firebase", "message": "[OK] Firebase Admin SDK initialized successfully"}
+{"time": "2026-02-18 15:55:31,046", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Initialized with max_size=100, max_time=1.0s"}
+{"time": "2026-02-18 15:55:31,046", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Created global EEG data buffer"}
+{"time": "2026-02-18 15:55:31,046", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker started"}
+{"time": "2026-02-18 15:55:31,046", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Started EEG data buffer background worker"}
+{"time": "2026-02-18 15:55:31,046", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker running"}
+INFO:     Application startup complete.
+{"time": "2026-02-18 15:58:01,549", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+WARNING:  WatchFiles detected changes in 'app\api\routes\auth.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"time": "2026-02-18 15:58:04,163", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Stopped and flushed remaining data"}
+{"time": "2026-02-18 15:58:04,164", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Stopped EEG data buffer"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [19616]
+{"time": "2026-02-18 15:58:06,052", "level": "INFO", "logger": "watchfiles.main", "message": "5 changes detected"}
+{"time": "2026-02-18 15:58:06,553", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+{"time": "2026-02-18 15:58:06,678", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+INFO:     Started server process [55280]
+INFO:     Waiting for application startup.
+{"time": "2026-02-18 15:58:06,739", "level": "INFO", "logger": "app.core.firebase", "message": "[OK] Firebase Admin SDK initialized successfully"}
+{"time": "2026-02-18 15:58:06,739", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Initialized with max_size=100, max_time=1.0s"}
+{"time": "2026-02-18 15:58:06,739", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Created global EEG data buffer"}
+{"time": "2026-02-18 15:58:06,739", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker started"}
+{"time": "2026-02-18 15:58:06,739", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Started EEG data buffer background worker"}
+{"time": "2026-02-18 15:58:06,739", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker running"}
+INFO:     Application startup complete.
+{"time": "2026-02-18 15:58:40,417", "level": "INFO", "logger": "watchfiles.main", "message": "2 changes detected"}
+WARNING:  WatchFiles detected changes in 'app\api\routes\alerts.py', 'app\api\routes\eeg.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"time": "2026-02-18 15:59:13,395", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Stopped and flushed remaining data"}
+{"time": "2026-02-18 15:59:13,395", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Stopped EEG data buffer"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [55280]
+{"time": "2026-02-18 15:59:15,034", "level": "INFO", "logger": "watchfiles.main", "message": "5 changes detected"}
+{"time": "2026-02-18 15:59:15,134", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+{"time": "2026-02-18 15:59:15,243", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+INFO:     Started server process [69660]
+INFO:     Waiting for application startup.
+{"time": "2026-02-18 15:59:15,298", "level": "INFO", "logger": "app.core.firebase", "message": "[OK] Firebase Admin SDK initialized successfully"}
+{"time": "2026-02-18 15:59:15,298", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Initialized with max_size=100, max_time=1.0s"}
+{"time": "2026-02-18 15:59:15,299", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Created global EEG data buffer"}
+{"time": "2026-02-18 15:59:15,299", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker started"}
+{"time": "2026-02-18 15:59:15,299", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Started EEG data buffer background worker"}
+{"time": "2026-02-18 15:59:15,299", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker running"}
+INFO:     Application startup complete.
+{"time": "2026-02-18 15:59:15,395", "level": "INFO", "logger": "watchfiles.main", "message": "5 changes detected"}
+{"time": "2026-02-18 15:59:48,969", "level": "INFO", "logger": "watchfiles.main", "message": "2 changes detected"}
+WARNING:  WatchFiles detected changes in 'app\api\routes\alerts.py', 'app\api\routes\eeg.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"time": "2026-02-18 16:00:59,731", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Stopped and flushed remaining data"}
+{"time": "2026-02-18 16:00:59,731", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Stopped EEG data buffer"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [69660]
