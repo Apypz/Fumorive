@@ -353,78 +353,30 @@ const Dashboard = () => {
 
                 {/* OVERVIEW TAB */}
                 {activeTab === 'overview' && (
-                    <div className="dashboard-gripd">
-                        {/* Informasi & Tips */}
-                        <div className="widget-card" style={{marginBottom: '1rem', gridColumn: 'span 3', background: '#f8fafc', border: '2px dashed #cbd5e1' }}>
-                            <div style={{ display: 'flex', alignItems: 'start', gap: '1rem' }}>
-                                <div style={{
-                                    width: '50px',
-                                    height: '50px',
-                                    borderRadius: '12px',
-                                    background: '#dbeafe',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    <Info size={24} color="#3b82f6" />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b', fontSize: '1.1rem' }}>Cara Menggunakan Sistem</h3>
-                                    <div style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: '1.6' }}>
-                                        <ol style={{ margin: '0.5rem 0 0 1.25rem', padding: 0 }}>
-                                            <li>Hubungkan <strong>Muse 2 EEG Headset</strong> melalui LSL (Lab Streaming Layer)</li>
-                                            <li>Pastikan <strong>kamera</strong> terdeteksi untuk face detection</li>
-                                            <li>Klik <strong>"Mulai Sesi Baru"</strong> untuk memulai monitoring real-time</li>
-                                            <li>Sistem akan menganalisis <strong>brain waves</strong> (EEG) dan <strong>visual cues</strong> (mata, yawn, head pose)</li>
-                                            <li>Dapatkan <strong>alert otomatis</strong> jika terdeteksi tanda-tanda kelelahan</li>
-                                        </ol>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-                        {/* Active Session ID Card */}
+                        {/* ── WELCOME BANNER ────────────────────────────────────── */}
+                        
+
+                        {/* ── STAT SUMMARY CARDS ────────────────────────────────── */}
+                        
+
+                        {/* ── ACTIVE SESSION ID (contextual) ────────────────────── */}
                         {sessionId && (
-                            <div className="widget-card" style={{ gridColumn: 'span 3', background: '#0f172a', border: '2px solid #1e40af', marginBottom: '0.5rem' }}>
+                            <div className="widget-card" style={{ background: '#0f172a', border: '1.5px solid #3b82f6' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
                                     <div style={{
-                                        width: '44px',
-                                        height: '44px',
-                                        borderRadius: '12px',
-                                        background: '#1e3a5f',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        fontSize: '1.3rem'
-                                    }}>
-                                        🧠
-                                    </div>
+                                        width: '40px', height: '40px', borderRadius: '10px',
+                                        background: '#1e3a5f', display: 'flex',
+                                        alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem'
+                                    }}>🧠</div>
                                     <div>
-                                        <div style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 600 }}>ACTIVE SESSION ID</div>
-                                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Copy ID ini dan paste ke terminal EEG untuk menghubungkan Muse 2</div>
+                                        <div style={{ fontSize: '0.75rem', color: '#38bdf8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Active Session ID</div>
+                                        <div style={{ fontSize: '0.78rem', color: '#94a3b8' }}>Paste ID ini ke terminal EEG untuk menghubungkan Muse 2</div>
                                     </div>
                                 </div>
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '10px',
-                                    padding: '12px 14px',
-                                    background: '#1e293b',
-                                    borderRadius: '8px',
-                                    border: '1px solid #334155'
-                                }}>
-                                    <code style={{
-                                        flex: 1,
-                                        fontSize: '1rem',
-                                        color: '#38bdf8',
-                                        fontFamily: '"Cascadia Code", "Fira Code", monospace',
-                                        wordBreak: 'break-all',
-                                        userSelect: 'all',
-                                        cursor: 'text',
-                                        letterSpacing: '0.5px',
-                                        lineHeight: '1.5'
-                                    }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: '#1e293b', borderRadius: '8px', border: '1px solid #334155' }}>
+                                    <code style={{ flex: 1, fontSize: '0.95rem', color: '#38bdf8', fontFamily: '"Cascadia Code", "Fira Code", monospace', wordBreak: 'break-all', userSelect: 'all' }}>
                                         {sessionId}
                                     </code>
                                     <button
@@ -435,20 +387,11 @@ const Dashboard = () => {
                                         }}
                                         style={{
                                             background: sessionIdCopied ? '#059669' : '#3b82f6',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            padding: '8px 16px',
-                                            cursor: 'pointer',
-                                            fontWeight: 600,
-                                            fontSize: '0.85rem',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '6px',
-                                            transition: 'all 0.2s',
-                                            flexShrink: 0
+                                            color: 'white', border: 'none', borderRadius: '8px',
+                                            padding: '8px 16px', cursor: 'pointer', fontWeight: 600,
+                                            fontSize: '0.85rem', display: 'flex', alignItems: 'center',
+                                            gap: '6px', transition: 'all 0.2s', flexShrink: 0
                                         }}
-                                        title="Copy Session ID"
                                     >
                                         {sessionIdCopied ? '✓ Copied!' : '📋 Copy ID'}
                                     </button>
@@ -456,201 +399,314 @@ const Dashboard = () => {
                             </div>
                         )}
 
-                        {/* System Status Cards */}
-                        <div className="widget-card">
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                                <div style={{
-                                    width: '50px',
-                                    height: '50px',
-                                    borderRadius: '12px',
-                                    background: '#dbeafe',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}>
-                                    <Activity size={24} color="#3b82f6" />
-                                </div>
-                                <div>
-                                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>EEG Headset</div>
-                                    <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1e293b' }}>Muse 2</div>
-                                </div>
+                        {/* ── SECTION: CARA MENJALANKAN SISTEM ─────────────────── */}
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#94a3b8' }}>Cara Menjalankan Sistem</span>
+                                <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: isConnected ? '#f0fdf4' : '#fef2f2', borderRadius: '8px', border: `1px solid ${isConnected ? '#bbf7d0' : '#fecaca'}` }}>
-                                <span style={{ fontSize: '0.9rem', color: isConnected ? '#166534' : '#991b1b' }}>Status: {isConnected ? 'Connected' : 'Disconnected'}</span>
-                                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: isConnected ? '#10b981' : '#ef4444' }}></span>
-                            </div>
-                            <button
-                                onClick={() => setActiveTab('settings')}
-                                style={{
-                                    marginTop: '1rem',
-                                    width: '100%',
-                                    padding: '10px',
-                                    background: '#3b82f6',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '8px',
-                                    cursor: 'pointer',
-                                    fontWeight: 500
-                                }}
-                            >
-                                Konfigurasi Device
-                            </button>
-                        </div>
-
-                        {/* Game Session Card */}
-                        <div className="widget-card" style={{ gridColumn: 'span 2' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                                <div style={{
-                                    width: '50px',
-                                    height: '50px',
-                                    borderRadius: '12px',
-                                    background: '#ddd6fe',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}>
-                                    <Gamepad2 size={24} color="#6366f1" />
+                            <div className="widget-card" style={{ padding: '1.5rem 2rem', border: '2px dashed #cbd5e1', background: '#f8fafc', boxShadow: 'none' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    {[
+                                        {
+                                            step: '01',
+                                            icon: '🧠',
+                                            title: 'Pasang EEG Headset',
+                                            desc: 'Kenakan Muse 2 headset, pastikan sensor menempel di dahi dan belakang telinga. Nyalakan dan buka aplikasi Lab Streaming Layer (LSL).',
+                                            color: '#4f46e5',
+                                            bg: '#eef2ff',
+                                            border: '#c7d2fe'
+                                        },
+                                        {
+                                            step: '02',
+                                            icon: '📷',
+                                            title: 'Aktifkan Kamera',
+                                            desc: 'Pastikan webcam terhubung dan izin kamera sudah diberikan. Posisikan wajah agar terlihat jelas untuk face & eye detection.',
+                                            color: '#0891b2',
+                                            bg: '#ecfeff',
+                                            border: '#a5f3fc'
+                                        },
+                                        {
+                                            step: '03',
+                                            icon: '🎮',
+                                            title: 'Mulai Sesi Game',
+                                            desc: 'Klik tombol "Mulai Sesi" untuk membuka simulasi mengemudi. Sistem akan otomatis menghubungkan EEG dan memulai monitoring.',
+                                            color: '#7c3aed',
+                                            bg: '#f5f3ff',
+                                            border: '#ddd6fe'
+                                        },
+                                        {
+                                            step: '04',
+                                            icon: '🚨',
+                                            title: 'Pantau & Respons Alert',
+                                            desc: 'Sistem akan menganalisis brain waves + visual cues secara real-time. Segera berhenti & istirahat jika alert kelelahan muncul.',
+                                            color: '#dc2626',
+                                            bg: '#fff1f2',
+                                            border: '#fecdd3'
+                                        }
+                                    ].map((s, i, arr) => (
+                                        <div key={s.step} style={{ display: 'flex', gap: '1rem', alignItems: 'stretch' }}>
+                                            {/* Left: number + vertical line */}
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                                                <div style={{
+                                                    width: '32px', height: '32px', borderRadius: '50%',
+                                                    background: s.bg, border: `1.5px solid ${s.border}`,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: '0.8rem', fontWeight: 800, color: s.color, flexShrink: 0
+                                                }}>
+                                                    {s.step}
+                                                </div>
+                                                {i < arr.length - 1 && (
+                                                    <div style={{ width: '1.5px', flex: 1, background: '#e2e8f0', margin: '4px 0' }} />
+                                                )}
+                                            </div>
+                                            {/* Right: content */}
+                                            <div style={{ paddingBottom: i < arr.length - 1 ? '1.25rem' : 0, paddingTop: '0.3rem' }}>
+                                                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.2rem' }}>{s.title}</div>
+                                                <div style={{ fontSize: '0.82rem', color: '#64748b', lineHeight: 1.6 }}>{s.desc}</div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                                <div>
-                                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Game Session</div>
-                                    <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#1e293b' }}>Simulasi Mengemudi</div>
-                                </div>
-                            </div>
-
-                            <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: '#64748b', lineHeight: '1.5' }}>
-                                Mulai sesi simulasi mengemudi untuk memantau dan menganalisis tingkat kelelahan Anda secara real-time.
-                            </p>
-                            <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                <button
-                                    onClick={() => navigate('/session')}
-                                    style={{
-                                        flex: 1,
-                                        padding: '12px',
-                                        background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
-                                        fontWeight: 600,
-                                        fontSize: '1rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '8px'
-                                    }}
-                                >
-                                    <Gamepad2 size={18} />
-                                    Mulai Game
-                                </button>
-                                <button
-                                    onClick={handleViewSampleResults}
-                                    style={{
-                                        flex: 1,
-                                        padding: '12px',
-                                        background: 'rgba(99, 102, 241, 0.1)',
-                                        color: '#6366f1',
-                                        border: '2px solid #6366f1',
-                                        borderRadius: '8px',
-                                        cursor: 'pointer',
-                                        fontWeight: 600,
-                                        fontSize: '1rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '8px'
-                                    }}
-                                >
-                                    <BarChart3 size={18} />
-                                    Lihat Contoh
-                                </button>
                             </div>
                         </div>
 
-
-                        {/* EEG Brain Waves Statistics */}
-                        <div className="widget-card" style={{ gridColumn: 'span 3' }}>
-                            <div className="widget-title">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <Brain size={20} color="#3b82f6" />
-                                        <span>Real-time Brain Wave Activity (Muse2 EEG)</span>
+                        {/* ── SECTION: STATUS SISTEM ────────────────────────────── */}
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#94a3b8' }}>Status Sistem</span>
+                                <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+                            </div>
+                            <div className="stats-row">
+                            {[
+                                {
+                                    label: 'Total Sesi',
+                                    value: String(historyStats.totalSessions),
+                                    sub: 'sesi tercatat',
+                                    icon: <History size={20} />,
+                                    bg: '#ede9fe', iconColor: '#7c3aed', valColor: '#4c1d95'
+                                },
+                                {
+                                    label: 'Total Waktu',
+                                    value: historyStats.totalHours + 'j',
+                                    sub: 'jam berkendara',
+                                    icon: <Clock size={20} />,
+                                    bg: '#dbeafe', iconColor: '#2563eb', valColor: '#1e3a8a'
+                                },
+                                {
+                                    label: 'Avg. Fatigue',
+                                    value: historyStats.avgFatigue === '--' ? '--' : historyStats.avgFatigue,
+                                    sub: 'rata-rata skor',
+                                    icon: <Brain size={20} />,
+                                    bg: '#fef3c7', iconColor: '#d97706', valColor: '#78350f'
+                                },
+                                {
+                                    label: 'EEG Status',
+                                    value: isConnected ? 'Online' : 'Offline',
+                                    sub: isConnected ? 'sedang terhubung' : 'belum terhubung',
+                                    icon: <Activity size={20} />,
+                                    bg: isConnected ? '#dcfce7' : '#fee2e2',
+                                    iconColor: isConnected ? '#16a34a' : '#dc2626',
+                                    valColor: isConnected ? '#14532d' : '#7f1d1d'
+                                }
+                            ].map((s) => (
+                                <div key={s.label} className="widget-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <div style={{
+                                        width: '48px', height: '48px', borderRadius: '14px',
+                                        background: s.bg, display: 'flex',
+                                        alignItems: 'center', justifyContent: 'center',
+                                        flexShrink: 0, color: s.iconColor
+                                    }}>
+                                        {s.icon}
                                     </div>
-                                    <span style={{ fontSize: '0.8rem', padding: '4px 10px', background: currentMetrics ? '#ecfdf5' : '#fef2f2', color: currentMetrics ? '#166534' : '#991b1b', borderRadius: '6px', fontWeight: 500 }}>
-                                        {currentMetrics ? 'Live Data' : 'No Data'}
-                                    </span>
+                                    <div style={{ minWidth: 0 }}>
+                                        <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>{s.label}</div>
+                                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: s.valColor, lineHeight: 1.2 }}>{s.value}</div>
+                                        <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{s.sub}</div>
+                                    </div>
                                 </div>
-                            </div>
+                            ))}
+                        </div>
                             
-                            {/* Simple Graph */}
-                            {graphData.length > 0 && (
-                                <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
-                                    <div style={{ height: '150px', display: 'flex', alignItems: 'flex-end', gap: '2px', justifyContent: 'space-around' }}>
-                                        {graphData.slice(-60).map((point: any, idx: number) => {
-                                            const maxVal = Math.max(...graphData.map((p: any) => Math.max(p.delta, p.theta, p.alpha, p.beta, p.gamma)));
-                                            const alpha = avgMetrics?.alphaPower ? (point.alpha / maxVal) * 100 : 20;
+                        </div>
+
+                        {/* ── SECTION: MONITORING REAL-TIME ─────────────────────── */}
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#94a3b8' }}>Monitoring Real-time</span>
+                                <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+                            </div>
+                            <div className="dashboard-grid">
+                                {/* Brain Waves */}
+                                <div className="widget-card span-2">
+                                    <div className="widget-title">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <Brain size={18} color="#2563eb" />
+                                            <span>Brain Wave Activity (Muse 2 EEG)</span>
+                                        </div>
+                                        <span style={{ fontSize: '0.75rem', padding: '3px 10px', background: currentMetrics ? '#dcfce7' : '#f1f5f9', color: currentMetrics ? '#15803d' : '#64748b', borderRadius: '999px', fontWeight: 600 }}>
+                                            {currentMetrics ? '● Live' : '○ No Data'}
+                                        </span>
+                                    </div>
+
+                                    {/* Mini bar chart */}
+                                    {graphData.length > 0 && (
+                                        <div style={{ marginBottom: '1.25rem', padding: '0.75rem', background: '#f8fafc', borderRadius: '8px' }}>
+                                            <div style={{ height: '100px', display: 'flex', alignItems: 'flex-end', gap: '2px' }}>
+                                                {graphData.slice(-80).map((point: any, idx: number) => {
+                                                    const maxVal = Math.max(...graphData.map((p: any) => Math.max(p.alpha, p.beta, p.theta)));
+                                                    const h = Math.max((point.alpha / (maxVal || 1)) * 100, 5);
+                                                    return (
+                                                        <div key={idx} style={{ flex: 1, height: `${h}%`, background: `hsl(${140 + (point.alpha / (maxVal || 1)) * 60}, 60%, 50%)`, borderRadius: '1px', opacity: 0.85 }} />
+                                                    );
+                                                })}
+                                            </div>
+                                            <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.4rem', textAlign: 'center' }}>Alpha Power — últimas 80 amostras</div>
+                                        </div>
+                                    )}
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.75rem' }}>
+                                        {[
+                                            { name: 'Delta', range: '1-4Hz', key: 'deltaPower', color: '#8b5cf6', desc: 'Deep Sleep', bg: '#f5f3ff' },
+                                            { name: 'Theta', range: '4-8Hz', key: 'thetaPower', color: '#06b6d4', desc: 'Drowsy', bg: '#ecfeff' },
+                                            { name: 'Alpha', range: '8-13Hz', key: 'alphaPower', color: '#10b981', desc: 'Relaxed', bg: '#f0fdf4' },
+                                            { name: 'Beta',  range: '13-30Hz', key: 'betaPower',  color: '#f59e0b', desc: 'Focused', bg: '#fffbeb' },
+                                            { name: 'Gamma', range: '30-50Hz', key: 'gammaPower', color: '#ef4444', desc: 'Alert',   bg: '#fff1f2' }
+                                        ].map((wave) => {
+                                            const val = currentMetrics && currentMetrics[wave.key as keyof typeof currentMetrics]
+                                                ? (currentMetrics[wave.key as keyof typeof currentMetrics] as number).toFixed(2)
+                                                : '--';
                                             return (
-                                                <div key={idx} style={{
-                                                    flex: 1,
-                                                    height: `${Math.max(alpha, 10)}%`,
-                                                    background: `hsl(${(point.alpha / (maxVal || 1)) * 360}, 70%, 50%)`,
-                                                    borderRadius: '2px',
-                                                    opacity: 0.8
-                                                }} />
+                                                <div key={wave.name} style={{ padding: '0.75rem', background: wave.bg, borderRadius: '10px', textAlign: 'center', border: `1.5px solid ${wave.color}22` }}>
+                                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: wave.color, marginBottom: '0.2rem' }}>{val}</div>
+                                                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>{wave.name}</div>
+                                                    <div style={{ fontSize: '0.65rem', color: '#64748b' }}>{wave.range}</div>
+                                                    <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '2px' }}>{wave.desc}</div>
+                                                </div>
                                             );
                                         })}
                                     </div>
-                                    <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.5rem', textAlign: 'center' }}>
-                                        Grafik Brain Wave (Alpha Power)
-                                    </div>
                                 </div>
-                            )}
-                            
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem', color: '#64748b' }}>
-                                {[
-                                    { name: 'Delta', range: '1-4Hz', key: 'deltaPower', color: '#8b5cf6', desc: 'Deep Sleep' },
-                                    { name: 'Theta', range: '4-8Hz', key: 'thetaPower', color: '#06b6d4', desc: 'Drowsiness' },
-                                    { name: 'Alpha', range: '8-13Hz', key: 'alphaPower', color: '#10b981', desc: 'Relaxed' },
-                                    { name: 'Beta', range: '13-30Hz', key: 'betaPower', color: '#f59e0b', desc: 'Focused' },
-                                    { name: 'Gamma', range: '30-50Hz', key: 'gammaPower', color: '#ef4444', desc: 'High Alert' }
-                                ].map((wave) => {
-                                    const value = currentMetrics && currentMetrics[wave.key as keyof typeof currentMetrics] 
-                                        ? (currentMetrics[wave.key as keyof typeof currentMetrics] as number).toFixed(2) 
-                                        : '--';
-                                    return (
-                                        <div key={wave.name} style={{
-                                            padding: '1rem',
-                                            background: '#f8fafc',
-                                            borderRadius: '12px',
-                                            textAlign: 'center'
-                                        }}>
-                                            <div style={{
-                                                width: '50px',
-                                                height: '50px',
-                                                margin: '0 auto 0.5rem',
-                                                borderRadius: '50%',
-                                                border: `4px solid ${wave.color}`,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                fontSize: '1.2rem',
-                                                fontWeight: 700
-                                            }}>
-                                                {value}
-                                            </div>
-                                            <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-                                                {wave.name}
-                                            </div>
-                                            <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.25rem' }}>
-                                                {wave.range}
-                                            </div>
-                                            <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                                                {wave.desc}
+
+                                {/* Fatigue Analysis */}
+                                <div className="widget-card span-1">
+                                    <div className="widget-title">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <Eye size={18} color="#d97706" />
+                                            <span>Analisis Kelelahan</span>
+                                        </div>
+                                        <span style={{ fontSize: '0.75rem', padding: '3px 10px', background: currentMetrics ? '#dcfce7' : '#f1f5f9', color: currentMetrics ? '#15803d' : '#64748b', borderRadius: '999px', fontWeight: 600 }}>
+                                            {currentMetrics ? '● Live' : '○ Standby'}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        <div style={{ padding: '1rem', borderRadius: '12px', background: '#fffbeb', border: '1px solid #fde68a' }}>
+                                            <div style={{ fontSize: '0.8rem', color: '#92400e', marginBottom: '0.25rem', fontWeight: 600 }}>EEG Fatigue Score</div>
+                                            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#b45309' }}>{currentMetrics?.eegFatigueScore ? (currentMetrics.eegFatigueScore as number).toFixed(2) : '--'}</div>
+                                            <div style={{ height: '6px', background: '#fef9c3', borderRadius: '4px', marginTop: '0.5rem', overflow: 'hidden' }}>
+                                                <div style={{ width: `${currentMetrics?.eegFatigueScore ? Math.min((currentMetrics.eegFatigueScore as number) * 10, 100) : 0}%`, height: '100%', background: 'linear-gradient(90deg, #10b981, #f59e0b, #ef4444)', transition: 'width 0.5s' }} />
                                             </div>
                                         </div>
-                                    );
-                                })}
+                                        <div style={{ padding: '1rem', borderRadius: '12px', background: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                                            <div style={{ fontSize: '0.8rem', color: '#166534', marginBottom: '0.25rem', fontWeight: 600 }}>Attention (Beta Power)</div>
+                                            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#15803d' }}>{currentMetrics?.betaPower ? (currentMetrics.betaPower as number).toFixed(2) : '--'}</div>
+                                        </div>
+                                        <div style={{ padding: '1rem', borderRadius: '12px', background: '#dbeafe', border: '1px solid #bfdbfe' }}>
+                                            <div style={{ fontSize: '0.8rem', color: '#1e40af', marginBottom: '0.25rem', fontWeight: 600 }}>Theta / Alpha Ratio</div>
+                                            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1d4ed8' }}>{currentMetrics?.thetaAlphaRatio ? (currentMetrics.thetaAlphaRatio as number).toFixed(2) : '--'}</div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
+                        {/* ── FATIGUE TIMELINE ──────────────────────────────────── */}
+                        {(isConnected || dataHistory.length > 0) && (
+                            <div className="widget-card">
+                                <div className="widget-title">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <TrendingUp size={18} color="#dc2626" />
+                                        <span>Fatigue Score Timeline {!isConnected && '(Data Sesi)'}</span>
+                                    </div>
+                                </div>
+                                <div style={{ height: '160px', display: 'flex', alignItems: 'flex-end', gap: '1px', background: '#f8fafc', padding: '1rem', borderRadius: '8px', marginBottom: '0.75rem' }}>
+                                    {dataHistory.slice(-100).map((item: any, idx: number) => {
+                                        const score = item.eegFatigueScore || 0;
+                                        const height = Math.max((score / 10) * 100, 5);
+                                        const color = score < 3 ? '#10b981' : score < 6 ? '#f59e0b' : '#ef4444';
+                                        return (
+                                            <div key={idx} title={`Score: ${score.toFixed(2)} — ${new Date(item.timestamp).toLocaleTimeString('id-ID')}`}
+                                                style={{ flex: 1, height: `${height}%`, background: color, borderRadius: '2px', opacity: 0.75, cursor: 'pointer' }} />
+                                        );
+                                    })}
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#64748b' }}>
+                                    <span>5 menit lalu</span>
+                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                        {[['#10b981','Alert'],['#f59e0b','Drowsy'],['#ef4444','Fatigued']].map(([c,l]) => (
+                                            <span key={l} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                <span style={{ width: '10px', height: '10px', background: c, borderRadius: '2px', display: 'inline-block' }} />{l}
+                                            </span>
+                                        ))}
+                                    </div>
+                                    <span>Sekarang</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {(!isConnected && dataHistory.length === 0) && (
+                            <div className="widget-card" style={{ background: '#f9fafb', border: '2px dashed #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '160px' }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <TrendingUp size={36} color="#cbd5e1" style={{ marginBottom: '0.75rem' }} />
+                                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Fatigue Score Timeline</p>
+                                    <p style={{ margin: '0.25rem 0 0', color: '#94a3b8', fontSize: '0.8rem' }}>Hubungkan EEG atau mulai sesi game untuk melihat grafik</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── SECTION: AKSI & SESI TERAKHIR ────────────────────── */}
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#94a3b8' }}>Aksi & Sesi Terakhir</span>
+                                <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
+                            </div>
+                            <div className="dashboard-grid">
+
+                                {/* Driving Performance */}
+                                <div className="widget-card span-2">
+                                    <div className="widget-title">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <Gauge size={18} color="#7c3aed" />
+                                            <span>Performa Mengemudi</span>
+                                        </div>
+                                        <span style={{ fontSize: '0.75rem', padding: '3px 10px', background: '#fef2f2', color: '#991b1b', borderRadius: '999px', fontWeight: 600 }}>Awaiting Session</span>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
+                                        {[
+                                            { label: 'Lane Deviation', value: '-- cm',  icon: <Target size={16} />,        color: '#3b82f6', bg: '#eff6ff' },
+                                            { label: 'Speed Consist.', value: '-- %',   icon: <Gauge size={16} />,          color: '#10b981', bg: '#f0fdf4' },
+                                            { label: 'Reaction Time',  value: '-- ms',  icon: <Timer size={16} />,          color: '#f59e0b', bg: '#fffbeb' },
+                                            { label: 'Alert Count',    value: '--',      icon: <AlertTriangle size={16} />,  color: '#ef4444', bg: '#fff1f2' }
+                                        ].map((m) => (
+                                            <div key={m.label} style={{ padding: '1rem', background: m.bg, borderRadius: '12px' }}>
+                                                <div style={{ color: m.color, marginBottom: '0.5rem' }}>{m.icon}</div>
+                                                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1e293b' }}>{m.value}</div>
+                                                <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.2rem' }}>{m.label}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                                        <button onClick={() => navigate('/session')} style={{ flex: 1, padding: '10px', background: 'linear-gradient(135deg,#6366f1,#7c3aed)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                            <Gamepad2 size={16} /> Mulai Sesi Baru
+                                        </button>
+                                        <button onClick={handleViewSampleResults} style={{ flex: 1, padding: '10px', background: 'white', color: '#6366f1', border: '1.5px solid #6366f1', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                            <BarChart3 size={16} /> Lihat Contoh Hasil
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Last Session */}
+                                <div className="widget-card span-1">
 
                         {/* Fatigue Score Timeline Graph */}
                         {(isConnected || dataHistory.length > 0) && (
@@ -705,338 +761,88 @@ const Dashboard = () => {
                             </div>
                         )}
 
-                        {/* Placeholder - Fatigue Score Timeline */}
-                        {!isConnected && dataHistory.length === 0 && (
-                            <div className="widget-card" style={{ gridColumn: 'span 3', background: '#f9fafb', border: '2px dashed #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '250px' }}>
-                                <div style={{ textAlign: 'center' }}>
-                                    <TrendingUp size={40} color="#cbd5e1" style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                                    <p style={{ margin: 0, fontSize: '0.95rem', color: '#64748b', marginBottom: '0.5rem' }}>Fatigue Score Timeline</p>
-                                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>Koneksi ke Muse atau mulai game session untuk melihat data</p>
-                                </div>
-                            </div>
-                        )}
 
-                        {/* Brain Wave Power Trend Graph */}
-                        {(isConnected || dataHistory.length > 0) && (
-                            <div className="widget-card" style={{ gridColumn: 'span 3' }}>
-                                <div className="widget-title">
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <Brain size={20} color="#3b82f6" />
-                                        <span>Brain Wave Power Trend (Last 100 samples) {!isConnected && '(Session Data)'}</span>
-                                    </div>
-                                </div>
-                                <div style={{ position: 'relative', height: '200px', background: '#f8fafc', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', overflow: 'hidden' }}>
-                                    {/* Render multiple layers for each brain wave */}
-                                    {(() => {
-                                        const historyToUse = dataHistory.length > 0 ? dataHistory : [];
-                                        return [
-                                            { key: 'alphaPower', color: '#10b981', name: 'Alpha', opacity: 0.4 },
-                                            { key: 'thetaPower', color: '#06b6d4', name: 'Theta', opacity: 0.5 },
-                                            { key: 'betaPower', color: '#f59e0b', name: 'Beta', opacity: 0.6 }
-                                        ].map((wave) => {
-                                            const maxVal = Math.max(
-                                                ...historyToUse.slice(-100).map((d: any) => (d[wave.key as keyof typeof d] as number) || 0)
-                                            ) || 1;
-                                            
-                                            return (
-                                                <div
-                                                    key={wave.key}
-                                                    style={{
-                                                        position: 'absolute',
-                                                        bottom: '1rem',
-                                                        left: '1rem',
-                                                        right: '1rem',
-                                                        height: 'calc(100% - 2rem)',
-                                                        display: 'flex',
-                                                        alignItems: 'flex-end',
-                                                        gap: '1px'
-                                                    }}
-                                                >
-                                                    {historyToUse.slice(-100).map((item: any, idx: number) => {
-                                                    const value = (item[wave.key as keyof typeof item] as number) || 0;
-                                                    const height = (value / maxVal) * 100;
-                                                    return (
-                                                        <div
-                                                            key={`${wave.key}-${idx}`}
-                                                            style={{
-                                                                flex: 1,
-                                                                height: `${Math.max(height, 5)}%`,
-                                                                background: wave.color,
-                                                                borderRadius: '1px',
-                                                                opacity: wave.opacity
-                                                            }}
-                                                        />
-                                                    );
-                                                })}
-                                            </div>
-                                        );
-                                    });
-                                    })()}
-                                </div>
-                                <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.8rem', flexWrap: 'wrap' }}>
-                                    {[
-                                        { color: '#8b5cf6', label: 'Delta (Sleep)' },
-                                        { color: '#06b6d4', label: 'Theta (Drowsy)' },
-                                        { color: '#10b981', label: 'Alpha (Relaxed)' },
-                                        { color: '#f59e0b', label: 'Beta (Focused)' },
-                                        { color: '#ef4444', label: 'Gamma (Alert)' }
-                                    ].map((item) => (
-                                        <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <span style={{ width: '12px', height: '12px', backgroundColor: item.color, borderRadius: '2px' }}></span>
-                                            <span style={{ color: '#64748b' }}>{item.label}</span>
+
+
+                                {/* Last Session */}
+                                    <div className="widget-title">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <History size={18} color="#64748b" />
+                                            <span>Sesi Terakhir</span>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Placeholder - Brain Wave Power Trend */}
-                        {!isConnected && dataHistory.length === 0 && (
-                            <div className="widget-card" style={{ gridColumn: 'span 3', background: '#f9fafb', border: '2px dashed #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '250px' }}>
-                                <div style={{ textAlign: 'center' }}>
-                                    <Brain size={40} color="#cbd5e1" style={{ marginBottom: '1rem', opacity: 0.5 }} />
-                                    <p style={{ margin: 0, fontSize: '0.95rem', color: '#64748b', marginBottom: '0.5rem' }}>Brain Wave Power Trend</p>
-                                    <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8' }}>Koneksi ke Muse atau mulai game session untuk melihat data</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Fatigue Analysis */}
-                        <div className="widget-card" style={{ gridColumn: 'span 2' }}>
-                            <div className="widget-title">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <Eye size={20} color="#f59e0b" />
-                                        <span>Real-time Analisis Kelelahan</span>
                                     </div>
-                                    <span style={{ fontSize: '0.8rem', padding: '4px 10px', background: currentMetrics ? '#ecfdf5' : '#fef2f2', color: currentMetrics ? '#166534' : '#991b1b', borderRadius: '6px', fontWeight: 500 }}>
-                                        {currentMetrics ? 'Live' : 'Standby'}
-                                    </span>
-                                </div>
-                            </div>
-                            <div style={{ marginBottom: '1rem', padding: '12px', background: '#fffbeb', borderRadius: '8px', border: '1px solid #fef3c7' }}>
-                                <p style={{ margin: 0, fontSize: '0.85rem', color: '#92400e', lineHeight: '1.5' }}>
-                                    <strong>💡 Fusion System:</strong> Menggabungkan data EEG (brain waves) dan Computer Vision (face detection) untuk deteksi kelelahan yang lebih akurat.
-                                </p>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                        <span style={{ fontSize: '0.9rem', color: '#64748b' }}>EEG Fatigue Score</span>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{currentMetrics?.eegFatigueScore ? (currentMetrics.eegFatigueScore as number).toFixed(2) : '--'}</span>
-                                    </div>
-                                    <div style={{ height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                                        <div style={{ width: `${currentMetrics?.eegFatigueScore ? Math.min((currentMetrics.eegFatigueScore as number) * 10, 100) : 0}%`, height: '100%', background: 'linear-gradient(90deg, #10b981, #f59e0b, #ef4444)' }}></div>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                        <span style={{ fontSize: '0.9rem', color: '#64748b' }}>Theta-Alpha Ratio</span>
-                                        <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{currentMetrics?.thetaAlphaRatio ? (currentMetrics.thetaAlphaRatio as number).toFixed(2) : '--'}</span>
-                                    </div>
-                                    <div style={{ height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                                        <div style={{ width: `${currentMetrics?.thetaAlphaRatio ? Math.min((currentMetrics.thetaAlphaRatio as number) * 20, 100) : 0}%`, height: '100%', background: '#3b82f6' }}></div>
-                                    </div>
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', marginTop: '0.5rem' }}>
-                                    <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '8px' }}>
-                                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Signal Quality</div>
-                                        <div style={{ fontSize: '1.25rem', fontWeight: 700, marginTop: '0.25rem', color: '#64748b' }}>{currentMetrics?.signalQuality ? (currentMetrics.signalQuality as number).toFixed(1) : '--'}</div>
-                                    </div>
-                                    <div style={{ padding: '0.75rem', background: '#f8fafc', borderRadius: '8px' }}>
-                                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>State</div>
-                                        <div style={{ fontSize: '1.25rem', fontWeight: 700, marginTop: '0.25rem', color: '#64748b' }}>{currentMetrics?.cognitiveState || '--'}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Cognitive Status */}
-                        <div className="widget-card">
-                            <div className="widget-title">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <TrendingUp size={20} color="#10b981" />
-                                    <span>Real-time Status Kognitif</span>
-                                </div>
-                            </div>
-                            <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: '#64748b' }}>
-                                Metrik real-time dari analisis EEG brain waves
-                            </p>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <div style={{ padding: '1rem', background: '#f0fdf4', borderRadius: '12px', border: '1px solid #bbf7d0' }}>
-                                    <div style={{ fontSize: '0.8rem', color: '#166534', marginBottom: '0.25rem' }}>Attention Level (Beta Power)</div>
-                                    <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#15803d' }}>{currentMetrics?.betaPower ? (currentMetrics.betaPower as number).toFixed(2) : '--'}</div>
-                                </div>
-                                <div style={{ padding: '1rem', background: '#fef3c7', borderRadius: '12px', border: '1px solid #fde68a' }}>
-                                    <div style={{ fontSize: '0.8rem', color: '#92400e', marginBottom: '0.25rem' }}>Cognitive Load (Theta/Alpha)</div>
-                                    <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#b45309' }}>{currentMetrics?.betaAlphaRatio ? (currentMetrics.betaAlphaRatio as number).toFixed(2) : '--'}</div>
-                                </div>
-                                <div style={{ padding: '1rem', background: '#dbeafe', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
-                                    <div style={{ fontSize: '0.8rem', color: '#1e40af', marginBottom: '0.25rem' }}>Signal Quality</div>
-                                    <div style={{ fontSize: '1.75rem', fontWeight: 700, color: '#1d4ed8' }}>{currentMetrics?.signalQuality ? (currentMetrics.signalQuality as number).toFixed(1) : '--'}</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Driving Performance */}
-                        <div className="widget-card" style={{ gridColumn: 'span 3' }}>
-                            <div className="widget-title">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', width: '100%' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <Gauge size={20} color="#8b5cf6" />
-                                        <span>Performa Mengemudi (Simulasi)</span>
-                                    </div>
-                                    <span style={{ fontSize: '0.8rem', padding: '4px 10px', background: '#fef2f2', color: '#991b1b', borderRadius: '6px', fontWeight: 500 }}>
-                                        Awaiting Session
-                                    </span>
-                                </div>
-                            </div>
-                            <p style={{ margin: '0 0 1rem 0', fontSize: '0.85rem', color: '#64748b' }}>
-                                Data dari simulasi mengemudi: lane keeping, speed control, reaction time, dan alert events
-                            </p>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', color: '#64748b' }}>
-                                {[
-                                    { label: 'Lane Deviation', value: '-- cm', icon: <Target size={18} />, color: '#3b82f6' },
-                                    { label: 'Speed Consistency', value: '-- %', icon: <Gauge size={18} />, color: '#10b981' },
-                                    { label: 'Reaction Time', value: '-- ms', icon: <Timer size={18} />, color: '#f59e0b' },
-                                    { label: 'Alert Count', value: '--', icon: <AlertTriangle size={18} />, color: '#ef4444' }
-                                ].map((metric) => (
-                                    <div key={metric.label} style={{
-                                        padding: '1.25rem',
-                                        background: '#f8fafc',
-                                        borderRadius: '12px',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: '0.5rem'
-                                    }}>
-                                        <div style={{ color: metric.color }}>{metric.icon}</div>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>{metric.value}</div>
-                                        <div style={{ fontSize: '0.85rem', color: '#64748b' }}>{metric.label}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Recommendations & Tips */}
-                        <div className="widget-card" style={{ gridColumn: 'span 2', background: '#FCDCDC', color: '#802222', border: 'none' }}>
-                            <div className="widget-title" style={{ borderBottom: '2px solid rgba(255, 255, 255, 0.8)', paddingBottom: '1rem', marginBottom: '1rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <AlertTriangle size={20} color="#802222" />
-                                    <span style={{ color: '#802222' }}>Tips Keselamatan Berkendara</span>
-                                </div>
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <div style={{ display: 'flex', gap: '12px', alignItems: 'start', padding: '12px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', backdropFilter: 'blur(10px)' }}>
-                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700 }}>1</div>
-                                    <div style={{ flex: 1, fontSize: '0.9rem', lineHeight: '1.5' }}>
-                                        <strong>Istirahat Teratur:</strong> Berhenti setiap 2 jam atau 200 km untuk mencegah kelelahan ekstrem
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', gap: '12px', alignItems: 'start', padding: '12px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', backdropFilter: 'blur(10px)' }}>
-                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700 }}>2</div>
-                                    <div style={{ flex: 1, fontSize: '0.9rem', lineHeight: '1.5' }}>
-                                        <strong>Cek Signal Quality:</strong> Pastikan headset EEG terpasang dengan benar untuk data akurat
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', gap: '12px', alignItems: 'start', padding: '12px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', backdropFilter: 'blur(10px)' }}>
-                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700 }}>3</div>
-                                    <div style={{ flex: 1, fontSize: '0.9rem', lineHeight: '1.5' }}>
-                                        <strong>Respond to Alerts:</strong> Jika sistem memberikan warning, segera istirahat atau pull over
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', gap: '12px', alignItems: 'start', padding: '12px', background: 'rgba(255,255,255,0.15)', borderRadius: '8px', backdropFilter: 'blur(10px)' }}>
-                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 700 }}>4</div>
-                                    <div style={{ flex: 1, fontSize: '0.9rem', lineHeight: '1.5' }}>
-                                        <strong>Hindari Multitasking:</strong> Fokus pada mengemudi untuk hasil monitoring optimal
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Session Summary */}
-                        <div className="widget-card">
-                            <div className="widget-title">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <History size={20} color="#64748b" />
-                                    <span>Sesi Terakhir</span>
-                                </div>
-                            </div>
-                            {sessionHistory.length > 0 ? (
-                                (() => {
-                                    const lastSession = sessionHistory[0];
-                                    const startDate = new Date(lastSession.startTime);
-                                    const duration = lastSession.duration || lastSession.completionTime || 0;
-                                    const durationMin = Math.floor(duration / 60);
-                                    
-                                    return (
-                                        <div 
-                                            style={{ padding: '1rem', cursor: 'pointer' }}
-                                            onClick={() => handleViewSession(lastSession)}
-                                        >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                                                <div style={{
-                                                    width: '48px',
-                                                    height: '48px',
-                                                    borderRadius: '10px',
-                                                    background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center'
-                                                }}>
-                                                    <Flag size={24} color="white" />
-                                                </div>
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ fontWeight: 600, color: '#1e293b' }}>{lastSession.routeName || 'Sesi Mengemudi'}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                                                        {startDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} • {durationMin} menit
+                                    {sessionHistory.length > 0 ? (() => {
+                                        const last = sessionHistory[0];
+                                        const durationMin = Math.floor((last.duration || last.completionTime || 0) / 60);
+                                        return (
+                                            <div style={{ cursor: 'pointer' }} onClick={() => handleViewSession(last)}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                                                    <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: 'linear-gradient(135deg,#6366f1,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                        <Flag size={20} color="white" />
+                                                    </div>
+                                                    <div style={{ minWidth: 0 }}>
+                                                        <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.95rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{last.routeName || 'Sesi Mengemudi'}</div>
+                                                        <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                                                            {new Date(last.startTime).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} · {durationMin} menit
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                                {lastSession.reachedCount !== undefined && (
-                                                    <span style={{ padding: '0.25rem 0.5rem', background: '#f0fdf4', color: '#10b981', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
-                                                        ✓ {lastSession.reachedCount}/{lastSession.totalWaypoints} checkpoint
+                                                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                                                    {last.reachedCount !== undefined && (
+                                                        <span style={{ padding: '3px 8px', background: '#f0fdf4', color: '#10b981', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
+                                                            ✓ {last.reachedCount}/{last.totalWaypoints} checkpoint
+                                                        </span>
+                                                    )}
+                                                    <span style={{ padding: '3px 8px', background: (last.totalViolationPoints || 0) === 0 ? '#f0fdf4' : '#fef2f2', color: (last.totalViolationPoints || 0) === 0 ? '#10b981' : '#ef4444', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
+                                                        ⚠️ {last.totalViolationPoints || 0} pelanggaran
                                                     </span>
-                                                )}
-                                                <span style={{ 
-                                                    padding: '0.25rem 0.5rem', 
-                                                    background: (lastSession.totalViolationPoints || 0) === 0 ? '#f0fdf4' : '#fef2f2', 
-                                                    color: (lastSession.totalViolationPoints || 0) === 0 ? '#10b981' : '#ef4444', 
-                                                    borderRadius: '4px', 
-                                                    fontSize: '0.75rem', 
-                                                    fontWeight: 600 
-                                                }}>
-                                                    ⚠️ {lastSession.totalViolationPoints || 0} poin pelanggaran
-                                                </span>
+                                                </div>
+                                                <button className="btn-primary" style={{ width: '100%', padding: '9px', fontSize: '0.85rem' }}
+                                                    onClick={(e) => { e.stopPropagation(); setActiveTab('history'); }}>
+                                                    Lihat Semua ({sessionHistory.length})
+                                                </button>
                                             </div>
-                                            <button
-                                                className="btn-primary"
-                                                style={{ marginTop: '1rem', padding: '8px 16px', fontSize: '0.85rem', width: '100%' }}
-                                                onClick={(e) => { e.stopPropagation(); setActiveTab('history'); }}
-                                            >
-                                                Lihat Semua History ({sessionHistory.length})
+                                        );
+                                    })() : (
+                                        <div style={{ textAlign: 'center', padding: '1.5rem 0', color: '#64748b' }}>
+                                            <Calendar size={40} style={{ margin: '0 auto 0.75rem', opacity: 0.2 }} />
+                                            <p style={{ margin: '0 0 1rem', fontSize: '0.85rem' }}>Belum ada sesi tercatat</p>
+                                            <button className="btn-primary" style={{ padding: '9px 18px', fontSize: '0.85rem' }} onClick={() => navigate('/session')}>
+                                                Mulai Sesi
                                             </button>
                                         </div>
-                                    );
-                                })()
-                            ) : (
-                                <div style={{
-                                    padding: '2rem 1rem',
-                                    textAlign: 'center',
-                                    color: '#64748b'
-                                }}>
-                                    <Calendar size={48} style={{ margin: '0 auto 1rem', opacity: 0.2 }} />
-                                    <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem' }}>Belum ada sesi yang dijalankan</p>
-                                    <button
-                                        className="btn-primary"
-                                        style={{ padding: '10px 20px', fontSize: '0.9rem' }}
-                                        onClick={() => navigate('/session')}
-                                    >
-                                        Mulai Sesi
-                                    </button>
+                                    )}
                                 </div>
-                            )}
+
+                                {/* Safety Tips */}
+                                <div className="widget-card span-3" style={{ background: 'linear-gradient(135deg, #fff7ed, #fef2f2)', border: '1.5px solid #fed7aa' }}>
+                                    <div className="widget-title" style={{ marginBottom: '0.75rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <AlertTriangle size={18} color="#ea580c" />
+                                            <span style={{ color: '#9a3412' }}>Tips Keselamatan Berkendara</span>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
+                                        {[
+                                            { n: 1, title: 'Istirahat Teratur', desc: 'Berhenti setiap 2 jam atau 200 km' },
+                                            { n: 2, title: 'Cek Signal Quality', desc: 'Pastikan headset EEG terpasang benar' },
+                                            { n: 3, title: 'Respons Alert', desc: 'Segera berhenti saat peringatan muncul' },
+                                            { n: 4, title: 'Fokus Berkendara', desc: 'Hindari multitasking saat monitoring' }
+                                        ].map((t) => (
+                                            <div key={t.n} style={{ display: 'flex', gap: '0.75rem', alignItems: 'start', padding: '0.75rem', background: 'rgba(255,255,255,0.7)', borderRadius: '10px' }}>
+                                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: '#fed7aa', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontWeight: 800, fontSize: '0.8rem', color: '#9a3412' }}>{t.n}</div>
+                                                <div>
+                                                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#7c2d12', marginBottom: '2px' }}>{t.title}</div>
+                                                    <div style={{ fontSize: '0.78rem', color: '#9a3412', lineHeight: 1.4 }}>{t.desc}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                            </div>
                         </div>
+
                     </div>
                 )}
 
