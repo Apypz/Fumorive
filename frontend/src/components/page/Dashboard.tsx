@@ -273,7 +273,7 @@ const Dashboard = () => {
         { icon: <History size={20} />, label: 'History', tab: 'history' as TabView },
         { icon: <User size={20} />, label: 'Profile', tab: 'profile' as TabView },
         { icon: <Settings size={20} />, label: 'Settings', tab: 'settings' as TabView },
-        { icon: <Camera size={20} />, label: 'Face Recognition', action: () => navigate('/face-recognition') },
+        // { icon: <Camera size={20} />, label: 'Face Recognition', action: () => navigate('/face-recognition') },
         { icon: <Gamepad2 size={20} />, label: 'Live Session', action: () => navigate('/session') },
     ];
 

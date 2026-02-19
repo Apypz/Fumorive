@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Chrome, Instagram, Youtube, Twitter, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Chrome, Instagram, Youtube, Twitter, Loader2, ArrowLeft } from 'lucide-react';
 import { useUserStore } from '../../stores/userStore';
 import fumoLogo from '../../assets/fumo.png';
 import './Login.css';
@@ -69,18 +69,18 @@ const Login = () => {
                 {/* Left Side: Visual (Blue) */}
                 <div className="login-visual">
                     <div className="visual-content">
-                        <p className="visual-tag">You can easily</p>
+                        <p className="visual-tag">Ikut serta uji coba Fumorive</p>
                         <h2 className="visual-heading">
-                            Speed up your work<br />with our Web App
+                           Fumorive hadir untuk menjaga keamanan berkendaramu.
                         </h2>
                     </div>
 
-                    <div className="partners-section">
+                   {/* <div className="partners-section">
                         <p className="partners-label">Our partners</p>
                         <div className="logos-marquee-container">
                             <div className="logos-marquee">
                                 {/* Duplicate items for seamless scroll */}
-                                <span className="partner-logo"><span style={{ fontWeight: 800 }}>Discord</span></span>
+                                {/* <span className="partner-logo"><span style={{ fontWeight: 800 }}>Discord</span></span>
                                 <span className="partner-logo"><Instagram size={16} style={{ marginRight: 4 }} />Instagram</span>
                                 <span className="partner-logo"><span style={{ fontWeight: 800 }}>Spotify</span></span>
                                 <span className="partner-logo"><Youtube size={16} style={{ marginRight: 4 }} />YouTube</span>
@@ -93,17 +93,41 @@ const Login = () => {
                                 <span className="partner-logo"><Twitter size={16} /></span>
                             </div>
                         </div>
-                    </div>
+                    </div> */}
 
                     <div className="abstract-bg"></div>
                 </div>
 
                 {/* Right Side: Form (White) */}
                 <div className="login-form-container">
+                    {/* Back to Landing */}
+                    <button
+                        onClick={() => navigate('/')}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--color-text-secondary, #64748b)',
+                            fontSize: '0.85rem',
+                            fontWeight: 500,
+                            padding: '0',
+                            marginBottom: '1.5rem',
+                            transition: 'color 0.2s'
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-accent-blue, #2563eb)')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-secondary, #64748b)')}
+                    >
+                        <ArrowLeft size={15} />
+                        Kembali ke Beranda
+                    </button>
+
                     <div className="form-header">
-                        <h2 className="form-title">{isLogin ? 'Hello Driver!' : 'Get Started Now'}</h2>
+                        <h2 className="form-title">{isLogin ? 'Halo Driver!' : 'Ayo Mulai Sekarang!'}</h2>
                         <p className="form-subtitle">
-                            {isLogin ? 'Please log in to your account to continue.' : 'Please enter your details to create account.'}
+                            {isLogin ? 'Mohon Log In untuk melanjutkan.' : 'Masukkan detail informasi anda untuk membuat akun.'}
                         </p>
                     </div>
 
@@ -123,10 +147,10 @@ const Login = () => {
                                     className="input-group"
                                     style={{ overflow: 'hidden' }}
                                 >
-                                    <label className="input-label">Name</label>
+                                    <label className="input-label">Nama</label>
                                     <input
                                         type="text"
-                                        placeholder="Enter your name..."
+                                        placeholder="Masukkan namamu"
                                         className="custom-input"
                                         required={!isLogin}
                                         value={name}
@@ -137,7 +161,7 @@ const Login = () => {
                         </AnimatePresence>
 
                         <div className="input-group">
-                            <label className="input-label">Email address</label>
+                            <label className="input-label">Email</label>
                             <input
                                 type="email"
                                 placeholder="workmail@gmail.com"
@@ -151,7 +175,7 @@ const Login = () => {
                         <div className="input-group">
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                 <label className="input-label">Password</label>
-                                <span className="forgot-pass">Forgot Password?</span>
+                                <span className="forgot-pass">Lupa Password?</span>
                             </div>
                             <div className="input-wrapper">
                                 <input
@@ -171,7 +195,7 @@ const Login = () => {
                             </div>
                         </div>
 
-                        {!isLogin && (
+                        {/* {!isLogin && (
                             <div className="checkbox-group">
                                 <label className="custom-checkbox">
                                     <input type="checkbox" required />
@@ -179,7 +203,7 @@ const Login = () => {
                                     <span className="checkbox-text">I agree to the <a href="#">Terms & Privacy</a></span>
                                 </label>
                             </div>
-                        )}
+                        )} */}
 
                         <button type="submit" className="login-btn-primary" disabled={isLoading}>
                             {isLoading ? (
@@ -191,14 +215,14 @@ const Login = () => {
                         </button>
 
                         <div className="toggle-text">
-                            {isLogin ? "Don't have an account? " : "Have an account? "}
+                            {isLogin ? "Tidak memiliki akun? " : "Sudah memiliki akun? "}
                             <span onClick={() => setIsLogin(!isLogin)}>
                                 {isLogin ? 'Signup' : 'Log in'}
                             </span>
                         </div>
 
                         <div className="divider-or">
-                            <span>Or</span>
+                            <span>Atau</span>
                         </div>
 
                         <div className="social-row">
@@ -210,7 +234,7 @@ const Login = () => {
                                 disabled={isLoading}
                             >
                                 <Chrome size={20} className="social-icon" />
-                                <span>Login with Google</span>
+                                <span>Login dengan Google</span>
                             </button>
                         </div>
                     </form>
