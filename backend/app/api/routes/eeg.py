@@ -4,14 +4,17 @@ HTTP endpoints to receive EEG data from Python LSL middleware
 Week 3, Monday - EEG Data Relay System
 """
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from typing import Dict
 from uuid import UUID
 from datetime import datetime
 
+from app.db.models import User
 from app.schemas.eeg import EEGStreamData, EEGDataPoint
 from app.api.websocket_manager import manager
+from app.api.dependencies import get_current_user
 from app.core.eeg_relay import relay_eeg_to_clients, save_eeg_to_database
+from app.core.rate_limiter import limiter, LIMIT_STREAM, LIMIT_READ
 
 router = APIRouter(prefix="/eeg", tags=["EEG Data"])
 
@@ -21,9 +24,12 @@ active_eeg_sessions: Dict[str, datetime] = {}
 
 
 @router.post("/stream", status_code=status.HTTP_200_OK)
+@limiter.limit(LIMIT_STREAM)
 async def receive_eeg_stream(
+    request: Request,
     data: EEGStreamData,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    _current_user: User = Depends(get_current_user),
 ):
     """
     Receive real-time EEG data from Python LSL middleware
@@ -65,10 +71,13 @@ async def receive_eeg_stream(
 
 
 @router.post("/batch", status_code=status.HTTP_200_OK)
+@limiter.limit(LIMIT_STREAM)
 async def receive_eeg_batch(
+    request: Request,
     session_id: UUID,
     data_points: list[EEGDataPoint],
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    _current_user: User = Depends(get_current_user),
 ):
     """
     Receive batch EEG data (alternative to streaming)
@@ -130,7 +139,10 @@ async def get_eeg_status():
 
 
 @router.delete("/session/{session_id}")
-async def stop_eeg_session(session_id: UUID):
+async def stop_eeg_session(
+    session_id: UUID,
+    _current_user: User = Depends(get_current_user),
+):
     """
     Stop EEG data streaming for a session
     

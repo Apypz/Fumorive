@@ -4,7 +4,7 @@ Login, Register, Token Refresh endpoints
 Week 2, Wednesday - Updated with Redis Caching
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
@@ -19,12 +19,15 @@ from app.core.config import settings
 from app.core.cache import cache_user_session, blacklist_token, blacklist_refresh_token, invalidate_user_cache
 from app.core.firebase import verify_firebase_token, is_firebase_available
 from app.api.dependencies import get_current_user, oauth2_scheme
+from app.core.rate_limiter import limiter, LIMIT_AUTH, LIMIT_READ
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit(LIMIT_AUTH)
 async def register(
+    request: Request,
     user_data: RegisterRequest,
     db: Session = Depends(get_db)
 ):
@@ -69,7 +72,9 @@ async def register(
 
 
 @router.post("/login", response_model=Token)
+@limiter.limit(LIMIT_AUTH)
 async def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
@@ -128,7 +133,9 @@ async def login(
 
 
 @router.post("/login/json", response_model=Token)
+@limiter.limit(LIMIT_AUTH)
 async def login_json(
+    request: Request,
     login_data: LoginRequest,
     db: Session = Depends(get_db)
 ):
@@ -184,7 +191,9 @@ async def login_json(
 
 
 @router.post("/refresh", response_model=Token)
+@limiter.limit(LIMIT_AUTH)
 async def refresh_token_endpoint(
+    request: Request,
     refresh_data: RefreshTokenRequest,
     db: Session = Depends(get_db)
 ):
@@ -247,7 +256,9 @@ async def refresh_token_endpoint(
 
 
 @router.post("/google", response_model=Token)
+@limiter.limit(LIMIT_AUTH)
 async def google_login(
+    request: Request,
     auth_data: GoogleAuthRequest,
     db: Session = Depends(get_db)
 ):
@@ -386,7 +397,9 @@ async def google_login(
 
 
 @router.post("/logout")
+@limiter.limit(LIMIT_READ)
 async def logout(
+    request: Request,
     current_user: User = Depends(get_current_user),
     token: str = Depends(oauth2_scheme)
 ):

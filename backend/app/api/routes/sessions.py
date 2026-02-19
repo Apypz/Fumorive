@@ -2,8 +2,10 @@
 Session Management API Routes
 CRUD operations for driving sessions
 Week 2, Tuesday - API Routes for Sessions
+Week 5, Wednesday - Redis caching for session metadata
 """
 
+import json
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -14,8 +16,49 @@ from app.db.database import get_db
 from app.db.models import User, Session as DBSession
 from app.schemas.session import SessionCreate, SessionUpdate, SessionResponse, SessionListResponse
 from app.api.dependencies import get_current_user
+from app.core.cache import get_redis
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
+
+# Cache TTL constants (seconds)
+_SESSION_TTL = 300   # 5 minutes for individual session metadata
+_SESSION_LIST_TTL = 60  # 1 minute for session list (changes more often)
+
+
+def _cache_key_session(session_id: UUID) -> str:
+    return f"session:{session_id}"
+
+
+def _get_cached_session(session_id: UUID) -> Optional[dict]:
+    r = get_redis()
+    if not r:
+        return None
+    try:
+        data = r.get(_cache_key_session(session_id))
+        return json.loads(data) if data else None
+    except Exception:
+        return None
+
+
+def _set_cached_session(session_id: UUID, session_data: dict) -> None:
+    r = get_redis()
+    if not r:
+        return
+    try:
+        r.setex(_cache_key_session(session_id), _SESSION_TTL, json.dumps(session_data, default=str))
+    except Exception:
+        pass
+
+
+def _invalidate_session_cache(session_id: UUID) -> None:
+    r = get_redis()
+    if not r:
+        return
+    try:
+        r.delete(_cache_key_session(session_id))
+    except Exception:
+        pass
+
 
 
 @router.post("", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
@@ -118,24 +161,48 @@ async def get_session(
 ):
     """
     Get a specific session by ID
-    
-    User can only access their own sessions (unless admin)
+
+    User can only access their own sessions (unless admin).
+    Result is cached in Redis for 5 minutes to reduce DB load.
     """
+    # Try cache first (skip for admins so they always get fresh data)
+    if current_user.role != "admin":
+        cached = _get_cached_session(session_id)
+        if cached:
+            # Quick ownership check before returning
+            if cached.get("user_id") == str(current_user.id):
+                return cached
+
     session = db.query(DBSession).filter(DBSession.id == session_id).first()
-    
+
     if not session:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Session not found"
         )
-    
+
     # Check authorization (user can only access their own sessions)
     if session.user_id != current_user.id and current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access this session"
         )
-    
+
+    # Populate cache for future reads
+    _set_cached_session(session_id, {
+        "id": str(session.id),
+        "user_id": str(session.user_id),
+        "session_name": session.session_name,
+        "device_type": session.device_type,
+        "session_status": session.session_status,
+        "started_at": str(session.started_at),
+        "ended_at": str(session.ended_at) if session.ended_at else None,
+        "duration_seconds": session.duration_seconds,
+        "avg_fatigue_score": session.avg_fatigue_score,
+        "max_fatigue_score": session.max_fatigue_score,
+        "alert_count": session.alert_count,
+    })
+
     return session
 
 
@@ -174,7 +241,10 @@ async def update_session(
     
     db.commit()
     db.refresh(session)
-    
+
+    # Invalidate cached session — data has changed
+    _invalidate_session_cache(session_id)
+
     return session
 
 
@@ -216,7 +286,10 @@ async def complete_session(
     
     db.commit()
     db.refresh(session)
-    
+
+    # Invalidate cache — session is now completed
+    _invalidate_session_cache(session_id)
+
     return session
 
 
@@ -258,7 +331,10 @@ async def end_session(
     
     db.commit()
     db.refresh(session)
-    
+
+    # Invalidate cache — session is now ended
+    _invalidate_session_cache(session_id)
+
     return session
 
 
@@ -291,5 +367,8 @@ async def delete_session(
     
     db.delete(session)
     db.commit()
-    
+
+    # Remove from cache
+    _invalidate_session_cache(session_id)
+
     return None

@@ -64,23 +64,23 @@ def verify_token(token: str, token_type: str = "access") -> Optional[dict]:
         Decoded token payload if valid, None otherwise
     """
     try:
-        print(f"🔍 Verifying {token_type} token...")
-        print(f"🔍 Token (first 50 chars): {token[:50]}...")
+        print(f"[SEARCH] Verifying {token_type} token...")
+        print(f"[SEARCH] Token (first 50 chars): {token[:50]}...")
         
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        print(f"✅ Token decoded successfully")
-        print(f"📋 Payload type: {payload.get('type')}")
-        print(f"📋 Expected type: {token_type}")
+        print(f"[OK] Token decoded successfully")
+        print(f"[LIST] Payload type: {payload.get('type')}")
+        print(f"[LIST] Expected type: {token_type}")
         
         # Verify token type
         if payload.get("type") != token_type:
-            print(f"❌ Token type mismatch! Got {payload.get('type')}, expected {token_type}")
+            print(f"[ERR] Token type mismatch! Got {payload.get('type')}, expected {token_type}")
             return None
         
-        print(f"✅ Token verified successfully")
+        print(f"[OK] Token verified successfully")
         return payload
     except JWTError as e:
-        print(f"❌ JWT Error: {str(e)}")
+        print(f"[ERR] JWT Error: {str(e)}")
         return None
 
 

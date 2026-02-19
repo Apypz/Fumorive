@@ -53,6 +53,15 @@ class Settings(BaseSettings):
     
     # Logging
     LOG_LEVEL: str = "INFO"
+
+    # Rate Limiting
+    # Production safe defaults. Override in .env for load testing
+    # (load tests run from single IP, so limits need to be higher).
+    LIMIT_AUTH: str = "10/minute"
+    LIMIT_READ: str = "120/minute"
+    LIMIT_WRITE: str = "30/minute"
+    LIMIT_STREAM: str = "300/minute"
+    LIMIT_EXPORT: str = "10/minute"
     
     model_config = SettingsConfigDict(
         env_file=".env",

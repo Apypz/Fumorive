@@ -25,9 +25,9 @@ def init_db():
     print("\n📦 Creating database tables...")
     try:
         Base.metadata.create_all(bind=engine)
-        print("✅ All tables created successfully")
+        print("[OK] All tables created successfully")
     except Exception as e:
-        print(f"❌ Error creating tables: {e}")
+        print(f"[ERR] Error creating tables: {e}")
         return
     
     print("\n" + "=" * 60)
@@ -38,7 +38,7 @@ def init_db():
     create_hypertables()
     
     print("\n" + "=" * 60)
-    print("✨ Database initialization complete!")
+    print("[NEW] Database initialization complete!")
     print("=" * 60)
 
 
