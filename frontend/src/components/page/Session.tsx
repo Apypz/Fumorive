@@ -17,6 +17,7 @@ import { ViolationHUD } from '../ViolationHUD'
 import { WrongWayWarning } from '../WrongWayWarning'
 import { GearHUD } from '../GearHUD'
 import { WaypointHUD } from '../WaypointHUD'
+import { TutorialPopup } from '../TutorialPopup'
 import { useGameStore } from '../../stores/gameStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useWaypointStore } from '../../stores/waypointStore'
@@ -35,6 +36,7 @@ export default function Session() {
   const [eegEnabled, setEegEnabled] = useState(true)
   const [eegCognitiveState, setEegCognitiveState] = useState<'alert' | 'drowsy' | 'fatigued' | undefined>()
   const [sessionCopied, setSessionCopied] = useState(false)
+  const [showTutorial, setShowTutorial] = useState(false)
 
   // Initialize session on mount
   useEffect(() => {
@@ -44,6 +46,7 @@ export default function Session() {
   const handleStartGame = () => {
     setShowMapSelection(false)
     setGameStarted(true)
+    setShowTutorial(true)
     // Reset pelanggaran setiap mulai sesi baru
     useViolationStore.getState().resetViolations()
   }
@@ -115,10 +118,15 @@ export default function Session() {
         </div>
       )}
 
+      {/* Tutorial Popup - shown when game first starts */}
+      {showTutorial && gameStarted && (
+        <TutorialPopup onClose={() => setShowTutorial(false)} />
+      )}
+
       {/* Global Alert Notifications - always active when game started */}
       {gameStarted && <AlertNotification />}
 
-      {/* Map Selection Screen - shown before game starts */}}
+      {/* Map Selection Screen - shown before game starts */}
       {showMapSelection && (
         <MapSelection onStartGame={handleStartGame} />
       )}
