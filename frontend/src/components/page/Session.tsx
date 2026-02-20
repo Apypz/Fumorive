@@ -11,6 +11,8 @@ import { DriftMeter } from '../DriftMeter'
 import { MapSelection } from '../MapSelection'
 import { CameraFatigueMonitor } from '../CameraFatigueMonitor'
 import { EEGMonitoringWidget } from '../EEGMonitoringWidget'
+import { AlertNotification } from '../AlertNotification'
+import { FusionScoreDisplay } from '../FusionScoreDisplay'
 import { ViolationHUD } from '../ViolationHUD'
 import { WrongWayWarning } from '../WrongWayWarning'
 import { GearHUD } from '../GearHUD'
@@ -29,6 +31,7 @@ export default function Session() {
   const [showMapSelection, setShowMapSelection] = useState(true)
   const [gameStarted, setGameStarted] = useState(false)
   const [cameraEnabled, setCameraEnabled] = useState(false)
+  const [cameraFatigueScore, setCameraFatigueScore] = useState(0)
   const [eegEnabled, setEegEnabled] = useState(true)
   const [eegCognitiveState, setEegCognitiveState] = useState<'alert' | 'drowsy' | 'fatigued' | undefined>()
   const [sessionCopied, setSessionCopied] = useState(false)
@@ -112,7 +115,10 @@ export default function Session() {
         </div>
       )}
 
-      {/* Map Selection Screen - shown before game starts */}
+      {/* Global Alert Notifications - always active when game started */}
+      {gameStarted && <AlertNotification />}
+
+      {/* Map Selection Screen - shown before game starts */}}
       {showMapSelection && (
         <MapSelection onStartGame={handleStartGame} />
       )}
@@ -186,6 +192,7 @@ export default function Session() {
           <CameraFatigueMonitor 
             isEnabled={cameraEnabled}
             onToggle={() => setCameraEnabled(!cameraEnabled)}
+            onFatigueScoreChange={setCameraFatigueScore}
           />
 
           {/* EEG Monitoring Widget - top right corner */}
@@ -196,6 +203,9 @@ export default function Session() {
               onStateChange={setEegCognitiveState}
             />
           )}
+
+          {/* Multimodal Fusion Score — bottom left */}
+          <FusionScoreDisplay cameraFatigueScore={cameraFatigueScore} />
         </>
       )}
 
@@ -204,6 +214,7 @@ export default function Session() {
         <CameraFatigueMonitor 
           isEnabled={cameraEnabled}
           onToggle={() => setCameraEnabled(!cameraEnabled)}
+          onFatigueScoreChange={setCameraFatigueScore}
         />
       )}
     </div>

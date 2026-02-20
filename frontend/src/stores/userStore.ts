@@ -14,6 +14,7 @@ interface UserState {
     register: (data: RegisterData) => Promise<void>;
     logout: () => Promise<void>;
     updateProfile: (data: Partial<UserResponse>) => void;
+    changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
     setError: (error: string | null) => void;
     refreshUserFromToken: () => void;
 }
@@ -151,6 +152,18 @@ export const useUserStore = create<UserState>()(
             },
 
             setError: (error) => set({ error }),
+
+            changePassword: async (currentPassword, newPassword) => {
+                set({ isLoading: true, error: null });
+                try {
+                    await authService.changePassword(currentPassword, newPassword);
+                    set({ isLoading: false });
+                } catch (error: any) {
+                    const msg = error.response?.data?.detail || 'Gagal mengganti password';
+                    set({ isLoading: false, error: msg });
+                    throw new Error(msg);
+                }
+            },
 
             refreshUserFromToken: () => {
                 const accessToken = getAccessToken();

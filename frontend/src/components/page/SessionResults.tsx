@@ -73,6 +73,7 @@ export default function SessionResults() {
   const navigate = useNavigate();
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [savedToHistory, setSavedToHistory] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // --- ALL HOOKS MUST BE BEFORE ANY EARLY RETURN ---
 
@@ -205,9 +206,10 @@ export default function SessionResults() {
     }
   }, [sessionData, savedToHistory, saveToHistory]);
 
-  // Export handler
+  // Export handler (JSON)
   const handleExport = useCallback(() => {
     if (!sessionData) return;
+    setShowExportMenu(false);
 
     const exportData = {
       sessionId: sessionData.sessionId,
@@ -230,6 +232,87 @@ export default function SessionResults() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `session-${sessionData.sessionId}-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [sessionData, eegStats, violationStats]);
+
+  // CSV Export handler
+  const handleExportCSV = useCallback(() => {
+    if (!sessionData) return;
+    setShowExportMenu(false);
+
+    const rows: string[][] = [];
+
+    // ---- Summary section ----
+    rows.push(['=== RINGKASAN SESI ===']);
+    rows.push(['Session ID', sessionData.sessionId]);
+    rows.push(['Rute', sessionData.routeName || '-']);
+    rows.push(['Mulai', sessionData.startTime.toISOString()]);
+    rows.push(['Selesai', sessionData.endTime.toISOString()]);
+    rows.push(['Durasi (menit)', String(eegStats.durationMinutes)]);
+    rows.push(['Rata-rata Kecepatan (km/h)', String((sessionData.averageSpeed || 0).toFixed(1))]);
+    rows.push(['Total Jarak (km)', String((sessionData.totalDistance || 0).toFixed(1))]);
+    rows.push(['Tabrakan', String(sessionData.collisions || violationStats.byType['collision'] || 0)]);
+    rows.push(['Penyimpangan Jalur', String(sessionData.laneDeviations || violationStats.byType['lane_deviation'] || 0)]);
+    rows.push([]);
+
+    // ---- EEG Stats ----
+    rows.push(['=== STATISTIK EEG ===']);
+    rows.push(['Avg Fatigue Score', String(eegStats.avgFatigue)]);
+    rows.push(['Max Fatigue Score', String(eegStats.maxFatigue)]);
+    rows.push(['Min Fatigue Score', String(eegStats.minFatigue)]);
+    rows.push(['Waktu Alert (detik)', String(eegStats.alertCount)]);
+    rows.push(['Waktu Drowsy (detik)', String(eegStats.drowsyCount)]);
+    rows.push(['Waktu Fatigued (detik)', String(eegStats.fatiguedCount)]);
+    rows.push(['Avg Alpha Power', String(eegStats.avgAlpha)]);
+    rows.push(['Avg Theta Power', String(eegStats.avgTheta)]);
+    rows.push(['Avg Beta Power', String(eegStats.avgBeta)]);
+    rows.push(['Avg Delta Power', String(eegStats.avgDelta)]);
+    rows.push(['Avg Gamma Power', String(eegStats.avgGamma)]);
+    rows.push([]);
+
+    // ---- Violations ----
+    rows.push(['=== PELANGGARAN ===']);
+    rows.push(['Total Pelanggaran', String(violationStats.total)]);
+    rows.push(['Total Poin', String(violationStats.totalPoints)]);
+    rows.push(['Jenis', 'Jumlah']);
+    Object.entries(violationStats.byType).forEach(([type, count]) => {
+      rows.push([type, String(count)]);
+    });
+    rows.push([]);
+
+    // ---- EEG Timeline ----
+    if (sessionData.eegData?.length) {
+      rows.push(['=== DATA EEG (TIMELINE) ===']);
+      rows.push(['Timestamp', 'FatigueScore', 'AlphaPower', 'ThetaPower', 'BetaPower', 'DeltaPower', 'GammaPower', 'Attention', 'Fatigue']);
+      sessionData.eegData.forEach((d) => {
+        rows.push([
+          d.timestamp ? new Date(d.timestamp).toISOString() : '-',
+          String(d.eegFatigueScore ?? d.fatigue ?? 0),
+          String(d.alphaPower ?? 0),
+          String(d.thetaPower ?? 0),
+          String(d.betaPower ?? 0),
+          String(d.deltaPower ?? 0),
+          String(d.gammaPower ?? 0),
+          String(d.attention ?? 0),
+          String(d.fatigue ?? 0),
+        ]);
+      });
+      rows.push([]);
+    }
+
+    // ---- Serialize to CSV ----
+    const csvContent = rows.map(row =>
+      row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `session-${sessionData.sessionId}-${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -302,17 +385,64 @@ export default function SessionResults() {
               Hasil Analisis Sesi
             </h1>
           </div>
-          <button
-            onClick={handleExport}
-            style={{ 
-              display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
-              background: 'white', border: '1px solid #e2e8f0', borderRadius: 8,
-              color: '#475569', cursor: 'pointer', fontSize: 14
-            }}
-          >
-            <Download size={16} />
-            Export
-          </button>
+          {/* Export dropdown */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowExportMenu((v) => !v)}
+              style={{ 
+                display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px',
+                background: 'white', border: '1px solid #e2e8f0', borderRadius: 8,
+                color: '#475569', cursor: 'pointer', fontSize: 14
+              }}
+            >
+              <Download size={16} />
+              Export ▾
+            </button>
+            {showExportMenu && (
+              <>
+                {/* Backdrop to close menu */}
+                <div
+                  style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+                  onClick={() => setShowExportMenu(false)}
+                />
+                <div style={{
+                  position: 'absolute', right: 0, top: '110%', zIndex: 100,
+                  background: 'white', border: '1px solid #e2e8f0', borderRadius: 10,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)', overflow: 'hidden', minWidth: 160,
+                }}>
+                  <button
+                    onClick={handleExportCSV}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '10px 16px', border: 'none', background: 'transparent',
+                      cursor: 'pointer', fontSize: 13, color: '#1e293b', textAlign: 'left',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <Download size={14} color="#22c55e" />
+                    <span>Export CSV</span>
+                    <span style={{ marginLeft: 'auto', fontSize: 10, color: '#94a3b8' }}>Spreadsheet</span>
+                  </button>
+                  <div style={{ height: 1, background: '#f1f5f9' }} />
+                  <button
+                    onClick={handleExport}
+                    style={{
+                      width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '10px 16px', border: 'none', background: 'transparent',
+                      cursor: 'pointer', fontSize: 13, color: '#1e293b', textAlign: 'left',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <Download size={14} color="#3b82f6" />
+                    <span>Export JSON</span>
+                    <span style={{ marginLeft: 'auto', fontSize: 10, color: '#94a3b8' }}>Raw data</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Top Cards Row */}

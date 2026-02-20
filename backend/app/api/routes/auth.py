@@ -8,11 +8,14 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
+import random
+import string
 
 from app.db.database import get_db
 from app.db.models import User
 from app.schemas.auth import Token, LoginRequest, RegisterRequest, RefreshTokenRequest, GoogleAuthRequest
-from app.schemas.user import UserResponse
+from app.schemas.user import UserResponse, ForgotPasswordRequest, ResetPasswordRequest
+from app.core.redis import get_redis
 from app.core.password import hash_password, verify_password
 from app.core.security import create_access_token, create_refresh_token, verify_token
 from app.core.config import settings
@@ -421,3 +424,81 @@ async def logout(
         "message": "Successfully logged out",
         "detail": "Token has been revoked and cache cleared"
     }
+
+
+@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+@limiter.limit(LIMIT_AUTH)
+async def forgot_password(
+    request: Request,
+    data: ForgotPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Request a 6-digit password reset code.
+    For demo: the code is returned in the response (production: sent via email).
+    Only works for email/password accounts (not OAuth).
+    """
+    user = db.query(User).filter(User.email == data.email).first()
+
+    if user and not user.oauth_provider:
+        # Generate 6-digit numeric code
+        token = ''.join(random.choices(string.digits, k=6))
+
+        # Store in Redis with 15-minute TTL
+        r = get_redis()
+        if r:
+            r.setex(f"pwd_reset:{data.email}", timedelta(minutes=15), token)
+
+        # DEMO MODE: return token directly
+        # In production this would be sent via email
+        return {
+            "message": "Kode reset berhasil dibuat.",
+            "dev_token": token
+        }
+
+    # Return 200 even for unknown emails (security: don't reveal account existence)
+    return {"message": "Jika email terdaftar, kode reset akan dikirimkan."}
+
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+@limiter.limit(LIMIT_AUTH)
+async def reset_password(
+    request: Request,
+    data: ResetPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Reset password using the 6-digit code from /forgot-password.
+    Only works for email/password accounts (not OAuth).
+    """
+    r = get_redis()
+    if not r:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Layanan reset password tidak tersedia saat ini."
+        )
+
+    stored = r.get(f"pwd_reset:{data.email}")
+    if not stored or stored.decode() != data.token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Kode reset tidak valid atau sudah kadaluarsa (15 menit)."
+        )
+
+    user = db.query(User).filter(User.email == data.email).first()
+    if not user or user.oauth_provider:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Akun tidak ditemukan atau menggunakan OAuth."
+        )
+
+    user.hashed_password = hash_password(data.new_password)
+    db.commit()
+
+    # Delete the reset token
+    r.delete(f"pwd_reset:{data.email}")
+
+    # Invalidate any cached user session
+    invalidate_user_cache(user.id)
+
+    return {"message": "Password berhasil direset. Silakan login dengan password baru."}

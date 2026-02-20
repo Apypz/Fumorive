@@ -26,7 +26,6 @@ import {
     Shield,
     Database,
     Info,
-    Camera,
     Trash2,
     Flag
 } from 'lucide-react';
@@ -64,7 +63,8 @@ const Dashboard = () => {
     const { user, logout } = useUserStore();
     const [fullName, setFullName] = useState(user?.full_name || '');
     const [isSaving, setIsSaving] = useState(false);
-    
+    const [profileSuccess, setProfileSuccess] = useState<string | null>(null);
+
     // History state
     const [sessionHistory, setSessionHistory] = useState<SavedSession[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -79,9 +79,63 @@ const Dashboard = () => {
     const sessionId = useSessionStore((state) => state.sessionId);
     const [sessionIdCopied, setSessionIdCopied] = useState(false);
     
-    // Average metrics state
-    const [avgMetrics, setAvgMetrics] = useState<any>(null);
+    // Graph data state
     const [graphData, setGraphData] = useState<any[]>([]);
+
+    // Settings state (persisted to localStorage)
+    const loadSettings = () => {
+        try {
+            const saved = localStorage.getItem('fumorive_settings');
+            if (saved) return JSON.parse(saved);
+        } catch {}
+        return {
+            eegDevice: 'Not Connected',
+            cameraDevice: 'Built-in Camera',
+            samplingRate: '256 Hz (Recommended)',
+            warningThreshold: 60,
+            criticalThreshold: 80,
+            perClosThreshold: 80,
+            audioAlerts: true,
+            visualEffects: true,
+            hapticFeedback: false,
+            saveSessionData: true,
+            shareAnonymousData: false,
+        };
+    };
+    const [settings, setSettings] = useState(loadSettings);
+
+    const updateSetting = (key: string, value: any) => {
+        setSettings((prev: any) => {
+            const updated = { ...prev, [key]: value };
+            localStorage.setItem('fumorive_settings', JSON.stringify(updated));
+            return updated;
+        });
+    };
+
+    const handleExportData = () => {
+        const data = { sessions: sessionHistory, exportedAt: new Date().toISOString() };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `fumorive_data_${new Date().toLocaleDateString('id-ID').replace(/\//g, '-')}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const handleClearAllData = () => {
+        if (window.confirm('Hapus semua data sesi? Tindakan ini tidak dapat dibatalkan.')) {
+            localStorage.removeItem('sessionHistory');
+            setSessionHistory([]);
+        }
+    };
+
+    const storageUsedKB = useMemo(() => {
+        try {
+            const raw = localStorage.getItem('sessionHistory') || '';
+            return (new Blob([raw]).size / 1024).toFixed(1);
+        } catch { return '0'; }
+    }, [sessionHistory]);
 
     // Generate sample data for demo
     const generateSampleData = () => {
@@ -232,11 +286,8 @@ const Dashboard = () => {
         }
     };
 
-    // Update average metrics and graph data from EEG store
+    // Update graph data from EEG store
     useEffect(() => {
-        const avg = getAverageMetrics(5000); // Average over last 5 seconds
-        setAvgMetrics(avg);
-        
         // Use real data if available, otherwise use sample data
         const historyToUse = dataHistory.length > 0 ? dataHistory : generateSampleData();
         
@@ -255,12 +306,14 @@ const Dashboard = () => {
 
     const handleSaveProfile = async () => {
         setIsSaving(true);
+        setProfileSuccess(null);
         try {
             await useUserStore.getState().updateProfile({ full_name: fullName });
-            alert('Profile updated successfully!');
+            setProfileSuccess('Nama berhasil diperbarui!');
+            setTimeout(() => setProfileSuccess(null), 3000);
         } catch (error: any) {
             console.error('Update profile error:', error);
-            alert(`Failed to update profile: ${error.message || 'Unknown error'}`);
+            alert(`Gagal memperbarui profil: ${error.message || 'Unknown error'}`);
         } finally {
             setIsSaving(false);
         }
@@ -633,7 +686,9 @@ const Dashboard = () => {
                                     {dataHistory.slice(-100).map((item: any, idx: number) => {
                                         const score = item.eegFatigueScore || 0;
                                         const height = Math.max((score / 10) * 100, 5);
-                                        const color = score < 3 ? '#10b981' : score < 6 ? '#f59e0b' : '#ef4444';
+                                        const warnLine = settings.warningThreshold / 10;
+                                        const critLine = settings.criticalThreshold / 10;
+                                        const color = score < warnLine ? '#10b981' : score < critLine ? '#f59e0b' : '#ef4444';
                                         return (
                                             <div key={idx} title={`Score: ${score.toFixed(2)} — ${new Date(item.timestamp).toLocaleTimeString('id-ID')}`}
                                                 style={{ flex: 1, height: `${height}%`, background: color, borderRadius: '2px', opacity: 0.75, cursor: 'pointer' }} />
@@ -723,7 +778,9 @@ const Dashboard = () => {
                                         return historyToUse.slice(-100).map((item: any, idx: number) => {
                                             const score = item.eegFatigueScore || 0;
                                             const height = Math.max((score / 10) * 100, 5);
-                                            const color = score < 3 ? '#10b981' : score < 6 ? '#f59e0b' : '#ef4444';
+                                            const warnLine = settings.warningThreshold / 10;
+                                            const critLine = settings.criticalThreshold / 10;
+                                            const color = score < warnLine ? '#10b981' : score < critLine ? '#f59e0b' : '#ef4444';
                                             return (
                                                 <div
                                                     key={idx}
@@ -894,6 +951,155 @@ const Dashboard = () => {
                             ))}
                         </div>
 
+                        {/* Session Comparison Chart */}
+                        {sessionHistory.length >= 2 && (() => {
+                            const last5 = [...sessionHistory].slice(0, 5).reverse(); // oldest → newest
+                            const maxFatigue = 10;
+                            const maxViolations = Math.max(...last5.map(s => s.violations?.length || 0), 1);
+                            const barW = 48;
+                            const barGap = 20;
+                            const chartH = 120;
+                            const chartW = last5.length * (barW + barGap) - barGap;
+
+                            return (
+                                <div className="widget-card" style={{ marginBottom: '1.5rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                                        <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                            <BarChart3 size={18} color="#6366f1" />
+                                            Perbandingan Sesi (Terakhir {last5.length})
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#64748b' }}>
+                                            <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#6366f1', borderRadius: 2, marginRight: 4 }} />Fatigue</span>
+                                            <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#ef4444', borderRadius: 2, marginRight: 4 }} />Pelanggaran</span>
+                                        </div>
+                                    </div>
+
+                                    {/* SVG Chart */}
+                                    <div style={{ overflowX: 'auto' }}>
+                                        <svg
+                                            width={Math.max(chartW + 60, 400)}
+                                            height={chartH + 70}
+                                            style={{ display: 'block', margin: '0 auto' }}
+                                        >
+                                            {/* Y-axis grid lines */}
+                                            {[0, 2.5, 5, 7.5, 10].map((val) => {
+                                                const y = 8 + chartH - (val / maxFatigue) * chartH;
+                                                return (
+                                                    <g key={val}>
+                                                        <line x1={30} x2={30 + chartW} y1={y} y2={y} stroke="#e2e8f0" strokeWidth={1} strokeDasharray="4,3" />
+                                                        <text x={24} y={y + 4} fontSize={9} fill="#94a3b8" textAnchor="end">{val}</text>
+                                                    </g>
+                                                );
+                                            })}
+
+                                            {/* Bars */}
+                                            {last5.map((session, i) => {
+                                                const fatigue = parseFloat(session.stats?.avgFatigue || '0');
+                                                const violations = session.violations?.length || 0;
+                                                const x = 30 + i * (barW + barGap);
+
+                                                const fatigueH = Math.max(2, (fatigue / maxFatigue) * chartH);
+                                                const violH = Math.max(2, (violations / maxViolations) * chartH);
+
+                                                const fatigueColor = fatigue < 3 ? '#22c55e' : fatigue < 6 ? '#f59e0b' : '#ef4444';
+                                                const date = new Date(session.startTime);
+                                                const label = `${date.getDate()}/${date.getMonth() + 1}`;
+                                                const timeLabel = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+                                                return (
+                                                    <g key={session.sessionId}>
+                                                        {/* Fatigue bar */}
+                                                        <rect
+                                                            x={x}
+                                                            y={8 + chartH - fatigueH}
+                                                            width={barW * 0.55}
+                                                            height={fatigueH}
+                                                            rx={3}
+                                                            fill={fatigueColor}
+                                                            opacity={0.85}
+                                                        />
+                                                        {/* Fatigue value label */}
+                                                        <text
+                                                            x={x + barW * 0.275}
+                                                            y={8 + chartH - fatigueH - 4}
+                                                            fontSize={9}
+                                                            fill={fatigueColor}
+                                                            textAnchor="middle"
+                                                            fontWeight={700}
+                                                        >
+                                                            {fatigue.toFixed(1)}
+                                                        </text>
+
+                                                        {/* Violations bar */}
+                                                        <rect
+                                                            x={x + barW * 0.58}
+                                                            y={8 + chartH - violH}
+                                                            width={barW * 0.4}
+                                                            height={violH}
+                                                            rx={3}
+                                                            fill="#ef4444"
+                                                            opacity={0.7}
+                                                        />
+                                                        {violations > 0 && (
+                                                            <text
+                                                                x={x + barW * 0.78}
+                                                                y={8 + chartH - violH - 4}
+                                                                fontSize={9}
+                                                                fill="#ef4444"
+                                                                textAnchor="middle"
+                                                                fontWeight={700}
+                                                            >
+                                                                {violations}
+                                                            </text>
+                                                        )}
+
+                                                        {/* X-axis label */}
+                                                        <text x={x + barW / 2} y={8 + chartH + 14} fontSize={10} fill="#475569" textAnchor="middle" fontWeight={600}>{label}</text>
+                                                        <text x={x + barW / 2} y={8 + chartH + 26} fontSize={9} fill="#94a3b8" textAnchor="middle">{timeLabel}</text>
+
+                                                        {/* Current session indicator */}
+                                                        {i === last5.length - 1 && (
+                                                            <text x={x + barW / 2} y={8 + chartH + 38} fontSize={8} fill="#6366f1" textAnchor="middle" fontWeight={700}>TERBARU</text>
+                                                        )}
+                                                    </g>
+                                                );
+                                            })}
+
+                                            {/* Trend line for fatigue */}
+                                            {last5.length >= 2 && (() => {
+                                                const points = last5.map((s, i) => {
+                                                    const fatigue = parseFloat(s.stats?.avgFatigue || '0');
+                                                    const x = 30 + i * (barW + barGap) + barW * 0.275;
+                                                    const y = 8 + chartH - (fatigue / maxFatigue) * chartH;
+                                                    return `${x},${y}`;
+                                                }).join(' ');
+                                                return <polyline points={points} fill="none" stroke="#6366f1" strokeWidth={1.5} strokeDasharray="4,3" opacity={0.6} />;
+                                            })()}
+                                        </svg>
+                                    </div>
+
+                                    {/* Trend insight */}
+                                    {(() => {
+                                        const scores = last5.map(s => parseFloat(s.stats?.avgFatigue || '0'));
+                                        if (scores.length < 2) return null;
+                                        const trend = scores[scores.length - 1] - scores[0];
+                                        const improving = trend < -0.5;
+                                        const worsening = trend > 0.5;
+                                        return (
+                                            <div style={{ marginTop: 12, padding: '8px 12px', borderRadius: 8, background: improving ? '#f0fdf4' : worsening ? '#fef2f2' : '#f8fafc', fontSize: 12, color: improving ? '#16a34a' : worsening ? '#dc2626' : '#64748b', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                <TrendingUp size={14} />
+                                                {improving
+                                                    ? `Tren membaik 📉 — fatigue turun ${Math.abs(trend).toFixed(1)} poin dari sesi pertama ke terbaru.`
+                                                    : worsening
+                                                    ? `Tren memburuk 📈 — fatigue naik ${trend.toFixed(1)} poin. Pertimbangkan istirahat lebih.`
+                                                    : 'Fatigue relatif stabil antar sesi.'}
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
+                            );
+                        })()}
+
                         {/* Session List */}
                         <div className="widget-card">
                             <div className="widget-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -914,24 +1120,7 @@ const Dashboard = () => {
                                             gap: '0.75rem',
                                             marginBottom: '1.5rem'
                                         }}>
-                                            <div style={{
-                                                width: '50px',
-                                                height: '50px',
-                                                borderRadius: '12px',
-                                                background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                color: 'white',
-                                                fontWeight: 'bold',
-                                                fontSize: '1.25rem'
-                                            }}>
-                                                F
-                                            </div>
-                                            <div style={{ textAlign: 'left' }}>
-                                                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 'bold', color: '#1e293b' }}>Fumorive</h2>
-                                                <p style={{ margin: 0, fontSize: '0.75rem', color: '#9ca3af' }}>Session History</p>
-                                            </div>
+                                           
                                         </div>
                                         <Calendar size={48} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
                                         <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b' }}>
@@ -1087,76 +1276,120 @@ const Dashboard = () => {
                 {/* PROFILE TAB */}
                 {activeTab === 'profile' && (
                     <div className="dashboard-content">
-                        <div className="widget-card" style={{ marginBottom: '1.5rem' }}>
-                            <div className="widget-title">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <User size={20} color="#667eea" />
-                                    <span>Profile Information</span>
+
+                        {/* ── PROFILE HEADER ─────────────────────────────── */}
+                        <div className="widget-card" style={{ marginBottom: '1.5rem', background: 'linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%)', border: '1.5px solid #dbeafe' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+                                {/* Avatar */}
+                                <div style={{
+                                    width: '80px', height: '80px', borderRadius: '50%',
+                                    background: user?.profile_picture ? '#e0e7ff' : 'linear-gradient(135deg, #6366f1, #7c3aed)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    fontSize: user?.profile_picture ? '2.5rem' : '2rem',
+                                    color: 'white', fontWeight: 800, flexShrink: 0,
+                                    boxShadow: '0 4px 15px rgba(99,102,241,0.3)'
+                                }}>
+                                    {user?.profile_picture
+                                        ? user.profile_picture
+                                        : (user?.full_name?.[0] || 'U').toUpperCase()
+                                    }
+                                </div>
+
+                                {/* Name & meta */}
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
+                                        <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: '#1e293b' }}>{user?.full_name || 'User'}</h2>
+                                        <span style={{
+                                            padding: '2px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'capitalize',
+                                            background: user?.role === 'admin' ? '#fef3c7' : user?.role === 'researcher' ? '#f0fdf4' : '#eff6ff',
+                                            color: user?.role === 'admin' ? '#92400e' : user?.role === 'researcher' ? '#15803d' : '#1d4ed8',
+                                            border: `1px solid ${user?.role === 'admin' ? '#fde68a' : user?.role === 'researcher' ? '#bbf7d0' : '#bfdbfe'}`
+                                        }}>{user?.role || 'student'}</span>
+                                        {user?.oauth_provider && (
+                                            <span style={{ padding: '2px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700, background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa' }}>
+                                                🔗 {user.oauth_provider.charAt(0).toUpperCase() + user.oauth_provider.slice(1)} OAuth
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div style={{ fontSize: '0.88rem', color: '#64748b' }}>{user?.email}</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.2rem' }}>
+                                        Bergabung {user?.created_at ? new Date(user.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' }) : '--'}
+                                    </div>
+                                </div>
+
+                                {/* Session stats */}
+                                <div style={{ display: 'flex', gap: '1.5rem', flexShrink: 0 }}>
+                                    {[
+                                        { label: 'Total Sesi', value: historyStats.totalSessions },
+                                        { label: 'Total Jam', value: `${historyStats.totalHours}j` },
+                                        { label: 'Avg Fatigue', value: historyStats.avgFatigue },
+                                    ].map(s => (
+                                        <div key={s.label} style={{ textAlign: 'center' }}>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#4f46e5' }}>{s.value}</div>
+                                            <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: 600 }}>{s.label}</div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                                {/* Personal Details */}
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem' }}>
+
+                            {/* ── EDIT PROFILE ──────────────────────────────── */}
+                            <div className="widget-card">
+                                <div className="widget-title" style={{ marginBottom: '1.25rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <User size={18} color="#6366f1" />
+                                        <span style={{ color: '#1e293b', fontWeight: 600 }}>Informasi Profil</span>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 500 }}>
-                                            Full Name
-                                        </label>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Nama Lengkap</label>
                                         <input
                                             type="text"
                                             value={fullName}
                                             onChange={(e) => setFullName(e.target.value)}
-                                            style={{
-                                                width: '100%',
-                                                padding: '12px 16px',
-                                                border: '1px solid #e2e8f0',
-                                                borderRadius: '8px',
-                                                fontSize: '1rem',
-                                                transition: 'border-color 0.2s',
-                                                marginBottom: '1rem'
-                                            }}
-                                            placeholder="Enter your name"
+                                            style={{ width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '0.95rem', color: '#1e293b', transition: 'border-color 0.2s', outline: 'none', boxSizing: 'border-box' }}
+                                            onFocus={e => e.target.style.borderColor = '#6366f1'}
+                                            onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                                            placeholder="Masukkan nama lengkap"
                                         />
-                                        <button
-                                            onClick={handleSaveProfile}
-                                            disabled={isSaving}
-                                            style={{
-                                                padding: '10px 20px',
-                                                background: '#4f46e5',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '8px',
-                                                cursor: isSaving ? 'not-allowed' : 'pointer',
-                                                fontWeight: 600,
-                                                opacity: isSaving ? 0.7 : 1
-                                            }}
-                                        >
-                                            {isSaving ? 'Saving...' : 'Save Profile'}
-                                        </button>
                                     </div>
-
                                     <div>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 500 }}>
-                                            Email Address
-                                        </label>
+                                        <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email</label>
                                         <input
                                             type="email"
                                             value={user?.email || ''}
                                             disabled
-                                            style={{
-                                                width: '100%',
-                                                padding: '12px 16px',
-                                                border: '1px solid #e2e8f0',
-                                                borderRadius: '8px',
-                                                fontSize: '1rem',
-                                                background: '#f1f5f9',
-                                                color: '#94a3b8',
-                                                cursor: 'not-allowed'
-                                            }}
+                                            style={{ width: '100%', padding: '11px 14px', border: '1.5px solid #e2e8f0', borderRadius: '8px', fontSize: '0.95rem', background: '#f8fafc', color: '#94a3b8', cursor: 'not-allowed', boxSizing: 'border-box' }}
                                         />
+                                        <p style={{ margin: '0.3rem 0 0', fontSize: '0.77rem', color: '#94a3b8' }}>Email tidak dapat diubah</p>
                                     </div>
+                                    {profileSuccess && (
+                                        <div style={{ padding: '10px 14px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', fontSize: '0.875rem', color: '#15803d', fontWeight: 600 }}>
+                                            ✓ {profileSuccess}
+                                        </div>
+                                    )}
+
+                                    <button
+                                        onClick={handleSaveProfile}
+                                        disabled={isSaving || fullName === user?.full_name}
+                                        style={{
+                                            padding: '11px 20px', background: 'linear-gradient(135deg, #6366f1, #7c3aed)',
+                                            color: 'white', border: 'none', borderRadius: '8px',
+                                            cursor: (isSaving || fullName === user?.full_name) ? 'not-allowed' : 'pointer',
+                                            fontWeight: 700, fontSize: '0.95rem',
+                                            opacity: (isSaving || fullName === user?.full_name) ? 0.6 : 1,
+                                            transition: 'opacity 0.2s'
+                                        }}
+                                    >
+                                        {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
+                                    </button>
                                 </div>
                             </div>
                         </div>
+
                     </div>
                 )}
 
@@ -1164,102 +1397,72 @@ const Dashboard = () => {
                 {activeTab === 'settings' && (
                     <div className="dashboard-content">
 
-                        {/* Device Settings */}
-                        {/* Device Settings */}
-                        <div className="widget-card" style={{ marginBottom: '1.5rem' }}>
-                            <div className="widget-title">
+                        {/* Device Configuration */}
+                        <div className="widget-card" style={{ marginBottom: '1.5rem', borderLeft: '4px solid #3b82f6' }}>
+                            <div className="widget-title" style={{ marginBottom: '0.5rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                     <Activity size={20} color="#3b82f6" />
-                                    <span>Device Configuration</span>
+                                    <span style={{ color: '#1e293b', fontWeight: 600 }}>Konfigurasi Perangkat</span>
                                 </div>
+                                <span style={{ fontSize: '0.75rem', padding: '3px 10px', background: '#eff6ff', color: '#1d4ed8', borderRadius: '999px', fontWeight: 600 }}>Info Only</span>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                {/* EEG Headset */}
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 500 }}>
-                                        EEG Headset (Muse2)
-                                    </label>
-                                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                        <select style={{ flex: 1, padding: '10px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.9rem' }}>
-                                            <option>Not Connected</option>
-                                            <option>Muse-12AB</option>
-                                            <option>Muse-34CD</option>
-                                        </select>
-                                        <button style={{ padding: '10px 20px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
-                                            Connect
-                                        </button>
+                            <div style={{ padding: '0.75rem 1rem', background: '#eff6ff', borderRadius: '8px', marginBottom: '1.25rem', fontSize: '0.82rem', color: '#1e40af', lineHeight: 1.6 }}>
+                                ⓘ Konfigurasi hardware EEG & sampling rate dikelola langsung di <code style={{ background: '#dbeafe', padding: '1px 5px', borderRadius: '4px' }}>eeg-processing/config.py</code> dan dijalankan via terminal. Frontend tidak dapat mengontrol hardware secara langsung.
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {[
+                                    { label: 'EEG Headset', value: isConnected ? 'Muse 2 — Terhubung via LSL' : 'Muse 2 — Belum Terhubung', valueColor: isConnected ? '#16a34a' : '#94a3b8', desc: 'Hubungkan dengan menjalankan: python server.py --session-id <ID>' },
+                                    { label: 'Sampling Rate', value: '256 Hz (Muse 2 default)', valueColor: '#1e293b', desc: 'Diatur di eeg-processing/config.py → SAMPLING_RATE = 256.0' },
+                                    { label: 'Filter Frekuensi', value: '1–40 Hz (Bandpass)', valueColor: '#1e293b', desc: 'Diatur di config.py → LOWCUT_FREQ = 1.0, HIGHCUT_FREQ = 40.0' },
+                                    { label: 'Notch Filter', value: '50 Hz (PLI Indonesia)', valueColor: '#1e293b', desc: 'Diatur di config.py → NOTCH_FREQ = 50.0' },
+                                ].map(row => (
+                                    <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', padding: '0.75rem', background: '#f8fafc', borderRadius: '8px' }}>
+                                        <div>
+                                            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e293b' }}>{row.label}</div>
+                                            <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '2px' }}>{row.desc}</div>
+                                        </div>
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: row.valueColor, whiteSpace: 'nowrap', flexShrink: 0 }}>{row.value}</span>
                                     </div>
-                                    <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
-                                        Device will connect via LSL (Lab Streaming Layer)
-                                    </p>
-                                </div>
-
-                                {/* Camera */}
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 500 }}>
-                                        Camera Device
-                                    </label>
-                                    <select style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.9rem' }}>
-                                        <option>Built-in Camera</option>
-                                        <option>External Webcam</option>
-                                    </select>
-                                </div>
-
-                                {/* Sampling Rate */}
-                                <div>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 500 }}>
-                                        EEG Sampling Rate
-                                    </label>
-                                    <select style={{ width: '100%', padding: '10px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.9rem' }}>
-                                        <option>256 Hz (Recommended)</option>
-                                        <option>512 Hz (High Quality)</option>
-                                        <option>128 Hz (Low Power)</option>
-                                    </select>
-                                </div>
+                                ))}
                             </div>
                         </div>
 
                         {/* Detection Thresholds */}
                         <div className="widget-card" style={{ marginBottom: '1.5rem' }}>
-                            <div className="widget-title">
+                            <div className="widget-title" style={{ marginBottom: '0.5rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                     <Sliders size={20} color="#f59e0b" />
-                                    <span>Detection Thresholds</span>
+                                    <span style={{ color: '#1e293b', fontWeight: 600 }}>Ambang Batas Deteksi</span>
                                 </div>
                             </div>
+                            <div style={{ padding: '0.75rem 1rem', background: '#fffbeb', borderRadius: '8px', marginBottom: '1.25rem', fontSize: '0.82rem', color: '#92400e', lineHeight: 1.6 }}>
+                                ⓘ <strong>Warning & Critical</strong> mempengaruhi <strong>warna tampilan</strong> grafik fatigue score di Dashboard (hijau → kuning → merah).
+                                Threshold ini <strong>tidak</strong> mengubah klasifikasi EEG server — klasifikasi di server tetap: ≥40 = drowsy, ≥70 = fatigued (diatur di <code style={{ background: '#fef3c7', padding: '1px 5px', borderRadius: '4px' }}>eeg-processing/server.py</code>).
+                                <br />PERCLOS dikelola sepenuhnya oleh backend, tidak dibaca dari sini.
+                            </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                <div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                        <label style={{ fontSize: '0.9rem', fontWeight: 500 }}>Warning Threshold</label>
-                                        <span style={{ fontSize: '0.9rem', color: '#64748b' }}>60%</span>
+                                {[
+                                    { key: 'warningThreshold',  label: 'Warning Threshold',  color: '#f59e0b', scope: '🖥 Tampilan dashboard' },
+                                    { key: 'criticalThreshold', label: 'Critical Threshold',  color: '#ef4444', scope: '🖥 Tampilan dashboard' },
+                                    { key: 'perClosThreshold',  label: 'PERCLOS Threshold',   color: '#8b5cf6', scope: '🔒 Info only — dikelola backend' },
+                                ].map(t => (
+                                    <div key={t.key}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                                            <div>
+                                                <label style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1e293b' }}>{t.label}</label>
+                                                <span style={{ marginLeft: '8px', fontSize: '0.72rem', color: t.key === 'perClosThreshold' ? '#94a3b8' : '#64748b' }}>{t.scope}</span>
+                                            </div>
+                                            <span style={{ fontSize: '0.9rem', fontWeight: 700, color: t.color }}>{settings[t.key]}%</span>
+                                        </div>
+                                        <input
+                                            type="range" min="0" max="100"
+                                            value={settings[t.key]}
+                                            onChange={e => updateSetting(t.key, Number(e.target.value))}
+                                            disabled={t.key === 'perClosThreshold'}
+                                            style={{ width: '100%', accentColor: t.color, opacity: t.key === 'perClosThreshold' ? 0.4 : 1, cursor: t.key === 'perClosThreshold' ? 'not-allowed' : 'pointer' }}
+                                        />
                                     </div>
-                                    <input type="range" min="0" max="100" defaultValue="60" style={{ width: '100%' }} />
-                                    <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
-                                        Show warning when fatigue score reaches this level
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                        <label style={{ fontSize: '0.9rem', fontWeight: 500 }}>Critical Threshold</label>
-                                        <span style={{ fontSize: '0.9rem', color: '#64748b' }}>80%</span>
-                                    </div>
-                                    <input type="range" min="0" max="100" defaultValue="80" style={{ width: '100%' }} />
-                                    <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
-                                        Show critical alert when fatigue score reaches this level
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                        <label style={{ fontSize: '0.9rem', fontWeight: 500 }}>PERCLOS Threshold</label>
-                                        <span style={{ fontSize: '0.9rem', color: '#64748b' }}>80%</span>
-                                    </div>
-                                    <input type="range" min="0" max="100" defaultValue="80" style={{ width: '100%' }} />
-                                    <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>
-                                        Percentage of eye closure to trigger fatigue detection
-                                    </p>
-                                </div>
+                                ))}
                             </div>
                         </div>
 
@@ -1269,22 +1472,28 @@ const Dashboard = () => {
                                 <div className="widget-title">
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <Bell size={20} color="#10b981" />
-                                        <span>Notifications</span>
+                                        <span style={{ color: '#1e293b', fontWeight: 600 }}>Notifikasi</span>
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                                        <input type="checkbox" defaultChecked />
-                                        <span style={{ fontSize: '0.9rem' }}>Audio Alerts</span>
-                                    </label>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                                        <input type="checkbox" defaultChecked />
-                                        <span style={{ fontSize: '0.9rem' }}>Visual Effects</span>
-                                    </label>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                                        <input type="checkbox" />
-                                        <span style={{ fontSize: '0.9rem' }}>Haptic Feedback</span>
-                                    </label>
+                                    {([
+                                        { key: 'audioAlerts',        label: 'Audio Alerts',         desc: 'Bunyi peringatan saat kelelahan terdeteksi' },
+                                        { key: 'visualEffects',      label: 'Visual Effects',        desc: 'Efek visual overlay pada layar game' },
+                                        { key: 'hapticFeedback',     label: 'Haptic Feedback',       desc: 'Getar perangkat (jika didukung)' },
+                                    ] as const).map(n => (
+                                        <label key={n.key} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={settings[n.key]}
+                                                onChange={e => updateSetting(n.key, e.target.checked)}
+                                                style={{ marginTop: '3px', accentColor: '#10b981' }}
+                                            />
+                                            <div>
+                                                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1e293b' }}>{n.label}</div>
+                                                <div style={{ fontSize: '0.78rem', color: '#64748b' }}>{n.desc}</div>
+                                            </div>
+                                        </label>
+                                    ))}
                                 </div>
                             </div>
 
@@ -1293,20 +1502,33 @@ const Dashboard = () => {
                                 <div className="widget-title">
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <Shield size={20} color="#8b5cf6" />
-                                        <span>Data & Privacy</span>
+                                        <span style={{ color: '#1e293b', fontWeight: 600 }}>Data & Privasi</span>
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                                        <input type="checkbox" defaultChecked />
-                                        <span style={{ fontSize: '0.9rem' }}>Save Session Data</span>
-                                    </label>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                                        <input type="checkbox" />
-                                        <span style={{ fontSize: '0.9rem' }}>Share Anonymous Data</span>
-                                    </label>
-                                    <button style={{ marginTop: '0.5rem', padding: '8px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '0.9rem' }}>
-                                        Export All Data
+                                    {([
+                                        { key: 'saveSessionData',       label: 'Simpan Data Sesi',        desc: 'Riwayat sesi disimpan di localStorage' },
+                                        { key: 'shareAnonymousData',    label: 'Bagikan Data Anonim',      desc: 'Kirim data tanpa identitas untuk penelitian' },
+                                    ] as const).map(n => (
+                                        <label key={n.key} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={settings[n.key]}
+                                                onChange={e => updateSetting(n.key, e.target.checked)}
+                                                style={{ marginTop: '3px', accentColor: '#8b5cf6' }}
+                                            />
+                                            <div>
+                                                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#1e293b' }}>{n.label}</div>
+                                                <div style={{ fontSize: '0.78rem', color: '#64748b' }}>{n.desc}</div>
+                                            </div>
+                                        </label>
+                                    ))}
+                                    <button
+                                        onClick={handleExportData}
+                                        disabled={sessionHistory.length === 0}
+                                        style={{ marginTop: '0.5rem', padding: '9px 16px', border: '1px solid #8b5cf6', borderRadius: '8px', background: 'white', cursor: sessionHistory.length === 0 ? 'not-allowed' : 'pointer', fontSize: '0.9rem', color: '#8b5cf6', fontWeight: 600, opacity: sessionHistory.length === 0 ? 0.5 : 1 }}
+                                    >
+                                        ⬇ Export Semua Data (.json)
                                     </button>
                                 </div>
                             </div>
@@ -1316,22 +1538,21 @@ const Dashboard = () => {
                                 <div className="widget-title">
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <Info size={20} color="#64748b" />
-                                        <span>System Info</span>
+                                        <span style={{ color: '#1e293b', fontWeight: 600 }}>Info Sistem</span>
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.9rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span style={{ color: '#64748b' }}>Version</span>
-                                        <span style={{ fontWeight: 500 }}>1.0.0</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span style={{ color: '#64748b' }}>Backend</span>
-                                        <span style={{ fontWeight: 500, color: '#ef4444' }}>Offline</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span style={{ color: '#64748b' }}>LSL Status</span>
-                                        <span style={{ fontWeight: 500, color: '#ef4444' }}>Not Connected</span>
-                                    </div>
+                                    {[
+                                        { label: 'Versi Aplikasi', value: '1.0.0',   valueColor: '#1e293b' },
+                                        { label: 'Backend',        value: 'FastAPI (localhost:8000)', valueColor: '#1e293b' },
+                                        { label: 'EEG / LSL',      value: isConnected ? 'Terhubung' : 'Tidak Terhubung', valueColor: isConnected ? '#16a34a' : '#ef4444' },
+                                        { label: 'EEG Server',     value: 'localhost:8765 (WS)',     valueColor: '#1e293b' },
+                                    ].map(row => (
+                                        <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ color: '#64748b' }}>{row.label}</span>
+                                            <span style={{ fontWeight: 600, color: row.valueColor }}>{row.value}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
@@ -1340,20 +1561,24 @@ const Dashboard = () => {
                                 <div className="widget-title">
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                         <Database size={20} color="#06b6d4" />
-                                        <span>Database</span>
+                                        <span style={{ color: '#1e293b', fontWeight: 600 }}>Penyimpanan Lokal</span>
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.9rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span style={{ color: '#64748b' }}>Storage Used</span>
-                                        <span style={{ fontWeight: 500 }}>0 MB</span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ color: '#64748b' }}>Storage Digunakan</span>
+                                        <span style={{ fontWeight: 600, color: '#1e293b' }}>{storageUsedKB} KB</span>
                                     </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <span style={{ color: '#64748b' }}>Sessions Stored</span>
-                                        <span style={{ fontWeight: 500 }}>0</span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ color: '#64748b' }}>Sesi Tersimpan</span>
+                                        <span style={{ fontWeight: 600, color: '#1e293b' }}>{sessionHistory.length}</span>
                                     </div>
-                                    <button style={{ marginTop: '0.5rem', padding: '8px 16px', border: '1px solid #e2e8f0', borderRadius: '8px', background: 'white', cursor: 'pointer', fontSize: '0.9rem', color: '#ef4444' }}>
-                                        Clear All Data
+                                    <button
+                                        onClick={handleClearAllData}
+                                        disabled={sessionHistory.length === 0}
+                                        style={{ marginTop: '0.5rem', padding: '9px 16px', border: '1px solid #fecaca', borderRadius: '8px', background: '#fff1f2', cursor: sessionHistory.length === 0 ? 'not-allowed' : 'pointer', fontSize: '0.9rem', color: '#ef4444', fontWeight: 600, opacity: sessionHistory.length === 0 ? 0.5 : 1 }}
+                                    >
+                                        🗑 Hapus Semua Data
                                     </button>
                                 </div>
                             </div>

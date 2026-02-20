@@ -4,7 +4,6 @@ import './EEGMonitoringWidget.css'
 import { useEEGStore } from '../stores/eegStore'
 import { useEEGWebSocket } from '../hooks/useEEGWebSocket'
 import { useAlertStore } from '../stores/alertStore'
-import { AlertNotification } from './AlertNotification'
 
 interface EEGMonitoringWidgetProps {
   sessionId: string
@@ -124,7 +123,6 @@ export const EEGMonitoringWidget: React.FC<EEGMonitoringWidgetProps> = ({
 
   return (
     <>
-      <AlertNotification />
       <div
         className="eeg-widget"
         style={{
@@ -286,6 +284,40 @@ export const EEGMonitoringWidget: React.FC<EEGMonitoringWidgetProps> = ({
                   </div>
                 </div>
 
+                {/* Signal Quality Indicator */}
+                {(() => {
+                  const quality = (currentMetrics.signalQuality || 0) * 100
+                  const qColor = quality >= 70 ? '#10b981' : quality >= 40 ? '#f59e0b' : '#ef4444'
+                  const qLabel = quality >= 70 ? 'Good' : quality >= 40 ? 'Fair' : 'Poor'
+                  return (
+                    <div style={{ padding: '6px 8px', borderTop: '1px solid #1e293b' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, letterSpacing: '0.5px' }}>SIGNAL QUALITY</span>
+                        <span style={{ fontSize: 11, color: qColor, fontWeight: 700 }}>{qLabel} · {quality.toFixed(0)}%</span>
+                      </div>
+                      <div style={{ height: 5, background: '#1e293b', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{
+                          height: '100%',
+                          width: `${quality}%`,
+                          background: qColor,
+                          borderRadius: 3,
+                          transition: 'width 0.4s, background 0.4s',
+                          boxShadow: `0 0 6px ${qColor}88`,
+                        }} />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+                        {[
+                          { label: '●', active: quality < 40, color: '#ef4444', title: 'Poor' },
+                          { label: '●', active: quality >= 40 && quality < 70, color: '#f59e0b', title: 'Fair' },
+                          { label: '●', active: quality >= 70, color: '#10b981', title: 'Good' },
+                        ].map((dot, i) => (
+                          <span key={i} title={dot.title} style={{ fontSize: 8, color: dot.active ? dot.color : '#334155', transition: 'color 0.3s' }}>{dot.label}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
+
                 {/* Indicators */}
                 <div className="eeg-widget-indicators">
                   <div className="indicator">
@@ -295,9 +327,9 @@ export const EEGMonitoringWidget: React.FC<EEGMonitoringWidgetProps> = ({
                     </span>
                   </div>
                   <div className="indicator">
-                    <span className="indicator-name">Quality</span>
+                    <span className="indicator-name">β/α</span>
                     <span className="indicator-value">
-                      {((currentMetrics.signalQuality || 0) * 100).toFixed(0)}%
+                      {(currentMetrics.betaAlphaRatio || 0).toFixed(3)}
                     </span>
                   </div>
                 </div>

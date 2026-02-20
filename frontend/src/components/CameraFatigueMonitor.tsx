@@ -15,14 +15,17 @@ import {
 } from '../utils/faceUtils';
 import { faceApi } from '../api/face';
 import { sessionApi } from '../api/session';
+import { useAlertStore } from '../stores/alertStore';
 import './CameraFatigueMonitor.css';
 
 interface CameraFatigueMonitorProps {
     isEnabled: boolean;
     onToggle: () => void;
+    onFatigueScoreChange?: (score: number) => void;
 }
 
-export function CameraFatigueMonitor({ isEnabled, onToggle }: CameraFatigueMonitorProps) {
+export function CameraFatigueMonitor({ isEnabled, onToggle, onFatigueScoreChange }: CameraFatigueMonitorProps) {
+    const addAlert = useAlertStore((state) => state.addAlert);
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const faceMeshRef = useRef<FaceMesh | null>(null);
@@ -230,6 +233,9 @@ export function CameraFatigueMonitor({ isEnabled, onToggle }: CameraFatigueMonit
             setFatigueScore(currentFatigue);
             setBlinkRate(currentBlinkRate);
 
+            // Expose fatigue score to parent
+            onFatigueScoreChange?.(currentFatigue);
+
             // Check for drowsiness alert
             checkDrowsinessAlert(currentFatigue, currentPERCLOS);
 
@@ -311,6 +317,15 @@ export function CameraFatigueMonitor({ isEnabled, onToggle }: CameraFatigueMonit
             setAlertMessage(message);
             setShowAlert(true);
             lastAlertTime.current = now;
+
+            // Also push to global alertStore (for AlertNotification component)
+            addAlert({
+                timestamp: new Date().toISOString(),
+                level: fatigue >= 75 ? 'critical' : 'warning',
+                fatigueScore: fatigue,
+                eegContribution: 0,
+                reason: `[Camera] ${message}`,
+            });
 
             // Auto-hide alert after 3 seconds
             setTimeout(() => setShowAlert(false), 3000);

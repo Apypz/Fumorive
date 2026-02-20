@@ -3,7 +3,7 @@
  * API calls for authentication (register, login, logout, refresh)
  */
 
-import { AUTH_ENDPOINTS, API_URL } from '../config/api';
+import { AUTH_ENDPOINTS, API_URL, USER_ENDPOINTS } from '../config/api';
 import { apiClient } from './client';
 import { saveTokens, clearTokens } from '../utils/auth';
 
@@ -33,6 +33,7 @@ export interface UserResponse {
     is_active: boolean;
     created_at: string;
     profile_picture?: string;
+    oauth_provider?: string;
 }
 
 /**
@@ -118,9 +119,43 @@ export const authService = {
      */
     updateProfile: async (data: Partial<UserResponse>): Promise<UserResponse> => {
         const response = await apiClient.put<UserResponse>(
-            `${API_URL}/users/me`,
+            USER_ENDPOINTS.ME,
             data
         );
         return response;
+    },
+
+    /**
+     * Change password (email users only)
+     */
+    changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+        await apiClient.post(
+            USER_ENDPOINTS.CHANGE_PASSWORD,
+            { current_password: currentPassword, new_password: newPassword }
+        );
+    },
+
+    /**
+     * Request a password reset code.
+     * Returns { message, dev_token? } — dev_token is only present in demo mode.
+     */
+    forgotPassword: async (email: string): Promise<{ message: string; dev_token?: string }> => {
+        const response = await apiClient.post<{ message: string; dev_token?: string }>(
+            AUTH_ENDPOINTS.FORGOT_PASSWORD,
+            { email },
+            false
+        );
+        return response;
+    },
+
+    /**
+     * Reset password using the 6-digit code
+     */
+    resetPassword: async (email: string, token: string, newPassword: string): Promise<void> => {
+        await apiClient.post(
+            AUTH_ENDPOINTS.RESET_PASSWORD,
+            { email, token, new_password: newPassword },
+            false
+        );
     }
 };

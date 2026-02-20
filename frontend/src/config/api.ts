@@ -14,6 +14,14 @@ export const AUTH_ENDPOINTS = {
   LOGIN: `${API_URL}/auth/login/json`,
   LOGOUT: `${API_URL}/auth/logout`,
   REFRESH: `${API_URL}/auth/refresh`,
+  FORGOT_PASSWORD: `${API_URL}/auth/forgot-password`,
+  RESET_PASSWORD: `${API_URL}/auth/reset-password`,
+} as const;
+
+// User Endpoints
+export const USER_ENDPOINTS = {
+  ME: `${API_URL}/users/me`,
+  CHANGE_PASSWORD: `${API_URL}/users/me/change-password`,
 } as const;
 
 // Session Endpoints
