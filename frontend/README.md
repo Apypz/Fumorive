@@ -71,3 +71,25 @@ export default defineConfig([
   },
 ])
 ```
+
+---
+
+## City map demo (new)
+
+A small canvas-based `CityMap` component has been added at `src/components/CityMap.tsx`. It generates a grid-based city with primary/secondary roads, computes shortest routes between random intersections, and draws a boundary around the map.
+
+Usage example:
+
+```tsx
+import CityMap from './components/CityMap';
+
+// inside a component
+<CityMap cols={18} rows={10} cellSize={28} numRoutes={3} />
+```
+
+Props you can tweak: `cols`, `rows`, `cellSize`, `primarySpacing`, `secondaryProb`, `numRoutes`.
+
+This is intended for demo/prototyping and can be extended to export route data, add landmarks, or convert to a graph data structure for pathfinding or gameplay.
+
+Additionally, a 3D map generator is available at `src/game/components/MapGenerator.ts`. It converts a grid into Babylon meshes (roads, buildings, boundary walls) and is integrated into `DemoScene` so the game scene shows a city layout at runtime.
+

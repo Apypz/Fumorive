@@ -1,0 +1,108 @@
+erDiagram
+    %% ERGODRIVE Database Schema - PostgreSQL + TimescaleDB
+    %% Backend Developer: Database Design
+    %% Date: 13 Januari 2026
+
+    USERS ||--o{ SESSIONS : "creates"
+    SESSIONS ||--o{ EEG_DATA : "records"
+    SESSIONS ||--o{ FACE_DETECTION_EVENTS : "logs"
+    SESSIONS ||--o{ GAME_EVENTS : "tracks"
+    SESSIONS ||--o{ ALERTS : "triggers"
+
+    USERS {
+        uuid id PK "Primary Key"
+        varchar email UK "Unique, required"
+        varchar hashed_password "Bcrypt hashed"
+        varchar full_name "User's full name"
+        varchar role "student, researcher, admin"
+        boolean is_active "Account status"
+        timestamp created_at "Account creation time"
+        timestamp updated_at "Last update time"
+    }
+
+    SESSIONS {
+        uuid id PK "Primary Key"
+        uuid user_id FK "Foreign Key to USERS"
+        varchar session_name "User-defined name"
+        varchar device_type "Muse 2, OpenBCI, etc."
+        varchar session_status "active, completed, failed"
+        jsonb calibration_data "Baseline calibration parameters"
+        jsonb settings "Game settings, thresholds"
+        timestamp started_at "Session start time"
+        timestamp ended_at "Session end time (nullable)"
+        integer duration_seconds "Total duration"
+        float avg_fatigue_score "Average fatigue (0-100)"
+        float max_fatigue_score "Peak fatigue score"
+        integer alert_count "Total alerts triggered"
+    }
+
+    EEG_DATA {
+        bigserial id PK "Auto-increment ID"
+        uuid session_id FK "Foreign Key to SESSIONS"
+        timestamptz timestamp "TimescaleDB time dimension"
+        jsonb raw_channels "Raw EEG channels (AF7, AF8, TP9, TP10)"
+        float delta_power "Delta band (1-4 Hz)"
+        float theta_power "Theta band (4-8 Hz)"
+        float alpha_power "Alpha band (8-13 Hz)"
+        float beta_power "Beta band (13-30 Hz)"
+        float gamma_power "Gamma band (30-50 Hz)"
+        float theta_alpha_ratio "Drowsiness indicator"
+        float beta_alpha_ratio "Engagement index"
+        float signal_quality "0-1, electrode quality"
+        varchar cognitive_state "alert, drowsy, fatigued"
+        float eeg_fatigue_score "EEG-only fatigue (0-100)"
+    }
+
+    FACE_DETECTION_EVENTS {
+        bigserial id PK "Auto-increment ID"
+        uuid session_id FK "Foreign Key to SESSIONS"
+        timestamptz timestamp "Event timestamp"
+        float eye_aspect_ratio "EAR value"
+        float mouth_aspect_ratio "MAR value"
+        boolean eyes_closed "Eye closure detected"
+        boolean yawning "Yawn detected"
+        integer blink_count "Cumulative blinks"
+        float blink_rate "Blinks per minute"
+        float head_yaw "Head rotation Y"
+        float head_pitch "Head rotation X"
+        float head_roll "Head rotation Z"
+        float face_fatigue_score "Face-only fatigue (0-100)"
+    }
+
+    GAME_EVENTS {
+        bigserial id PK "Auto-increment ID"
+        uuid session_id FK "Foreign Key to SESSIONS"
+        timestamptz timestamp "Event timestamp"
+        varchar event_type "lane_deviation, collision, brake, obstacle"
+        jsonb event_data "Event-specific data (JSON)"
+        float speed "Vehicle speed (km/h)"
+        float lane_deviation "Distance from center (meters)"
+        varchar weather "clear, rain, fog"
+        varchar time_of_day "day, night, sunset"
+    }
+
+    ALERTS {
+        bigserial id PK "Auto-increment ID"
+        uuid session_id FK "Foreign Key to SESSIONS"
+        timestamptz timestamp "Alert triggered time"
+        varchar alert_level "warning, critical"
+        float fatigue_score "Combined fatigue (0-100)"
+        float eeg_contribution "EEG weight (default 60%)"
+        float face_contribution "Face weight (default 40%)"
+        varchar trigger_reason "high_theta_alpha, eyes_closed, yawning"
+        boolean acknowledged "User acknowledged alert"
+    }
+
+    %% TimescaleDB Hypertables (Time-series optimized)
+    %% - EEG_DATA: partitioned by timestamp (high-frequency data)
+    %% - FACE_DETECTION_EVENTS: partitioned by timestamp
+    %% - GAME_EVENTS: partitioned by timestamp
+    %% - ALERTS: partitioned by timestamp
+
+    %% Indexes for Performance
+    %% - USERS: idx_users_email (unique)
+    %% - SESSIONS: idx_sessions_user_id, idx_sessions_status
+    %% - EEG_DATA: idx_eeg_session_timestamp (composite)
+    %% - FACE_DETECTION_EVENTS: idx_face_session_timestamp
+    %% - GAME_EVENTS: idx_game_session_timestamp
+    %% - ALERTS: idx_alerts_session_timestamp
