@@ -4,7 +4,7 @@ FastAPI dependencies for authentication and database
 Week 2, Wednesday - Updated with Redis caching
 """
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -130,6 +130,42 @@ async def get_current_user(
     print(f"[OK] get_current_user completed successfully")
     print("="*50 + "\n")
     return user
+
+
+async def get_eeg_or_user_auth(
+    request: Request,
+    token: Optional[str] = Depends(OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)),
+    db: Session = Depends(get_db),
+):
+    """
+    Dual auth dependency for EEG endpoints.
+    
+    Accepts EITHER:
+    1. X-EEG-API-Key header (for EEG server process) — no JWT needed
+    2. Standard Bearer JWT token (for browser/frontend)
+    
+    Returns the authenticated User or a sentinel string "eeg_internal".
+    """
+    from app.core.config import settings
+    
+    # Check internal API key first
+    eeg_key = request.headers.get("X-EEG-API-Key")
+    if eeg_key:
+        if eeg_key == settings.EEG_INTERNAL_KEY:
+            return "eeg_internal"
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid EEG API key",
+        )
+    
+    # Fall back to JWT auth
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return await get_current_user(token=token, db=db)
 
 
 async def get_current_active_user(

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserStore } from '@/stores/userStore'
+import { useSessionStore } from '@/stores/sessionStore'
 import { EEGDashboard } from '@/components/EEGDashboard'
 import './EEGMonitoringPage.css'
 
@@ -16,8 +17,8 @@ import './EEGMonitoringPage.css'
  */
 export const EEGMonitoringPage: React.FC = () => {
   const navigate = useNavigate()
-  const sessionId = useUserStore((state) => state.sessionId)
-  const userId = useUserStore((state) => state.userId)
+  const sessionId = useSessionStore((state: any) => state.sessionId)
+  const userId = useUserStore((state: any) => state.user?.uid ?? '')
 
   const [cognitiveState, setCognitiveState] = useState<'alert' | 'drowsy' | 'fatigued'>('alert')
   const [stateHistory, setStateHistory] = useState<Array<{ timestamp: Date; state: string }>>([])

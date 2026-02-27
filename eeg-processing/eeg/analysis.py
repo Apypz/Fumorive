@@ -11,6 +11,7 @@ EEG Markers untuk Driving:
 - NORMAL:   Balanced ratios → semua ratio mendekati 1.0
 """
 
+import time
 import numpy as np
 from typing import Dict, Any, Optional
 from collections import deque, Counter
@@ -53,6 +54,20 @@ class CognitiveAnalyzer:
         }
     }
 
+    # =========================
+    # HYSTERESIS CONFIG
+    # =========================
+    # Each state has ENTRY (higher, harder to enter) and EXIT (lower, easier to exit)
+    # thresholds. The system must exceed ENTRY to switch into a state, but can
+    # only leave when it falls below EXIT — preventing rapid flickering.
+    HYSTERESIS = {
+        "fatigue":  {"entry": 0.60, "exit": 0.40, "hold_sec": 4.0},
+        "stress":   {"entry": 0.70, "exit": 0.45, "hold_sec": 3.0},
+        "focused":  {"entry": 0.55, "exit": 0.30, "hold_sec": 2.0},
+        "relaxed":  {"entry": 0.50, "exit": 0.30, "hold_sec": 2.0},
+        "normal":   {"entry": 0.00, "exit": 0.00, "hold_sec": 1.0},  # always enterable
+    }
+
     def __init__(self, history_size: int = 5):
         """
         Initialize cognitive analyzer.
@@ -89,6 +104,18 @@ class CognitiveAnalyzer:
         
         # Stability tracking
         self._variability_history: deque = deque(maxlen=10)
+
+        # ---- Hysteresis state ----
+        # Current confirmed state (what we report to the outside world)
+        self._current_state: str = "normal"
+        # Timestamp when current state was last confirmed/entered
+        self._state_entered_at: float = time.time()
+        # Candidate state being evaluated (must persist before promotion)
+        self._candidate_state: str = "normal"
+        # How many consecutive analysis cycles the candidate has been seen
+        self._candidate_streak: int = 0
+        # Minimum consecutive cycles before a candidate state is promoted
+        self._CANDIDATE_MIN_STREAK: int = 2
 
     # =========================
     # CALIBRATION
@@ -286,40 +313,91 @@ class CognitiveAnalyzer:
 
     def _select_state(self, scores: Dict[str, float]) -> tuple:
         """
-        Select final state based on scores.
-        
+        Select final state using full hysteresis.
+
+        Algorithm:
+        1. Priority override — fatigue/stress can override immediately if
+           their score exceeds a high safety threshold.
+        2. Hold timer — the current state is "locked" for at least
+           HYSTERESIS[state]['hold_sec'] seconds before any transition.
+        3. Exit threshold — the current state is only abandoned when its
+           score drops below EXIT threshold.
+        4. Entry threshold — a candidate state must exceed its ENTRY
+           threshold AND persist for _CANDIDATE_MIN_STREAK cycles before
+           becoming the new current state.
+
         Returns (state_name, confidence)
         """
-        # Priority order for safety:
-        # 1. Fatigue (most dangerous for driving)
-        # 2. Stress (can impair judgment)
-        # 3. Others
-        
-        # If fatigue score is high enough, prioritize it
-        if scores["fatigue"] > 0.6:
-            return "fatigue", scores["fatigue"]
-        
-        # If stress is very high, prioritize it
-        if scores["stress"] > 0.7:
-            return "stress", scores["stress"]
-        
-        # Otherwise, pick highest score
-        best_state = max(scores, key=scores.get)
-        confidence = scores[best_state]
-        
-        # Apply majority voting for stability
-        self._state_history.append(best_state)
-        
-        if len(self._state_history) >= 3:
-            # Count recent states
-            recent = list(self._state_history)[-3:]
-            counts = Counter(recent)
-            voted_state, count = counts.most_common(1)[0]
-            # Only override if majority agrees
-            if count >= 2:
-                best_state = voted_state
-        
-        return best_state, confidence
+        now = time.time()
+        held_secs = now - self._state_entered_at
+        hyst = self.HYSTERESIS
+
+        # Record raw best for majority-vote history
+        raw_best = max(scores, key=scores.get)
+        self._state_history.append(raw_best)
+
+        # ── 1. SAFETY PRIORITY OVERRIDE ─────────────────────────────────
+        # Critical states (fatigue/stress) can break the hold timer via a
+        # very high score — safety takes precedence over stability.
+        if scores["fatigue"] >= 0.80 and self._current_state != "fatigue":
+            self._promote("fatigue", now)
+            return self._current_state, scores["fatigue"]
+
+        if scores["stress"] >= 0.85 and self._current_state != "stress":
+            self._promote("stress", now)
+            return self._current_state, scores["stress"]
+
+        # ── 2. HOLD TIMER ────────────────────────────────────────────────
+        # Don't allow any transition until the minimum hold time has passed.
+        min_hold = hyst[self._current_state]["hold_sec"]
+        if held_secs < min_hold:
+            return self._current_state, scores.get(self._current_state, 0.5)
+
+        # ── 3. EXIT CHECK ─────────────────────────────────────────────────
+        # Is the current state's score still above its EXIT threshold?
+        exit_thresh = hyst[self._current_state]["exit"]
+        current_score = scores.get(self._current_state, 0.0)
+        if current_score >= exit_thresh:
+            # Still comfortable in current state — stay.
+            self._candidate_state = self._current_state
+            self._candidate_streak = 0
+            return self._current_state, current_score
+
+        # ── 4. CANDIDATE PROMOTION ────────────────────────────────────────
+        # Find the best candidate (excluding the state we're leaving).
+        # Priority order for safety: fatigue > stress > others.
+        priority = ["fatigue", "stress", "focused", "relaxed", "normal"]
+        candidate = "normal"
+        candidate_score = 0.0
+        for state in priority:
+            if state == self._current_state:
+                continue
+            if scores[state] >= hyst[state]["entry"]:
+                candidate = state
+                candidate_score = scores[state]
+                break
+
+        if candidate == self._candidate_state:
+            self._candidate_streak += 1
+        else:
+            # New candidate — reset streak
+            self._candidate_state = candidate
+            self._candidate_streak = 1
+
+        # Promote once the candidate has been consistent enough
+        if self._candidate_streak >= self._CANDIDATE_MIN_STREAK:
+            self._promote(candidate, now)
+            return self._current_state, candidate_score
+
+        # Not yet promoted — stay in current state
+        return self._current_state, current_score
+
+    def _promote(self, new_state: str, now: float) -> None:
+        """Transition to a new state and reset hysteresis timers."""
+        self._current_state = new_state
+        self._state_entered_at = now
+        self._candidate_state = new_state
+        self._candidate_streak = 0
 
     # =========================
     # MAIN ANALYSIS

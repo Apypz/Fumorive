@@ -32,6 +32,7 @@ export function CameraFatigueMonitor({ isEnabled, onToggle, onFatigueScoreChange
     const cameraRef = useRef<MediaPipeCamera | null>(null);
 
     const [isActive, setIsActive] = useState(false);
+    const isActiveRef = useRef(false); // tracks active state without stale closure
     const [error, setError] = useState<string | null>(null);
     const [isMinimized, setIsMinimized] = useState(false);
 
@@ -64,9 +65,9 @@ export function CameraFatigueMonitor({ isEnabled, onToggle, onFatigueScoreChange
     // Handle window resize to keep position at top-right
     useEffect(() => {
         const handleResize = () => {
-            setPosition(prev => ({ 
-                x: Math.min(prev.x, window.innerWidth - 280), 
-                y: prev.y 
+            setPosition(prev => ({
+                x: Math.min(prev.x, window.innerWidth - 280),
+                y: prev.y
             }));
         };
 
@@ -76,18 +77,35 @@ export function CameraFatigueMonitor({ isEnabled, onToggle, onFatigueScoreChange
 
     // Auto start/stop based on isEnabled
     useEffect(() => {
-        if (isEnabled && !isActive) {
+        if (isEnabled && !isActiveRef.current) {
             startCamera();
-        } else if (!isEnabled && isActive) {
+        } else if (!isEnabled && isActiveRef.current) {
             stopCamera();
         }
-
-        return () => {
-            if (isActive) {
-                stopCamera();
-            }
-        };
     }, [isEnabled]);
+
+    // Guaranteed cleanup on unmount — stops camera regardless of state
+    useEffect(() => {
+        return () => {
+            // Stop MediaPipe camera
+            if (cameraRef.current) {
+                cameraRef.current.stop();
+                cameraRef.current = null;
+            }
+            // Release browser camera (turns off the camera indicator light)
+            if (videoRef.current?.srcObject) {
+                const stream = videoRef.current.srcObject as MediaStream;
+                stream.getTracks().forEach(track => track.stop());
+                videoRef.current.srcObject = null;
+            }
+            // Close FaceMesh
+            if (faceMeshRef.current) {
+                faceMeshRef.current.close();
+                faceMeshRef.current = null;
+            }
+            isActiveRef.current = false;
+        };
+    }, []); // runs only on unmount
 
     const startCamera = async () => {
         try {
@@ -145,6 +163,7 @@ export function CameraFatigueMonitor({ isEnabled, onToggle, onFatigueScoreChange
 
                 cameraRef.current.start();
                 setIsActive(true);
+                isActiveRef.current = true;
             }
         } catch (err: any) {
             console.error('Error starting camera:', err);
@@ -170,6 +189,7 @@ export function CameraFatigueMonitor({ isEnabled, onToggle, onFatigueScoreChange
         }
 
         setIsActive(false);
+        isActiveRef.current = false;
 
         // End session if exists
         if (sessionId.current) {
@@ -391,16 +411,16 @@ export function CameraFatigueMonitor({ isEnabled, onToggle, onFatigueScoreChange
     }
 
     return (
-        <div 
+        <div
             className="camera-fatigue-monitor"
-            style={{ 
-                left: `${position.x}px`, 
+            style={{
+                left: `${position.x}px`,
                 top: `${position.y}px`,
                 width: isMinimized ? '200px' : '240px',
             }}
         >
             {/* Drag Handle & Header */}
-            <div 
+            <div
                 className="monitor-header"
                 onMouseDown={handleMouseDown}
                 style={{ cursor: isDragging ? 'grabbing' : 'grab' }}

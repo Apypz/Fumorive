@@ -12,7 +12,7 @@ from datetime import datetime
 from app.db.models import User
 from app.schemas.eeg import EEGStreamData, EEGDataPoint
 from app.api.websocket_manager import manager
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, get_eeg_or_user_auth
 from app.core.eeg_relay import relay_eeg_to_clients, save_eeg_to_database
 from app.core.rate_limiter import limiter, LIMIT_STREAM, LIMIT_READ
 
@@ -29,7 +29,7 @@ async def receive_eeg_stream(
     request: Request,
     data: EEGStreamData,
     background_tasks: BackgroundTasks,
-    _current_user: User = Depends(get_current_user),
+    _auth = Depends(get_eeg_or_user_auth),
 ):
     """
     Receive real-time EEG data from Python LSL middleware
@@ -77,7 +77,7 @@ async def receive_eeg_batch(
     session_id: UUID,
     data_points: list[EEGDataPoint],
     background_tasks: BackgroundTasks,
-    _current_user: User = Depends(get_current_user),
+    _auth = Depends(get_eeg_or_user_auth),
 ):
     """
     Receive batch EEG data (alternative to streaming)
