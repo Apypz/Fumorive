@@ -265,7 +265,7 @@ app.include_router(face_router, prefix=API_V1_PREFIX)
 app.include_router(alerts_router, prefix=API_V1_PREFIX)
 app.include_router(playback_router, prefix=API_V1_PREFIX)
 app.include_router(export_router, prefix=API_V1_PREFIX)
-app.include_router(health_router, prefix=API_V1_PREFIX)
+app.include_router(health_router)  # No prefix — /health/* must be at root for Railway health check
 app.include_router(reporting_router, prefix=API_V1_PREFIX)
 
 # Register global exception handlers (after routers so they don't shadow 404s)
