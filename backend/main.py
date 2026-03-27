@@ -30,6 +30,7 @@ from app.api.routes.playback import router as playback_router
 from app.api.routes.export import router as export_router
 from app.api.routes.health import router as health_router
 from app.api.routes.reporting import router as reporting_router
+from app.api.routes.downloads import router as downloads_router
 
 
 # ============================================
@@ -257,6 +258,7 @@ app.include_router(playback_router, prefix=API_V1_PREFIX)
 app.include_router(export_router, prefix=API_V1_PREFIX)
 app.include_router(health_router)  # No prefix — /health/* must be at root for Railway health check
 app.include_router(reporting_router, prefix=API_V1_PREFIX)
+app.include_router(downloads_router, prefix=API_V1_PREFIX)
 
 # Register global exception handlers (after routers so they don't shadow 404s)
 register_exception_handlers(app)

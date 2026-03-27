@@ -66,10 +66,10 @@ RECORDING_FORMAT = "csv"     # Options: csv, edf
 # ===========================
 # BACKEND SETTINGS (Fumorive Backend)
 # ===========================
-BACKEND_URL = "http://localhost:8000"       # Backend URL
+BACKEND_URL = "https://fumorive-production.up.railway.app"  # Production backend
 EEG_ENDPOINT = "/api/v1/eeg/stream"         # EEG streaming endpoint (HTTP POST)
 EEG_INTERNAL_KEY = "fumorive-eeg-internal-dev-key"  # Must match backend setting
-SAVE_TO_DB = False                          # Save to database by default
+SAVE_TO_DB = True                           # Save to database by default
 
 # WebSocket endpoint (untuk referensi - tidak digunakan oleh server.py)
 # Frontend connects to: ws://localhost:8000/api/v1/ws/session/{session_id}
@@ -77,7 +77,7 @@ SAVE_TO_DB = False                          # Save to database by default
 # Legacy (for standalone server)
 SERVER_HOST = "127.0.0.1"
 SERVER_PORT = 5000
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 # ===========================
 # LOGGING
