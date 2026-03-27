@@ -32,6 +32,7 @@ import {
 import { useUserStore } from '../../stores/userStore';
 import { useEEGStore } from '../../stores/eegStore';
 import { useSessionStore } from '../../stores/sessionStore';
+import { API_URL } from '../../config/api';
 import './Dashboard.css';
 
 type TabView = 'overview' | 'history' | 'profile' | 'settings';
@@ -469,7 +470,7 @@ const Dashboard = () => {
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                                     <span>Download dan ekstrak EEG Server Package. Lalu double-click file <code>start_eeg.bat</code>. Kenakan Muse 2 dan pastikan Bluetooth aktif.</span>
                                                     <a
-                                                        href="https://github.com/Apypz/Fumorive/releases"
+                                                        href={`${API_URL}/downloads/eeg-package`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         style={{
