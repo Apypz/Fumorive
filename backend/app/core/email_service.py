@@ -29,7 +29,9 @@ def send_password_reset_email(to_email: str, code: str) -> bool:
     Send a 6-digit OTP reset code to the user's email via Resend API.
     Returns True on success, False on failure.
     """
-    if not _is_resend_configured():
+    api_key = _get_resend_key()
+    logger.info(f"[EMAIL] Checking RESEND config: key_present={bool(api_key)}, key_len={len(api_key)}")
+    if not api_key:
         logger.warning("RESEND_API_KEY not configured — cannot send password reset email.")
         return False
 
@@ -74,7 +76,7 @@ def send_password_reset_email(to_email: str, code: str) -> bool:
     """
 
     try:
-        api_key = _get_resend_key()
+        logger.info(f"[EMAIL] Sending reset email to {to_email} via Resend...")
         email_from_name = os.environ.get("EMAIL_FROM_NAME", "") or settings.EMAIL_FROM_NAME
         with httpx.Client(timeout=10) as client:
             resp = client.post(
