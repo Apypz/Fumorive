@@ -73,7 +73,6 @@ const Login = () => {
         setIsForgot(true);
         setForgotStep(1);
         setForgotEmail('');
-        setDevToken('');
         setResetCode('');
         setResetNewPwd('');
         setResetConfirmPwd('');
