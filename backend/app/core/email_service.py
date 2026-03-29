@@ -1,32 +1,31 @@
 """
 Email Service
-Sends transactional emails using Gmail SMTP (smtplib - no extra deps).
+Sends transactional emails using Resend API (HTTPS — no SMTP ports needed).
+Docs: https://resend.com/docs
 """
 
-import smtplib
 import logging
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+import httpx
 
 from app.core.config import settings
 
 logger = logging.getLogger("fumorive")
 
+RESEND_API_URL = "https://api.resend.com/emails"
 
-def _is_smtp_configured() -> bool:
-    return bool(settings.SMTP_USER and settings.SMTP_PASSWORD)
+
+def _is_resend_configured() -> bool:
+    return bool(settings.RESEND_API_KEY)
 
 
 def send_password_reset_email(to_email: str, code: str) -> bool:
     """
-    Send a 6-digit OTP reset code to the user's email.
+    Send a 6-digit OTP reset code to the user's email via Resend API.
     Returns True on success, False on failure.
     """
-    if not _is_smtp_configured():
-        logger.warning("SMTP not configured — cannot send password reset email.")
+    if not _is_resend_configured():
+        logger.warning("RESEND_API_KEY not configured — cannot send password reset email.")
         return False
-
-    subject = "Kode Reset Password Fumorive"
 
     html_body = f"""
     <!DOCTYPE html>
@@ -50,16 +49,16 @@ def send_password_reset_email(to_email: str, code: str) -> bool:
     </head>
     <body>
       <div class="card">
-        <div class="logo">🧠 Fumorive</div>
+        <div class="logo">&#129504; Fumorive</div>
         <h2>Reset Password</h2>
         <p>Kami menerima permintaan reset password untuk akun yang terhubung dengan email ini.</p>
         <div class="code-box">
           <p style="margin:0 0 8px;color:#475569;font-weight:600;">Kode Verifikasi</p>
           <div class="code">{code}</div>
-          <p class="note">⏱ Berlaku selama <strong>15 menit</strong></p>
+          <p class="note">&#9201; Berlaku selama <strong>15 menit</strong></p>
         </div>
         <p>Masukkan kode di atas pada halaman reset password Fumorive.</p>
-        <p>Jika kamu tidak meminta reset password, abaikan email ini — akunmu aman.</p>
+        <p>Jika kamu tidak meminta reset password, abaikan email ini &mdash; akunmu aman.</p>
         <div class="footer">
           Email ini dikirim otomatis oleh sistem Fumorive. Jangan balas email ini.
         </div>
@@ -69,20 +68,27 @@ def send_password_reset_email(to_email: str, code: str) -> bool:
     """
 
     try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = f"{settings.EMAIL_FROM_NAME} <{settings.SMTP_USER}>"
-        msg["To"] = to_email
-        msg.attach(MIMEText(html_body, "html", "utf-8"))
+        with httpx.Client(timeout=10) as client:
+            resp = client.post(
+                RESEND_API_URL,
+                headers={
+                    "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": f"{settings.EMAIL_FROM_NAME} <onboarding@resend.dev>",
+                    "to": [to_email],
+                    "subject": "Kode Reset Password Fumorive",
+                    "html": html_body,
+                },
+            )
 
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10) as srv:
-            srv.ehlo()
-            srv.starttls()
-            srv.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            srv.sendmail(settings.SMTP_USER, to_email, msg.as_string())
-
-        logger.info(f"Password reset email sent to {to_email}")
-        return True
+        if resp.status_code in (200, 201):
+            logger.info(f"Password reset email sent to {to_email} via Resend")
+            return True
+        else:
+            logger.error(f"Resend API error {resp.status_code}: {resp.text}")
+            return False
 
     except Exception as e:
         logger.error(f"Failed to send email to {to_email}: {e}")
