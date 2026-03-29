@@ -55,6 +55,13 @@ class Settings(BaseSettings):
     # EEG Internal API Key (server-to-server auth, no JWT needed)
     EEG_INTERNAL_KEY: str = "fumorive-eeg-internal-dev-key"
 
+    # Email / SMTP (for password reset, notifications)
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""          # Set in Railway: SMTP_USER=yourmail@gmail.com
+    SMTP_PASSWORD: str = ""      # Set in Railway: SMTP_PASSWORD=your-app-password
+    EMAIL_FROM_NAME: str = "Fumorive"
+
     # WebSocket
     WEBSOCKET_HEARTBEAT_INTERVAL: int = 30  # seconds
 

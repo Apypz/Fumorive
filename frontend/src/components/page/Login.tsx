@@ -20,7 +20,6 @@ const Login = () => {
     const [isForgot, setIsForgot] = useState(false);
     const [forgotStep, setForgotStep] = useState<1 | 2>(1);
     const [forgotEmail, setForgotEmail] = useState('');
-    const [devToken, setDevToken] = useState('');   // demo only
     const [resetCode, setResetCode] = useState('');
     const [resetNewPwd, setResetNewPwd] = useState('');
     const [resetConfirmPwd, setResetConfirmPwd] = useState('');
@@ -94,8 +93,7 @@ const Login = () => {
         setForgotError('');
         setForgotLoading(true);
         try {
-            const res = await authService.forgotPassword(forgotEmail);
-            setDevToken(res.dev_token || '');
+            await authService.forgotPassword(forgotEmail);
             setForgotStep(2);
         } catch (err: any) {
             setForgotError(err.response?.data?.detail || 'Terjadi kesalahan. Coba lagi.');
@@ -253,15 +251,9 @@ const Login = () => {
                                     <>
                                         <div className="form-header">
                                             <h2 className="form-title">Masukkan Kode Reset</h2>
-                                            <p className="form-subtitle">Kode 6-digit dikirim ke <strong>{forgotEmail}</strong>.</p>
+                                            <p className="form-subtitle">Kode 6-digit dikirimkan ke email <strong>{forgotEmail}</strong>. Cek inbox (atau folder spam).</p>
                                         </div>
-                                        {devToken && (
-                                            <div style={{ marginBottom: '1.25rem', padding: '12px 16px', background: '#fffbeb', border: '1.5px dashed #fbbf24', borderRadius: '10px', fontSize: '0.82rem', color: '#92400e', lineHeight: 1.6 }}>
-                                                <strong>⚠ Mode Demo</strong> — Kode reset Anda:<br />
-                                                <span style={{ fontFamily: 'monospace', fontSize: '1.6rem', fontWeight: 800, letterSpacing: '0.15em', color: '#b45309', display: 'block', marginTop: '4px' }}>{devToken}</span>
-                                                <span style={{ fontSize: '0.75rem', color: '#a16207' }}>Berlaku 15 menit. Pada produksi, kode ini dikirim via email.</span>
-                                            </div>
-                                        )}
+
                                         <form className="auth-form" onSubmit={handleResetPassword}>
                                             {forgotError && (
                                                 <div style={{ color: '#be123c', marginBottom: '1rem', fontSize: '0.9rem', background: '#fff1f2', padding: '10px', borderRadius: '8px', border: '1px solid #fecdd3' }}>
