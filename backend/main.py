@@ -1,4 +1,4 @@
-﻿"""
+"""
 FastAPI Backend Application
 Main application entry point with all routes and middleware
 """
@@ -321,6 +321,9 @@ async def startup_event():
     print("[START] Fumorive Backend API Starting...")
     print(f"[ENV] Environment: {settings.ENVIRONMENT}")
     print(f"[CORS] Origins: {settings.CORS_ORIGINS}")
+    import os
+    resend_key = os.environ.get("RESEND_API_KEY", "")
+    print(f"[EMAIL] RESEND_API_KEY set: {bool(resend_key)} (len={len(resend_key)})")
 
     # Initialize Redis
     print("\n[REDIS] Initializing Redis...")

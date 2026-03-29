@@ -4,6 +4,7 @@ Sends transactional emails using Resend API (HTTPS — no SMTP ports needed).
 Docs: https://resend.com/docs
 """
 
+import os
 import logging
 import httpx
 
@@ -14,8 +15,13 @@ logger = logging.getLogger("fumorive")
 RESEND_API_URL = "https://api.resend.com/emails"
 
 
+def _get_resend_key() -> str:
+    # Read directly from os.environ to avoid pydantic-settings caching issues
+    return os.environ.get("RESEND_API_KEY", "") or settings.RESEND_API_KEY
+
+
 def _is_resend_configured() -> bool:
-    return bool(settings.RESEND_API_KEY)
+    return bool(_get_resend_key())
 
 
 def send_password_reset_email(to_email: str, code: str) -> bool:
@@ -68,15 +74,17 @@ def send_password_reset_email(to_email: str, code: str) -> bool:
     """
 
     try:
+        api_key = _get_resend_key()
+        email_from_name = os.environ.get("EMAIL_FROM_NAME", "") or settings.EMAIL_FROM_NAME
         with httpx.Client(timeout=10) as client:
             resp = client.post(
                 RESEND_API_URL,
                 headers={
-                    "Authorization": f"Bearer {settings.RESEND_API_KEY}",
+                    "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
                 },
                 json={
-                    "from": f"{settings.EMAIL_FROM_NAME} <onboarding@resend.dev>",
+                    "from": f"{email_from_name} <onboarding@resend.dev>",
                     "to": [to_email],
                     "subject": "Kode Reset Password Fumorive",
                     "html": html_body,
