@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     # TimescaleDB Settings
     TIMESCALE_CHUNK_INTERVAL: str = "1 day"  # Chunk interval for hypertables
     
+    # EEG Internal API Key (server-to-server auth, no JWT needed)
+    EEG_INTERNAL_KEY: str = "fumorive-eeg-internal-dev-key"
+    
     # WebSocket
     WEBSOCKET_HEARTBEAT_INTERVAL: int = 30  # seconds
     

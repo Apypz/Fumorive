@@ -68,6 +68,7 @@ RECORDING_FORMAT = "csv"     # Options: csv, edf
 # ===========================
 BACKEND_URL = "http://localhost:8000"       # Backend URL
 EEG_ENDPOINT = "/api/v1/eeg/stream"         # EEG streaming endpoint (HTTP POST)
+EEG_INTERNAL_KEY = "fumorive-eeg-internal-dev-key"  # Must match backend setting
 SAVE_TO_DB = False                          # Save to database by default
 
 # WebSocket endpoint (untuk referensi - tidak digunakan oleh server.py)

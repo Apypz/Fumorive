@@ -124,32 +124,38 @@ export function TutorialPopup({ onClose }: TutorialPopupProps) {
       content: (
         <div>
           <p style={{ fontSize: '0.95rem', lineHeight: '1.6', color: '#e2e8f0', marginBottom: '1rem' }}>
-            Sistem memantau aktivitas otak kamu secara <strong style={{ color: '#c4b5fd' }}>real-time</strong> menggunakan headset <strong style={{ color: '#c4b5fd' }}>Muse 2 EEG</strong>.
+            Punya headset <strong style={{ color: '#c4b5fd' }}>Muse 2 EEG</strong>? Sambungkan untuk monitoring aktivitas otak real-time.
+            Tanpanya, app tetap jalan normal dengan monitoring kamera saja.
           </p>
-          <div style={{ display: 'grid', gap: '10px', marginBottom: '1rem' }}>
-            <div style={{ background: 'rgba(139, 92, 246, 0.12)', borderRadius: '10px', padding: '14px', border: '1px solid rgba(139, 92, 246, 0.25)' }}>
-              <h4 style={{ margin: '0 0 6px', color: '#c4b5fd', fontSize: '0.9rem' }}>🧠 Gelombang Otak yang Dianalisis</h4>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {['Delta (tidur)', 'Theta (ngantuk)', 'Alpha (rileks)', 'Beta (fokus)', 'Gamma (alert)'].map((band) => (
-                  <span key={band} style={{ background: 'rgba(255,255,255,0.08)', padding: '4px 10px', borderRadius: '6px', fontSize: '0.78rem', color: '#e2e8f0' }}>
-                    {band}
-                  </span>
-                ))}
+
+          {/* 3-step setup */}
+          <div style={{ display: 'grid', gap: '8px', marginBottom: '1rem' }}>
+            {[
+              { num: '1', color: '#38bdf8', text: 'Download EEG Package dari Dashboard → "Setup Muse 2"' },
+              { num: '2', color: '#a78bfa', text: 'Double-click start_eeg.bat — pastikan Muse 2 & Bluetooth aktif' },
+              { num: '3', color: '#34d399', text: 'Copy Session ID dari banner atas, paste ke terminal EEG' },
+            ].map((s) => (
+              <div key={s.num} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <span style={{ width: '24px', height: '24px', borderRadius: '50%', background: s.color + '25', color: s.color, border: `1px solid ${s.color}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.78rem', flexShrink: 0 }}>{s.num}</span>
+                <span style={{ color: '#cbd5e1', fontSize: '0.84rem', lineHeight: 1.5 }}>{s.text}</span>
               </div>
-            </div>
-            <div style={{ background: 'rgba(139, 92, 246, 0.12)', borderRadius: '10px', padding: '14px', border: '1px solid rgba(139, 92, 246, 0.25)' }}>
-              <h4 style={{ margin: '0 0 6px', color: '#c4b5fd', fontSize: '0.9rem' }}>📊 Metrik yang Ditampilkan</h4>
-              <ul style={{ margin: 0, paddingLeft: '1.2rem', color: '#cbd5e1', fontSize: '0.85rem', lineHeight: '1.7' }}>
-                <li><strong>Cognitive State</strong> — Alert, Drowsy, atau Fatigued</li>
-                <li><strong>Fatigue Score</strong> — Persentase kelelahan (0-100%)</li>
-                <li><strong>Theta/Alpha Ratio</strong> — Indikator kantuk</li>
-                <li><strong>Signal Quality</strong> — Kualitas sinyal EEG</li>
-              </ul>
+            ))}
+          </div>
+
+          <div style={{ background: 'rgba(139, 92, 246, 0.12)', borderRadius: '10px', padding: '12px 14px', border: '1px solid rgba(139, 92, 246, 0.25)', marginBottom: '10px' }}>
+            <h4 style={{ margin: '0 0 6px', color: '#c4b5fd', fontSize: '0.88rem' }}>🧠 Gelombang Otak yang Dianalisis</h4>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              {['Delta (tidur)', 'Theta (ngantuk)', 'Alpha (rileks)', 'Beta (fokus)', 'Gamma (alert)'].map((band) => (
+                <span key={band} style={{ background: 'rgba(255,255,255,0.08)', padding: '3px 9px', borderRadius: '6px', fontSize: '0.76rem', color: '#e2e8f0' }}>
+                  {band}
+                </span>
+              ))}
             </div>
           </div>
-          <div style={{ background: 'rgba(56, 189, 248, 0.1)', borderRadius: '10px', padding: '12px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-            <p style={{ margin: 0, color: '#7dd3fc', fontSize: '0.85rem' }}>
-              💡 <strong>Cara koneksi:</strong> Copy Session ID dari banner atas, lalu paste di terminal EEG.
+
+          <div style={{ background: 'rgba(56, 189, 248, 0.1)', borderRadius: '8px', padding: '10px 12px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+            <p style={{ margin: 0, color: '#7dd3fc', fontSize: '0.83rem' }}>
+              💡 Panduan lengkap download & setup ada di halaman <strong>Pilih Map</strong> sebelum bermain.
             </p>
           </div>
         </div>

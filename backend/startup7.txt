@@ -2456,3 +2456,94 @@ WHERE users.email = %(email_1)s OR users.google_id = %(google_id_1)s
  LIMIT %(param_1)s
 2026-02-19 11:28:11,158 INFO sqlalchemy.engine.Engine [generated in 0.00104s] {'email_1': 'someb350@gmail.com', 'google_id_1': 'pv2nxGxlA7SNoxAwVu9KMOFJLuo1', 'param_1': 1}
 2026-02-19 11:28:11,165 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:40:59,826 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:40:59,828 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.hashed_password AS users_hashed_password, users.full_name AS users_full_name, users.role AS users_role, users.is_active AS users_is_active, users.oauth_provider AS users_oauth_provider, users.google_id AS users_google_id, users.profile_picture AS users_profile_picture, users.name_manually_edited AS users_name_manually_edited, users.created_at AS users_created_at, users.updated_at AS users_updated_at 
+FROM users 
+WHERE users.email = %(email_1)s OR users.google_id = %(google_id_1)s 
+ LIMIT %(param_1)s
+2026-02-19 11:40:59,830 INFO sqlalchemy.engine.Engine [cached since 768.7s ago] {'email_1': 'someb350@gmail.com', 'google_id_1': 'pv2nxGxlA7SNoxAwVu9KMOFJLuo1', 'param_1': 1}
+2026-02-19 11:40:59,849 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'someb350@gmail.com', 'user_id': '1b0c6937-6cdc-4b8b-97c9-1decc0c0e378', 'email': 'someb350@gmail.com', 'full_name': 'oioiassad', 'role': 'student', 'exp': 1771477859, 'type': 'access'}
+[LOG] User ID from token: 1b0c6937-6cdc-4b8b-97c9-1decc0c0e378
+[OK] User UUID: 1b0c6937-6cdc-4b8b-97c9-1decc0c0e378
+[LOG] Checking cache for user 1b0c6937-6cdc-4b8b-97c9-1decc0c0e378...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:41:55,379 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:41:55,382 INFO sqlalchemy.engine.Engine INSERT INTO sessions (id, user_id, session_name, device_type, session_status, calibration_data, settings, ended_at, duration_seconds, avg_fatigue_score, max_fatigue_score, alert_count) VALUES (%(id)s::UUID, %(user_id)s::UUID, %(session_name)s, %(device_type)s, %(session_status)s, %(calibration_data)s, %(settings)s, %(ended_at)s, %(duration_seconds)s, %(avg_fatigue_score)s, %(max_fatigue_score)s, %(alert_count)s) RETURNING sessions.started_at
+2026-02-19 11:41:55,384 INFO sqlalchemy.engine.Engine [cached since 1811s ago] {'id': UUID('7be4c904-bdb4-4fa2-85cb-eaaea1bd4250'), 'user_id': UUID('1b0c6937-6cdc-4b8b-97c9-1decc0c0e378'), 'session_name': 'Driving Session - 19/02/2026, 11.41.55', 'device_type': 'EEG + Camera', 'session_status': 'active', 'calibration_data': '{}', 'settings': '{}', 'ended_at': None, 'duration_seconds': None, 'avg_fatigue_score': None, 'max_fatigue_score': None, 'alert_count': 0}
+2026-02-19 11:41:55,396 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:41:55,406 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:41:55,408 INFO sqlalchemy.engine.Engine SELECT sessions.id, sessions.user_id, sessions.session_name, sessions.device_type, sessions.session_status, sessions.calibration_data, sessions.settings, sessions.started_at, sessions.ended_at, sessions.duration_seconds, sessions.avg_fatigue_score, sessions.max_fatigue_score, sessions.alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:41:55,410 INFO sqlalchemy.engine.Engine [cached since 1811s ago] {'pk_1': UUID('7be4c904-bdb4-4fa2-85cb-eaaea1bd4250')}
+2026-02-19 11:41:55,419 INFO sqlalchemy.engine.Engine ROLLBACK
+
+==================================================
+[AUTH] Starting get_current_user...
+[LOG] Checking if token is blacklisted...
+[OK] Token is not blacklisted
+[LOG] Calling verify_token...
+[SEARCH] Verifying access token...
+[SEARCH] Token (first 50 chars): eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzb...
+[OK] Token decoded successfully
+[LIST] Payload type: access
+[LIST] Expected type: access
+[OK] Token verified successfully
+[OK] Token payload received: {'sub': 'someb350@gmail.com', 'user_id': '1b0c6937-6cdc-4b8b-97c9-1decc0c0e378', 'email': 'someb350@gmail.com', 'full_name': 'oioiassad', 'role': 'student', 'exp': 1771477859, 'type': 'access'}
+[LOG] User ID from token: 1b0c6937-6cdc-4b8b-97c9-1decc0c0e378
+[OK] User UUID: 1b0c6937-6cdc-4b8b-97c9-1decc0c0e378
+[LOG] Checking cache for user 1b0c6937-6cdc-4b8b-97c9-1decc0c0e378...
+[OK] User found in cache
+[OK] get_current_user completed successfully (from cache)
+==================================================
+
+2026-02-19 11:41:55,432 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:41:55,433 INFO sqlalchemy.engine.Engine INSERT INTO sessions (id, user_id, session_name, device_type, session_status, calibration_data, settings, ended_at, duration_seconds, avg_fatigue_score, max_fatigue_score, alert_count) VALUES (%(id)s::UUID, %(user_id)s::UUID, %(session_name)s, %(device_type)s, %(session_status)s, %(calibration_data)s, %(settings)s, %(ended_at)s, %(duration_seconds)s, %(avg_fatigue_score)s, %(max_fatigue_score)s, %(alert_count)s) RETURNING sessions.started_at
+2026-02-19 11:41:55,435 INFO sqlalchemy.engine.Engine [cached since 1811s ago] {'id': UUID('01035322-58bd-4e3e-8f9d-344dd2ee4949'), 'user_id': UUID('1b0c6937-6cdc-4b8b-97c9-1decc0c0e378'), 'session_name': 'Driving Session - 19/02/2026, 11.41.55', 'device_type': 'EEG + Camera', 'session_status': 'active', 'calibration_data': '{}', 'settings': '{}', 'ended_at': None, 'duration_seconds': None, 'avg_fatigue_score': None, 'max_fatigue_score': None, 'alert_count': 0}
+2026-02-19 11:41:55,444 INFO sqlalchemy.engine.Engine COMMIT
+2026-02-19 11:41:55,452 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:41:55,454 INFO sqlalchemy.engine.Engine SELECT sessions.id, sessions.user_id, sessions.session_name, sessions.device_type, sessions.session_status, sessions.calibration_data, sessions.settings, sessions.started_at, sessions.ended_at, sessions.duration_seconds, sessions.avg_fatigue_score, sessions.max_fatigue_score, sessions.alert_count 
+FROM sessions 
+WHERE sessions.id = %(pk_1)s::UUID
+2026-02-19 11:41:55,456 INFO sqlalchemy.engine.Engine [cached since 1811s ago] {'pk_1': UUID('01035322-58bd-4e3e-8f9d-344dd2ee4949')}
+2026-02-19 11:41:55,466 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:41:58,877 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:41:58,878 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(id_1)s::UUID 
+ LIMIT %(param_1)s
+2026-02-19 11:41:58,879 INFO sqlalchemy.engine.Engine [cached since 1815s ago] {'id_1': UUID('01035322-58bd-4e3e-8f9d-344dd2ee4949'), 'param_1': 1}
+2026-02-19 11:42:01,028 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:42:01,032 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(id_1)s::UUID 
+ LIMIT %(param_1)s
+2026-02-19 11:42:01,033 INFO sqlalchemy.engine.Engine [cached since 1817s ago] {'id_1': UUID('01035322-58bd-4e3e-8f9d-344dd2ee4949'), 'param_1': 1}
+Client disconnected from session 01035322-58bd-4e3e-8f9d-344dd2ee4949
+2026-02-19 11:42:08,074 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 11:42:10,424 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-02-19 11:42:10,426 INFO sqlalchemy.engine.Engine SELECT sessions.id AS sessions_id, sessions.user_id AS sessions_user_id, sessions.session_name AS sessions_session_name, sessions.device_type AS sessions_device_type, sessions.session_status AS sessions_session_status, sessions.calibration_data AS sessions_calibration_data, sessions.settings AS sessions_settings, sessions.started_at AS sessions_started_at, sessions.ended_at AS sessions_ended_at, sessions.duration_seconds AS sessions_duration_seconds, sessions.avg_fatigue_score AS sessions_avg_fatigue_score, sessions.max_fatigue_score AS sessions_max_fatigue_score, sessions.alert_count AS sessions_alert_count 
+FROM sessions 
+WHERE sessions.id = %(id_1)s::UUID 
+ LIMIT %(param_1)s
+2026-02-19 11:42:10,427 INFO sqlalchemy.engine.Engine [cached since 1826s ago] {'id_1': UUID('01035322-58bd-4e3e-8f9d-344dd2ee4949'), 'param_1': 1}
+Client disconnected from session 01035322-58bd-4e3e-8f9d-344dd2ee4949
+Client disconnected from session 01035322-58bd-4e3e-8f9d-344dd2ee4949
+2026-02-19 12:01:18,965 INFO sqlalchemy.engine.Engine ROLLBACK
+2026-02-19 12:01:18,967 INFO sqlalchemy.engine.Engine ROLLBACK

@@ -1,13 +1,8 @@
-// Export semua EEG components dan hooks untuk kemudahan import
+// EEG module exports
+// Note: some sub-modules are intentionally excluded as they require hardware/local-only setup
 
-// Stores
-export { useEEGStore, type EEGMetrics, type EEGStreamState } from '../stores/eegStore'
-
-// Hooks
-export { useEEGWebSocket } from './useEEGWebSocket'
-
-// Components
-export { EEGDashboard } from '../components/EEGDashboard'
-export { EEGMetricsDisplay } from '../components/EEG/EEGMetricsDisplay'
-export { EEGWaveformDisplay } from '../components/EEG/EEGWaveformDisplay'
-export { EEGMonitoringPage } from '../components/page/EEGMonitoringPage'
+export { useEEGStore } from '../../stores/eegStore'
+export type { EEGMetrics, EEGStreamState } from '../../stores/eegStore'
+export { EEGMetricsDisplay } from '../../components/EEG/EEGMetricsDisplay'
+export { EEGWaveformDisplay } from '../../components/EEG/EEGWaveformDisplay'
+export { EEGMonitoringPage } from '../../components/page/EEGMonitoringPage'

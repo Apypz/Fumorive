@@ -29,7 +29,7 @@ from eeg import EEGAcquisition, EEGPreprocessor, EEGFeatureExtractor, CognitiveA
 from config import (
     SAMPLING_RATE, CHUNK_DURATION, 
     LOWCUT_FREQ, HIGHCUT_FREQ, NOTCH_FREQ,
-    BACKEND_URL, EEG_ENDPOINT
+    BACKEND_URL, EEG_ENDPOINT, EEG_INTERNAL_KEY
 )
 
 
@@ -292,7 +292,10 @@ class EEGStreamingServer:
                 self.endpoint,
                 json=payload,
                 timeout=2.0,
-                headers={"Content-Type": "application/json"}
+                headers={
+                    "Content-Type": "application/json",
+                    "X-EEG-API-Key": EEG_INTERNAL_KEY
+                }
             )
             
             if response.status_code == 200:
@@ -376,7 +379,7 @@ class EEGStreamingServer:
             logger.info("Testing backend connection...")
             try:
                 test_response = requests.get(
-                    f"{self.backend_url}/health",
+                    f"{self.backend_url}/api/v1/health/live",
                     timeout=5.0
                 )
                 if test_response.status_code == 200:

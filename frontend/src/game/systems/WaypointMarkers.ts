@@ -130,8 +130,6 @@ export class WaypointMarkers {
 
       this.markers.push({ pillar, ring, waypointId: wp.id })
     })
-
-    this.currentActiveIndex = 0
   }
 
   /**

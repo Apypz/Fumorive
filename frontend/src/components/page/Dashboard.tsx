@@ -68,7 +68,7 @@ const Dashboard = () => {
     // History state
     const [sessionHistory, setSessionHistory] = useState<SavedSession[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
-    
+
     // EEG Store
     const isConnected = useEEGStore((state) => state.isConnected);
     const currentMetrics = useEEGStore((state) => state.currentMetrics);
@@ -78,7 +78,7 @@ const Dashboard = () => {
     // Session Store
     const sessionId = useSessionStore((state) => state.sessionId);
     const [sessionIdCopied, setSessionIdCopied] = useState(false);
-    
+
     // Graph data state
     const [graphData, setGraphData] = useState<any[]>([]);
 
@@ -87,7 +87,7 @@ const Dashboard = () => {
         try {
             const saved = localStorage.getItem('fumorive_settings');
             if (saved) return JSON.parse(saved);
-        } catch {}
+        } catch { }
         return {
             eegDevice: 'Not Connected',
             cameraDevice: 'Built-in Camera',
@@ -157,7 +157,7 @@ const Dashboard = () => {
     const generateSampleSessionData = () => {
         const startTime = new Date(Date.now() - 30 * 60 * 1000); // 30 minutes ago
         const eegData = [];
-        
+
         // Generate 300 samples for 30-minute session
         for (let i = 0; i < 300; i++) {
             eegData.push({
@@ -213,7 +213,7 @@ const Dashboard = () => {
             }
         };
         loadHistory();
-        
+
         // Listen for storage changes (in case another tab updates)
         window.addEventListener('storage', loadHistory);
         return () => window.removeEventListener('storage', loadHistory);
@@ -242,14 +242,14 @@ const Dashboard = () => {
 
         const totalDuration = sessionHistory.reduce((sum, s) => sum + (s.duration || s.completionTime || 0), 0);
         const totalHours = (totalDuration / 3600).toFixed(1);
-        
+
         const allFatigueScores = sessionHistory
             .filter(s => s.stats?.avgFatigue)
             .map(s => parseFloat(s.stats.avgFatigue));
-        const avgFatigue = allFatigueScores.length > 0 
+        const avgFatigue = allFatigueScores.length > 0
             ? (allFatigueScores.reduce((a, b) => a + b, 0) / allFatigueScores.length).toFixed(2)
             : '--';
-        
+
         const totalAlerts = sessionHistory.reduce((sum, s) => sum + (s.violations?.length || 0), 0);
 
         return {
@@ -264,7 +264,7 @@ const Dashboard = () => {
     const filteredSessions = useMemo(() => {
         if (!searchQuery.trim()) return sessionHistory;
         const query = searchQuery.toLowerCase();
-        return sessionHistory.filter(s => 
+        return sessionHistory.filter(s =>
             s.routeName?.toLowerCase().includes(query) ||
             s.sessionId.toLowerCase().includes(query) ||
             new Date(s.startTime).toLocaleDateString().includes(query)
@@ -290,7 +290,7 @@ const Dashboard = () => {
     useEffect(() => {
         // Use real data if available, otherwise use sample data
         const historyToUse = dataHistory.length > 0 ? dataHistory : generateSampleData();
-        
+
         // Prepare graph data from history (last 100 samples)
         const recentHistory = historyToUse.slice(-100);
         const graphPoints = recentHistory.map((item: any) => ({
@@ -409,10 +409,10 @@ const Dashboard = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
                         {/* ── WELCOME BANNER ────────────────────────────────────── */}
-                        
+
 
                         {/* ── STAT SUMMARY CARDS ────────────────────────────────── */}
-                        
+
 
                         {/* ── ACTIVE SESSION ID (contextual) ────────────────────── */}
                         {sessionId && (
@@ -464,36 +464,63 @@ const Dashboard = () => {
                                         {
                                             step: '01',
                                             icon: '🧠',
-                                            title: 'Pasang EEG Headset',
-                                            desc: 'Kenakan Muse 2 headset, pastikan sensor menempel di dahi dan belakang telinga. Nyalakan dan buka aplikasi Lab Streaming Layer (LSL).',
+                                            title: 'Setup EEG Headset (Muse 2)',
+                                            desc: (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    <span>Download dan ekstrak EEG Server Package. Lalu double-click file <code>start_eeg.bat</code>. Kenakan Muse 2 dan pastikan Bluetooth aktif.</span>
+                                                    <a
+                                                        href="https://github.com/Apypz/Fumorive/releases"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        style={{
+                                                            alignSelf: 'flex-start', background: '#4f46e5',
+                                                            color: 'white', border: 'none', borderRadius: '8px',
+                                                            padding: '8px 16px', cursor: 'pointer', fontWeight: 600,
+                                                            fontSize: '0.85rem', display: 'flex', alignItems: 'center',
+                                                            gap: '6px', transition: 'all 0.2s', flexShrink: 0
+                                                        }}
+                                                    >
+                                                        📋 Download EEG Server Package
+                                                    </a>
+                                                </div>
+                                            ),
                                             color: '#4f46e5',
                                             bg: '#eef2ff',
                                             border: '#c7d2fe'
                                         },
                                         {
                                             step: '02',
-                                            icon: '📷',
-                                            title: 'Aktifkan Kamera',
-                                            desc: 'Pastikan webcam terhubung dan izin kamera sudah diberikan. Posisikan wajah agar terlihat jelas untuk face & eye detection.',
+                                            icon: '🧠',
+                                            title: 'Pilih Map Simulasi Mengemudi',
+                                            desc: 'Masuk ke halaman Live Session dan pilih map simulasi mengemudi yang akan dimainkan.',
                                             color: '#0891b2',
                                             bg: '#ecfeff',
                                             border: '#a5f3fc'
                                         },
                                         {
                                             step: '03',
-                                            icon: '🎮',
-                                            title: 'Mulai Sesi Game',
-                                            desc: 'Klik tombol "Mulai Sesi" untuk membuka simulasi mengemudi. Sistem akan otomatis menghubungkan EEG dan memulai monitoring.',
+                                            icon: '📷',
+                                            title: 'Aktifkan Kamera',
+                                            desc: 'Pastikan webcam terhubung dan izin kamera sudah diberikan. Posisikan wajah agar terlihat jelas untuk face & eye detection.',
                                             color: '#7c3aed',
                                             bg: '#f5f3ff',
                                             border: '#ddd6fe'
                                         },
                                         {
                                             step: '04',
+                                            icon: '🎮',
+                                            title: 'Mulai Sesi & Paste Session ID',
+                                            desc: 'Klik "Mulai Sesi Baru", pilih map, lalu copy Session ID yang muncul di banner atas dan paste ke terminal EEG yang sudah berjalan.',
+                                            color: '#f59e0b',
+                                            bg: '#fffbeb',
+                                            border: '#fde68a'
+                                        },
+                                        {
+                                            step: '05',
                                             icon: '🚨',
                                             title: 'Pantau & Respons Alert',
-                                            desc: 'Sistem akan menganalisis brain waves + visual cues secara real-time. Segera berhenti & istirahat jika alert kelelahan muncul.',
-                                            color: '#dc2626',
+                                            desc: 'Sistem menganalisis brain waves + visual cues secara real-time. Segera berhenti & istirahat jika alert kelelahan muncul.',
+                                            color: '#ef4444',
                                             bg: '#fff1f2',
                                             border: '#fecdd3'
                                         }
@@ -531,56 +558,56 @@ const Dashboard = () => {
                                 <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }} />
                             </div>
                             <div className="stats-row">
-                            {[
-                                {
-                                    label: 'Total Sesi',
-                                    value: String(historyStats.totalSessions),
-                                    sub: 'sesi tercatat',
-                                    icon: <History size={20} />,
-                                    bg: '#ede9fe', iconColor: '#7c3aed', valColor: '#4c1d95'
-                                },
-                                {
-                                    label: 'Total Waktu',
-                                    value: historyStats.totalHours + 'j',
-                                    sub: 'jam berkendara',
-                                    icon: <Clock size={20} />,
-                                    bg: '#dbeafe', iconColor: '#2563eb', valColor: '#1e3a8a'
-                                },
-                                {
-                                    label: 'Avg. Fatigue',
-                                    value: historyStats.avgFatigue === '--' ? '--' : historyStats.avgFatigue,
-                                    sub: 'rata-rata skor',
-                                    icon: <Brain size={20} />,
-                                    bg: '#fef3c7', iconColor: '#d97706', valColor: '#78350f'
-                                },
-                                {
-                                    label: 'EEG Status',
-                                    value: isConnected ? 'Online' : 'Offline',
-                                    sub: isConnected ? 'sedang terhubung' : 'belum terhubung',
-                                    icon: <Activity size={20} />,
-                                    bg: isConnected ? '#dcfce7' : '#fee2e2',
-                                    iconColor: isConnected ? '#16a34a' : '#dc2626',
-                                    valColor: isConnected ? '#14532d' : '#7f1d1d'
-                                }
-                            ].map((s) => (
-                                <div key={s.label} className="widget-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{
-                                        width: '48px', height: '48px', borderRadius: '14px',
-                                        background: s.bg, display: 'flex',
-                                        alignItems: 'center', justifyContent: 'center',
-                                        flexShrink: 0, color: s.iconColor
-                                    }}>
-                                        {s.icon}
+                                {[
+                                    {
+                                        label: 'Total Sesi',
+                                        value: String(historyStats.totalSessions),
+                                        sub: 'sesi tercatat',
+                                        icon: <History size={20} />,
+                                        bg: '#ede9fe', iconColor: '#7c3aed', valColor: '#4c1d95'
+                                    },
+                                    {
+                                        label: 'Total Waktu',
+                                        value: historyStats.totalHours + 'j',
+                                        sub: 'jam berkendara',
+                                        icon: <Clock size={20} />,
+                                        bg: '#dbeafe', iconColor: '#2563eb', valColor: '#1e3a8a'
+                                    },
+                                    {
+                                        label: 'Avg. Fatigue',
+                                        value: historyStats.avgFatigue === '--' ? '--' : historyStats.avgFatigue,
+                                        sub: 'rata-rata skor',
+                                        icon: <Brain size={20} />,
+                                        bg: '#fef3c7', iconColor: '#d97706', valColor: '#78350f'
+                                    },
+                                    {
+                                        label: 'EEG Status',
+                                        value: isConnected ? 'Online' : 'Offline',
+                                        sub: isConnected ? 'sedang terhubung' : 'belum terhubung',
+                                        icon: <Activity size={20} />,
+                                        bg: isConnected ? '#dcfce7' : '#fee2e2',
+                                        iconColor: isConnected ? '#16a34a' : '#dc2626',
+                                        valColor: isConnected ? '#14532d' : '#7f1d1d'
+                                    }
+                                ].map((s) => (
+                                    <div key={s.label} className="widget-card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <div style={{
+                                            width: '48px', height: '48px', borderRadius: '14px',
+                                            background: s.bg, display: 'flex',
+                                            alignItems: 'center', justifyContent: 'center',
+                                            flexShrink: 0, color: s.iconColor
+                                        }}>
+                                            {s.icon}
+                                        </div>
+                                        <div style={{ minWidth: 0 }}>
+                                            <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>{s.label}</div>
+                                            <div style={{ fontSize: '1.5rem', fontWeight: 800, color: s.valColor, lineHeight: 1.2 }}>{s.value}</div>
+                                            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{s.sub}</div>
+                                        </div>
                                     </div>
-                                    <div style={{ minWidth: 0 }}>
-                                        <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>{s.label}</div>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: s.valColor, lineHeight: 1.2 }}>{s.value}</div>
-                                        <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{s.sub}</div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                            
+                                ))}
+                            </div>
+
                         </div>
 
                         {/* ── SECTION: MONITORING REAL-TIME ─────────────────────── */}
@@ -623,8 +650,8 @@ const Dashboard = () => {
                                             { name: 'Delta', range: '1-4Hz', key: 'deltaPower', color: '#8b5cf6', desc: 'Deep Sleep', bg: '#f5f3ff' },
                                             { name: 'Theta', range: '4-8Hz', key: 'thetaPower', color: '#06b6d4', desc: 'Drowsy', bg: '#ecfeff' },
                                             { name: 'Alpha', range: '8-13Hz', key: 'alphaPower', color: '#10b981', desc: 'Relaxed', bg: '#f0fdf4' },
-                                            { name: 'Beta',  range: '13-30Hz', key: 'betaPower',  color: '#f59e0b', desc: 'Focused', bg: '#fffbeb' },
-                                            { name: 'Gamma', range: '30-50Hz', key: 'gammaPower', color: '#ef4444', desc: 'Alert',   bg: '#fff1f2' }
+                                            { name: 'Beta', range: '13-30Hz', key: 'betaPower', color: '#f59e0b', desc: 'Focused', bg: '#fffbeb' },
+                                            { name: 'Gamma', range: '30-50Hz', key: 'gammaPower', color: '#ef4444', desc: 'Alert', bg: '#fff1f2' }
                                         ].map((wave) => {
                                             const val = currentMetrics && currentMetrics[wave.key as keyof typeof currentMetrics]
                                                 ? (currentMetrics[wave.key as keyof typeof currentMetrics] as number).toFixed(2)
@@ -682,10 +709,10 @@ const Dashboard = () => {
                                         <span>Fatigue Score Timeline {!isConnected && '(Data Sesi)'}</span>
                                     </div>
                                 </div>
-                                <div style={{ height: '160px', display: 'flex', alignItems: 'flex-end', gap: '1px', background: '#f8fafc', padding: '1rem', borderRadius: '8px', marginBottom: '0.75rem' }}>
+                                <div style={{ height: '160px', display: 'flex', alignItems: 'flex-end', gap: '1px', background: '#f8fafc', padding: '0.5rem', borderRadius: '8px', marginBottom: '0.75rem', overflow: 'hidden' }}>
                                     {dataHistory.slice(-100).map((item: any, idx: number) => {
                                         const score = item.eegFatigueScore || 0;
-                                        const height = Math.max((score / 10) * 100, 5);
+                                        const height = Math.min(Math.max((score / 10) * 100, 3), 95);
                                         const warnLine = settings.warningThreshold / 10;
                                         const critLine = settings.criticalThreshold / 10;
                                         const color = score < warnLine ? '#10b981' : score < critLine ? '#f59e0b' : '#ef4444';
@@ -698,7 +725,7 @@ const Dashboard = () => {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: '#64748b' }}>
                                     <span>5 menit lalu</span>
                                     <div style={{ display: 'flex', gap: '1rem' }}>
-                                        {[['#10b981','Alert'],['#f59e0b','Drowsy'],['#ef4444','Fatigued']].map(([c,l]) => (
+                                        {[['#10b981', 'Alert'], ['#f59e0b', 'Drowsy'], ['#ef4444', 'Fatigued']].map(([c, l]) => (
                                             <span key={l} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                                 <span style={{ width: '10px', height: '10px', background: c, borderRadius: '2px', display: 'inline-block' }} />{l}
                                             </span>
@@ -738,10 +765,10 @@ const Dashboard = () => {
                                     </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
                                         {[
-                                            { label: 'Lane Deviation', value: '-- cm',  icon: <Target size={16} />,        color: '#3b82f6', bg: '#eff6ff' },
-                                            { label: 'Speed Consist.', value: '-- %',   icon: <Gauge size={16} />,          color: '#10b981', bg: '#f0fdf4' },
-                                            { label: 'Reaction Time',  value: '-- ms',  icon: <Timer size={16} />,          color: '#f59e0b', bg: '#fffbeb' },
-                                            { label: 'Alert Count',    value: '--',      icon: <AlertTriangle size={16} />,  color: '#ef4444', bg: '#fff1f2' }
+                                            { label: 'Lane Deviation', value: '-- cm', icon: <Target size={16} />, color: '#3b82f6', bg: '#eff6ff' },
+                                            { label: 'Speed Consist.', value: '-- %', icon: <Gauge size={16} />, color: '#10b981', bg: '#f0fdf4' },
+                                            { label: 'Reaction Time', value: '-- ms', icon: <Timer size={16} />, color: '#f59e0b', bg: '#fffbeb' },
+                                            { label: 'Alert Count', value: '--', icon: <AlertTriangle size={16} />, color: '#ef4444', bg: '#fff1f2' }
                                         ].map((m) => (
                                             <div key={m.label} style={{ padding: '1rem', background: m.bg, borderRadius: '12px' }}>
                                                 <div style={{ color: m.color, marginBottom: '0.5rem' }}>{m.icon}</div>
@@ -763,65 +790,65 @@ const Dashboard = () => {
                                 {/* Last Session */}
                                 <div className="widget-card span-1">
 
-                        {/* Fatigue Score Timeline Graph */}
-                        {(isConnected || dataHistory.length > 0) && (
-                            <div className="widget-card" style={{ gridColumn: 'span 3' }}>
-                                <div className="widget-title">
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <TrendingUp size={20} color="#ef4444" />
-                                        <span>Fatigue Score Timeline {!isConnected && '(Session Data)'}</span>
-                                    </div>
-                                </div>
-                                <div style={{ height: '200px', display: 'flex', alignItems: 'flex-end', gap: '1px', background: '#f8fafc', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
-                                    {(() => {
-                                        const historyToUse = dataHistory.length > 0 ? dataHistory : [];
-                                        return historyToUse.slice(-100).map((item: any, idx: number) => {
-                                            const score = item.eegFatigueScore || 0;
-                                            const height = Math.max((score / 10) * 100, 5);
-                                            const warnLine = settings.warningThreshold / 10;
-                                            const critLine = settings.criticalThreshold / 10;
-                                            const color = score < warnLine ? '#10b981' : score < critLine ? '#f59e0b' : '#ef4444';
-                                            return (
-                                                <div
-                                                    key={idx}
-                                                    title={`Score: ${score.toFixed(2)} at ${new Date(item.timestamp).toLocaleTimeString('id-ID')}`}
-                                                    style={{
-                                                        flex: 1,
-                                                        height: `${height}%`,
-                                                        background: color,
-                                                        borderRadius: '2px',
-                                                        opacity: 0.7,
-                                                        cursor: 'pointer'
-                                                    }}
-                                                />
-                                            );
-                                        });
-                                    })()}
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#64748b' }}>
-                                    <span>5 min ago</span>
-                                    <span style={{ display: 'flex', gap: '1rem' }}>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <span style={{ width: '12px', height: '12px', background: '#10b981', borderRadius: '2px' }}></span>
-                                            Alert
-                                        </span>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <span style={{ width: '12px', height: '12px', background: '#f59e0b', borderRadius: '2px' }}></span>
-                                            Drowsy
-                                        </span>
-                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <span style={{ width: '12px', height: '12px', background: '#ef4444', borderRadius: '2px' }}></span>
-                                            Fatigued
-                                        </span>
-                                    </span>
-                                </div>
-                            </div>
-                        )}
+                                    {/* Fatigue Score Timeline Graph */}
+                                    {(isConnected || dataHistory.length > 0) && (
+                                        <div className="widget-card" style={{ gridColumn: 'span 3' }}>
+                                            <div className="widget-title">
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <TrendingUp size={20} color="#ef4444" />
+                                                    <span>Fatigue Score Timeline {!isConnected && '(Session Data)'}</span>
+                                                </div>
+                                            </div>
+                                            <div style={{ height: '200px', display: 'flex', alignItems: 'flex-end', gap: '1px', background: '#f8fafc', padding: '0.5rem', borderRadius: '8px', marginBottom: '1rem', overflow: 'hidden' }}>
+                                                {(() => {
+                                                    const historyToUse = dataHistory.length > 0 ? dataHistory : [];
+                                                    return historyToUse.slice(-100).map((item: any, idx: number) => {
+                                                        const score = item.eegFatigueScore || 0;
+                                                        const height = Math.min(Math.max((score / 10) * 100, 3), 95);
+                                                        const warnLine = settings.warningThreshold / 10;
+                                                        const critLine = settings.criticalThreshold / 10;
+                                                        const color = score < warnLine ? '#10b981' : score < critLine ? '#f59e0b' : '#ef4444';
+                                                        return (
+                                                            <div
+                                                                key={idx}
+                                                                title={`Score: ${score.toFixed(2)} at ${new Date(item.timestamp).toLocaleTimeString('id-ID')}`}
+                                                                style={{
+                                                                    flex: 1,
+                                                                    height: `${height}%`,
+                                                                    background: color,
+                                                                    borderRadius: '2px',
+                                                                    opacity: 0.7,
+                                                                    cursor: 'pointer'
+                                                                }}
+                                                            />
+                                                        );
+                                                    });
+                                                })()}
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#64748b' }}>
+                                                <span>5 min ago</span>
+                                                <span style={{ display: 'flex', gap: '1rem' }}>
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <span style={{ width: '12px', height: '12px', background: '#10b981', borderRadius: '2px' }}></span>
+                                                        Alert
+                                                    </span>
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <span style={{ width: '12px', height: '12px', background: '#f59e0b', borderRadius: '2px' }}></span>
+                                                        Drowsy
+                                                    </span>
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <span style={{ width: '12px', height: '12px', background: '#ef4444', borderRadius: '2px' }}></span>
+                                                        Fatigued
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
 
 
 
 
-                                {/* Last Session */}
+                                    {/* Last Session */}
                                     <div className="widget-title">
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <History size={18} color="#64748b" />
@@ -925,7 +952,7 @@ const Dashboard = () => {
                                         }}
                                     />
                                 </div>
-                                <button 
+                                <button
                                     onClick={() => navigate('/session')}
                                     style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', border: 'none', borderRadius: '8px', background: 'linear-gradient(135deg, #6366f1 0%, #7c3aed 100%)', color: 'white', cursor: 'pointer', fontWeight: 600 }}
                                 >
@@ -1091,8 +1118,8 @@ const Dashboard = () => {
                                                 {improving
                                                     ? `Tren membaik 📉 — fatigue turun ${Math.abs(trend).toFixed(1)} poin dari sesi pertama ke terbaru.`
                                                     : worsening
-                                                    ? `Tren memburuk 📈 — fatigue naik ${trend.toFixed(1)} poin. Pertimbangkan istirahat lebih.`
-                                                    : 'Fatigue relatif stabil antar sesi.'}
+                                                        ? `Tren memburuk 📈 — fatigue naik ${trend.toFixed(1)} poin. Pertimbangkan istirahat lebih.`
+                                                        : 'Fatigue relatif stabil antar sesi.'}
                                             </div>
                                         );
                                     })()}
@@ -1120,7 +1147,7 @@ const Dashboard = () => {
                                             gap: '0.75rem',
                                             marginBottom: '1.5rem'
                                         }}>
-                                           
+
                                         </div>
                                         <Calendar size={48} style={{ margin: '0 auto 1rem', opacity: 0.3 }} />
                                         <h3 style={{ margin: '0 0 0.5rem 0', color: '#1e293b' }}>
@@ -1148,9 +1175,9 @@ const Dashboard = () => {
                                         const durationSec = Math.floor(duration % 60);
                                         const violationCount = session.violations?.length || 0;
                                         const violationPoints = session.totalViolationPoints || 0;
-                                        
+
                                         return (
-                                            <div 
+                                            <div
                                                 key={session.sessionId}
                                                 onClick={() => handleViewSession(session)}
                                                 style={{
@@ -1179,7 +1206,7 @@ const Dashboard = () => {
                                                     }}>
                                                         <Flag size={24} color="white" />
                                                     </div>
-                                                    
+
                                                     {/* Info */}
                                                     <div style={{ flex: 1, minWidth: 0 }}>
                                                         <div style={{ fontWeight: 600, color: '#1e293b', fontSize: '1rem', marginBottom: '0.25rem' }}>
@@ -1200,13 +1227,13 @@ const Dashboard = () => {
                                                             </span>
                                                         </div>
                                                     </div>
-                                                    
+
                                                     {/* Stats Badges */}
                                                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                                                         {session.reachedCount !== undefined && (
-                                                            <div style={{ 
-                                                                padding: '0.35rem 0.75rem', 
-                                                                background: '#f0fdf4', 
+                                                            <div style={{
+                                                                padding: '0.35rem 0.75rem',
+                                                                background: '#f0fdf4',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.8rem',
                                                                 fontWeight: 600,
@@ -1216,9 +1243,9 @@ const Dashboard = () => {
                                                                 {session.reachedCount}/{session.totalWaypoints}
                                                             </div>
                                                         )}
-                                                        <div style={{ 
-                                                            padding: '0.35rem 0.75rem', 
-                                                            background: violationPoints === 0 ? '#f0fdf4' : violationPoints < 30 ? '#fef3c7' : '#fef2f2', 
+                                                        <div style={{
+                                                            padding: '0.35rem 0.75rem',
+                                                            background: violationPoints === 0 ? '#f0fdf4' : violationPoints < 30 ? '#fef3c7' : '#fef2f2',
                                                             borderRadius: '6px',
                                                             fontSize: '0.8rem',
                                                             fontWeight: 600,
@@ -1228,9 +1255,9 @@ const Dashboard = () => {
                                                             {violationCount}x ({violationPoints} poin)
                                                         </div>
                                                         {session.stats?.avgFatigue && (
-                                                            <div style={{ 
-                                                                padding: '0.35rem 0.75rem', 
-                                                                background: parseFloat(session.stats.avgFatigue) < 3 ? '#eff6ff' : parseFloat(session.stats.avgFatigue) < 6 ? '#fef3c7' : '#fef2f2', 
+                                                            <div style={{
+                                                                padding: '0.35rem 0.75rem',
+                                                                background: parseFloat(session.stats.avgFatigue) < 3 ? '#eff6ff' : parseFloat(session.stats.avgFatigue) < 6 ? '#fef3c7' : '#fef2f2',
                                                                 borderRadius: '6px',
                                                                 fontSize: '0.8rem',
                                                                 fontWeight: 600,
@@ -1241,7 +1268,7 @@ const Dashboard = () => {
                                                             </div>
                                                         )}
                                                     </div>
-                                                    
+
                                                     {/* Delete Button */}
                                                     <button
                                                         onClick={(e) => handleDeleteSession(session.sessionId, e)}
@@ -1260,7 +1287,7 @@ const Dashboard = () => {
                                                     >
                                                         <Trash2 size={18} />
                                                     </button>
-                                                    
+
                                                     {/* View indicator */}
                                                     <ChevronRight size={20} color="#9ca3af" />
                                                 </div>
@@ -1442,9 +1469,9 @@ const Dashboard = () => {
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 {[
-                                    { key: 'warningThreshold',  label: 'Warning Threshold',  color: '#f59e0b', scope: '🖥 Tampilan dashboard' },
-                                    { key: 'criticalThreshold', label: 'Critical Threshold',  color: '#ef4444', scope: '🖥 Tampilan dashboard' },
-                                    { key: 'perClosThreshold',  label: 'PERCLOS Threshold',   color: '#8b5cf6', scope: '🔒 Info only — dikelola backend' },
+                                    { key: 'warningThreshold', label: 'Warning Threshold', color: '#f59e0b', scope: '🖥 Tampilan dashboard' },
+                                    { key: 'criticalThreshold', label: 'Critical Threshold', color: '#ef4444', scope: '🖥 Tampilan dashboard' },
+                                    { key: 'perClosThreshold', label: 'PERCLOS Threshold', color: '#8b5cf6', scope: '🔒 Info only — dikelola backend' },
                                 ].map(t => (
                                     <div key={t.key}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
@@ -1477,9 +1504,9 @@ const Dashboard = () => {
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                     {([
-                                        { key: 'audioAlerts',        label: 'Audio Alerts',         desc: 'Bunyi peringatan saat kelelahan terdeteksi' },
-                                        { key: 'visualEffects',      label: 'Visual Effects',        desc: 'Efek visual overlay pada layar game' },
-                                        { key: 'hapticFeedback',     label: 'Haptic Feedback',       desc: 'Getar perangkat (jika didukung)' },
+                                        { key: 'audioAlerts', label: 'Audio Alerts', desc: 'Bunyi peringatan saat kelelahan terdeteksi' },
+                                        { key: 'visualEffects', label: 'Visual Effects', desc: 'Efek visual overlay pada layar game' },
+                                        { key: 'hapticFeedback', label: 'Haptic Feedback', desc: 'Getar perangkat (jika didukung)' },
                                     ] as const).map(n => (
                                         <label key={n.key} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
                                             <input
@@ -1507,8 +1534,8 @@ const Dashboard = () => {
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                     {([
-                                        { key: 'saveSessionData',       label: 'Simpan Data Sesi',        desc: 'Riwayat sesi disimpan di localStorage' },
-                                        { key: 'shareAnonymousData',    label: 'Bagikan Data Anonim',      desc: 'Kirim data tanpa identitas untuk penelitian' },
+                                        { key: 'saveSessionData', label: 'Simpan Data Sesi', desc: 'Riwayat sesi disimpan di localStorage' },
+                                        { key: 'shareAnonymousData', label: 'Bagikan Data Anonim', desc: 'Kirim data tanpa identitas untuk penelitian' },
                                     ] as const).map(n => (
                                         <label key={n.key} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer' }}>
                                             <input
@@ -1543,10 +1570,10 @@ const Dashboard = () => {
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.9rem' }}>
                                     {[
-                                        { label: 'Versi Aplikasi', value: '1.0.0',   valueColor: '#1e293b' },
-                                        { label: 'Backend',        value: 'FastAPI (localhost:8000)', valueColor: '#1e293b' },
-                                        { label: 'EEG / LSL',      value: isConnected ? 'Terhubung' : 'Tidak Terhubung', valueColor: isConnected ? '#16a34a' : '#ef4444' },
-                                        { label: 'EEG Server',     value: 'localhost:8765 (WS)',     valueColor: '#1e293b' },
+                                        { label: 'Versi Aplikasi', value: '1.0.0', valueColor: '#1e293b' },
+                                        { label: 'Backend', value: 'FastAPI (localhost:8000)', valueColor: '#1e293b' },
+                                        { label: 'EEG / LSL', value: isConnected ? 'Terhubung' : 'Tidak Terhubung', valueColor: isConnected ? '#16a34a' : '#ef4444' },
+                                        { label: 'EEG Server', value: 'localhost:8765 (WS)', valueColor: '#1e293b' },
                                     ].map(row => (
                                         <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <span style={{ color: '#64748b' }}>{row.label}</span>
