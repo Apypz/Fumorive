@@ -12,6 +12,8 @@ export function GameCanvas() {
   const {
     graphicsConfig,
     selectedMap,
+    mapSeed,
+    currentLevel,
     setLoading,
     setFps,
     setGameState,
@@ -48,8 +50,8 @@ export function GameCanvas() {
       // Create scene
       engine.createScene()
 
-      // Create and initialize demo scene with selected map
-      const demoScene = new DemoScene(graphicsConfig, selectedMap)
+      // Create and initialize demo scene with selected map (+ seed/level for Ngawi)
+      const demoScene = new DemoScene(graphicsConfig, selectedMap, mapSeed, currentLevel)
       sceneRef.current = demoScene
 
       // Set camera mode change callback to update UI
@@ -79,6 +81,9 @@ export function GameCanvas() {
 
       // Start render loop
       let wrongWayViolationCooldown = 0
+      let prevWrongWay = false
+      let fpsAccumulator = 0
+      let lastFpsValue = 0
       engine.start((deltaTime) => {
         demoScene.update(deltaTime)
 
@@ -97,7 +102,11 @@ export function GameCanvas() {
         // Check wrong-way driving (throttled violation trigger every 5 seconds)
         wrongWayViolationCooldown = Math.max(0, wrongWayViolationCooldown - deltaTime)
         const wrongWayNow = demoScene.isWrongWay()
-        setIsWrongWay(wrongWayNow)
+        // Only write to the store on transition, not 60x/sec.
+        if (wrongWayNow !== prevWrongWay) {
+          prevWrongWay = wrongWayNow
+          setIsWrongWay(wrongWayNow)
+        }
         if (wrongWayNow && wrongWayViolationCooldown <= 0) {
           useViolationStore.getState().addViolation('wrong-way')
           wrongWayViolationCooldown = 5 // 5 second cooldown between wrong-way violations
@@ -137,9 +146,15 @@ export function GameCanvas() {
           }
         }
 
-        // Update FPS counter every 0.5 seconds
-        if (Math.random() < 0.05) {
-          setFps(Math.round(engine.getFPS()))
+        // Update FPS counter ~once per second, and only when it actually changes.
+        fpsAccumulator += deltaTime
+        if (fpsAccumulator >= 1) {
+          fpsAccumulator = 0
+          const fpsNow = Math.round(engine.getFPS())
+          if (fpsNow !== lastFpsValue) {
+            lastFpsValue = fpsNow
+            setFps(fpsNow)
+          }
         }
       })
 
@@ -154,7 +169,7 @@ export function GameCanvas() {
       console.error('[GameCanvas] Failed to initialize game:', error)
       setLoading(false)
     }
-  }, [graphicsConfig, selectedMap, setLoading, setFps, setGameState, setCameraMode, setControlMode, setSteeringAngle, setCurrentSpeed, setIsDrifting, setSlipAngle, setEngineRunning])
+  }, [graphicsConfig, selectedMap, mapSeed, currentLevel, setLoading, setFps, setGameState, setCameraMode, setControlMode, setSteeringAngle, setCurrentSpeed, setIsDrifting, setSlipAngle, setEngineRunning])
 
   // Handle inspector toggle
   useEffect(() => {

@@ -25,7 +25,9 @@ export class GameEngine {
 
     // Create the Babylon.js engine with optimal settings for high quality
     this.engine = new Engine(config.canvas, config.antialias ?? true, {
-      preserveDrawingBuffer: true,
+      // Only needed for canvas.toDataURL/screenshots; forces an extra per-frame
+      // backbuffer copy otherwise. Use Babylon's CreateScreenshot if needed.
+      preserveDrawingBuffer: false,
       stencil: true,
       disableWebGL2Support: false,
       failIfMajorPerformanceCaveat: false,
@@ -35,8 +37,11 @@ export class GameEngine {
       ...config.engineOptions,
     })
 
-    // Set hardware scaling to 1 for best quality (no downscaling)
-    this.engine.setHardwareScalingLevel(1)
+    // Render at CSS-pixel resolution instead of full native HiDPI. On a laptop
+    // at devicePixelRatio 1.5 the native backbuffer is ~2.25x the pixels, and
+    // every per-pixel cost (shadow sampling, glow blur, fill) scales with it.
+    // Math.max(1, dpr) only downscales on HiDPI displays; DPR=1 stays native.
+    this.engine.setHardwareScalingLevel(Math.max(1, window.devicePixelRatio || 1))
 
     // Handle window resize
     window.addEventListener('resize', this.handleResize)

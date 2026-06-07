@@ -134,7 +134,7 @@ export class EnvironmentSetup {
       {
         width: size,
         height: size,
-        subdivisions: 128, // Higher subdivisions for smoother appearance
+        subdivisions: 1, // Flat plane — extra subdivisions are wasted vertices
       },
       this.scene
     )
@@ -146,11 +146,10 @@ export class EnvironmentSetup {
       groundMaterial.roughness = 0.95 // Very rough for asphalt-like look
       groundMaterial.environmentIntensity = 0.3
       
-      // Add micro-surface detail
+      // Add micro-surface detail (occlusion terms dropped — costly per-pixel
+      // PBR work on the largest surface on screen, for negligible visual gain)
       groundMaterial.usePhysicalLightFalloff = true
-      groundMaterial.useRadianceOcclusion = true
-      groundMaterial.useHorizonOcclusion = true
-      
+
       ground.material = groundMaterial
     } else {
       const groundMaterial = new StandardMaterial('groundMaterial', this.scene)
@@ -211,8 +210,8 @@ export class EnvironmentSetup {
     }
 
     this.glowLayer = new GlowLayer('glowLayer', this.scene, {
-      mainTextureSamples: this.graphicsConfig.antialiasing ? 4 : 1,
-      blurKernelSize: 64,
+      mainTextureSamples: 1, // glow doesn't need MSAA — halves the RT cost
+      blurKernelSize: 32, // was 64; the blur is a per-frame full-screen pass
     })
 
     this.glowLayer.intensity = intensity

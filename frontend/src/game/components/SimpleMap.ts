@@ -8,6 +8,7 @@ import {
   AbstractMesh,
 } from '@babylonjs/core'
 import { LightingSetup } from './LightingSetup'
+import type { NgawiCityPlan } from './NgawiCityGenerator'
 
 interface Collider {
   min: Vector3
@@ -20,6 +21,7 @@ export class SimpleMap {
   private lightingSetup: LightingSetup | null
   private meshes: AbstractMesh[] = []
   private colliders: Collider[] = []
+  private roadDetailMat: PBRMaterial | null = null
   private spawnPoint: { x: number; z: number; rotationY: number } = { x: 0, z: 0, rotationY: 0 }
   
   // Map boundaries - diperluas untuk objektif game
@@ -144,6 +146,154 @@ export class SimpleMap {
     console.log('[SimpleMap] Sriwedari Park map created with', this.colliders.length, 'colliders')
   }
 
+  // ============================================
+  // NGAWI CITY (procedural / dynamic)
+  // ============================================
+
+  /**
+   * Build the procedurally-generated "Ngawi City" map from a pre-computed plan
+   * (see NgawiCityGenerator.generateNgawiCity). Roads are collider-free ground
+   * meshes (drivable); building blocks get AABB colliders (obstacles). Overrides
+   * mapBounds + spawnPoint so collision and spawn match the generated layout.
+   */
+  buildNgawiCity(plan: NgawiCityPlan): void {
+    this.createNgawiGround(plan)
+    this.createNgawiRoads(plan)
+    this.createNgawiBuildings(plan)
+    this.createNgawiBoundaryWalls(plan)
+
+    this.mapBounds = { ...plan.bounds }
+    this.spawnPoint = { x: plan.spawn.x, z: plan.spawn.z, rotationY: plan.spawn.rotationY }
+
+    console.log('[SimpleMap] Ngawi City built with', this.colliders.length, 'colliders')
+  }
+
+  private createNgawiGround(plan: NgawiCityPlan): void {
+    const { bounds } = plan
+    const width = bounds.maxX - bounds.minX + 40
+    const depth = bounds.maxZ - bounds.minZ + 40
+
+    const ground = MeshBuilder.CreateGround('ngawiGround', {
+      width,
+      height: depth,
+      subdivisions: 1, // flat plane — no subdivisions needed
+    }, this.scene)
+
+    const mat = new PBRMaterial('ngawiGroundMat', this.scene)
+    mat.albedoColor = new Color3(0.32, 0.42, 0.28) // grass green
+    mat.metallic = 0
+    mat.roughness = 0.95
+    ground.material = mat
+    ground.receiveShadows = true
+    ground.position = new Vector3((bounds.minX + bounds.maxX) / 2, -0.02, (bounds.minZ + bounds.maxZ) / 2)
+    this.meshes.push(ground)
+  }
+
+  private createNgawiRoads(plan: NgawiCityPlan): void {
+    const roadMat = new PBRMaterial('ngawiRoadMat', this.scene)
+    roadMat.albedoColor = new Color3(0.16, 0.16, 0.18) // asphalt
+    roadMat.metallic = 0.1
+    roadMat.roughness = 0.8
+
+    plan.roadSegments.forEach((seg) => {
+      const w = seg.horizontal ? seg.length : seg.width
+      const d = seg.horizontal ? seg.width : seg.length
+      const road = MeshBuilder.CreateGround(seg.name, { width: w, height: d }, this.scene)
+      // Vertical strips sit a hair higher to avoid z-fighting at intersections.
+      road.position = new Vector3(seg.x, seg.horizontal ? 0.01 : 0.02, seg.z)
+      road.material = roadMat
+      road.receiveShadows = true
+      this.meshes.push(road)
+    })
+
+    // Intersection patches fill the corners where perpendicular streets meet and
+    // any hairline gaps between abutting per-edge strips. Sit just below the
+    // strips so the strips always render on top.
+    const roadWidth = plan.grid.roadWidth
+    plan.grid.nodes.forEach((node) => {
+      if ((plan.grid.adj.get(node.id)?.size ?? 0) === 0) return
+      const patch = MeshBuilder.CreateGround(`ngawiNode_${node.id}`, {
+        width: roadWidth,
+        height: roadWidth,
+      }, this.scene)
+      patch.position = new Vector3(node.x, 0.005, node.z)
+      patch.material = roadMat
+      patch.receiveShadows = true
+      this.meshes.push(patch)
+    })
+  }
+
+  private createNgawiBuildings(plan: NgawiCityPlan): void {
+    // A few muted facade colours — created ONCE and shared across all buildings
+    // (was one new PBRMaterial per building = dozens of redundant shaders).
+    const palette = [
+      new Color3(0.82, 0.55, 0.45),
+      new Color3(0.55, 0.64, 0.78),
+      new Color3(0.88, 0.82, 0.6),
+      new Color3(0.6, 0.72, 0.58),
+      new Color3(0.78, 0.78, 0.8),
+    ]
+    const materials = palette.map((color, i) => {
+      const mat = new PBRMaterial(`ngawiBuildingMat_${i}`, this.scene)
+      mat.albedoColor = color
+      mat.metallic = 0.05
+      mat.roughness = 0.85
+      return mat
+    })
+
+    plan.buildings.forEach((b, i) => {
+      const building = MeshBuilder.CreateBox(b.name, {
+        width: b.width,
+        height: b.height,
+        depth: b.depth,
+      }, this.scene)
+      building.position = new Vector3(b.x, b.height / 2, b.z)
+      building.material = materials[i % materials.length]
+      building.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(building)
+      this.meshes.push(building)
+
+      // Collider — this is what keeps the car on the streets.
+      this.addBoxCollider(building)
+    })
+  }
+
+  private createNgawiBoundaryWalls(plan: NgawiCityPlan): void {
+    const { bounds } = plan
+    const wallMat = new PBRMaterial('ngawiBoundaryMat', this.scene)
+    wallMat.albedoColor = new Color3(0.45, 0.47, 0.5)
+    wallMat.metallic = 0.2
+    wallMat.roughness = 0.8
+
+    const wallHeight = 4
+    const t = 2
+    const cx = (bounds.minX + bounds.maxX) / 2
+    const cz = (bounds.minZ + bounds.maxZ) / 2
+    const spanX = bounds.maxX - bounds.minX + t * 2
+    const spanZ = bounds.maxZ - bounds.minZ + t * 2
+
+    const walls = [
+      { name: 'ngawi_wall_n', x: cx, z: bounds.maxZ + t / 2, w: spanX, d: t },
+      { name: 'ngawi_wall_s', x: cx, z: bounds.minZ - t / 2, w: spanX, d: t },
+      { name: 'ngawi_wall_e', x: bounds.maxX + t / 2, z: cz, w: t, d: spanZ },
+      { name: 'ngawi_wall_w', x: bounds.minX - t / 2, z: cz, w: t, d: spanZ },
+    ]
+
+    walls.forEach((wall) => {
+      const mesh = MeshBuilder.CreateBox(wall.name, {
+        width: wall.w,
+        height: wallHeight,
+        depth: wall.d,
+      }, this.scene)
+      mesh.position = new Vector3(wall.x, wallHeight / 2, wall.z)
+      mesh.material = wallMat
+      mesh.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(mesh)
+      this.meshes.push(mesh)
+      this.addBoxCollider(mesh)
+    })
+  }
+
   // Legacy method - creates Solo City
   createRaceTrack(): void {
     this.createSoloCity()
@@ -162,7 +312,7 @@ export class SimpleMap {
     const ground = MeshBuilder.CreateGround('parkGround', {
       width: 800,
       height: 1000,
-      subdivisions: 32,
+      subdivisions: 1, // flat plane — no subdivisions needed
     }, this.scene)
 
     const groundMaterial = new PBRMaterial('parkGroundMaterial', this.scene)
@@ -476,7 +626,7 @@ export class SimpleMap {
     const ground = MeshBuilder.CreateGround('ground', {
       width: 800,
       height: 1000,
-      subdivisions: 32,
+      subdivisions: 1, // flat plane — no subdivisions needed
     }, this.scene)
 
     const groundMaterial = new PBRMaterial('groundMaterial', this.scene)
@@ -639,6 +789,18 @@ export class SimpleMap {
     this.meshes.push(road)
   }
 
+  /** Shared asphalt-grey material for junctions & curves (all identical). */
+  private getRoadDetailMat(): PBRMaterial {
+    if (!this.roadDetailMat) {
+      const m = new PBRMaterial('roadDetailMat', this.scene)
+      m.albedoColor = new Color3(0.45, 0.48, 0.42)
+      m.metallic = 0.05
+      m.roughness = 0.85
+      this.roadDetailMat = m
+    }
+    return this.roadDetailMat
+  }
+
   private createCurveRoad(
     name: string,
     x: number,
@@ -647,10 +809,7 @@ export class SimpleMap {
     endAngle: number,
     roadWidth: number
   ): void {
-    const material = new PBRMaterial(`${name}_mat`, this.scene)
-    material.albedoColor = new Color3(0.45, 0.48, 0.42)
-    material.metallic = 0.05
-    material.roughness = 0.85
+    const material = this.getRoadDetailMat()
 
     const curve = MeshBuilder.CreateDisc(name, {
       radius: roadWidth / 2 + 1,
@@ -666,10 +825,7 @@ export class SimpleMap {
   }
 
   private createJunction(x: number, z: number, size: number): void {
-    const material = new PBRMaterial(`junction_${x}_${z}`, this.scene)
-    material.albedoColor = new Color3(0.45, 0.48, 0.42)
-    material.metallic = 0.05
-    material.roughness = 0.85
+    const material = this.getRoadDetailMat()
 
     const junction = MeshBuilder.CreateGround(`junction_${x}_${z}`, {
       width: size + 4,
@@ -1761,11 +1917,17 @@ export class SimpleMap {
     const shopDepth = 12
     const shopHeight = 8
 
+    // One shared material per palette colour (not one per shop).
+    const shopMaterials = colors.map((color, idx) => {
+      const m = new PBRMaterial(`shopMat_${idx}`, this.scene)
+      m.albedoColor = color
+      m.metallic = 0.05
+      m.roughness = 0.85
+      return m
+    })
+
     allShops.forEach((shop, i) => {
-      const shopMaterial = new PBRMaterial(`shopMat_${i}`, this.scene)
-      shopMaterial.albedoColor = colors[shop.colorIdx]
-      shopMaterial.metallic = 0.05
-      shopMaterial.roughness = 0.85
+      const shopMaterial = shopMaterials[shop.colorIdx]
 
       // Shop body
       const shopBuilding = MeshBuilder.CreateBox(`shop_${i}`, {

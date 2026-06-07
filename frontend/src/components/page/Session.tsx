@@ -26,7 +26,7 @@ import { Copy, Check } from 'lucide-react'
 import '../../App.css'
 
 export default function Session() {
-  const { gameState, setGameState } = useGameStore()
+  const { gameState, setGameState, selectedMap, currentLevel, mapSeed, startNgawiRun, resetLevels } = useGameStore()
   const { sessionId, initializeSession } = useSessionStore()
   const [showSettings, setShowSettings] = useState(false)
   const [showMapSelection, setShowMapSelection] = useState(true)
@@ -44,6 +44,10 @@ export default function Session() {
   }, [initializeSession])
 
   const handleStartGame = () => {
+    // Ngawi City: start a fresh 3-level run (level 1 + new random seed)
+    if (selectedMap === 'ngawi-city') {
+      startNgawiRun()
+    }
     setShowMapSelection(false)
     setGameStarted(true)
     setShowTutorial(true)
@@ -57,6 +61,7 @@ export default function Session() {
     setGameState('loading')
     useWaypointStore.getState().resetWaypoints()
     useViolationStore.getState().resetViolations()
+    resetLevels()
   }
 
   return (
@@ -131,8 +136,10 @@ export default function Session() {
         <MapSelection onStartGame={handleStartGame} />
       )}
 
-      {/* Game Canvas - only render when game started */}
-      {gameStarted && <GameCanvas />}
+      {/* Game Canvas - only render when game started.
+          The key forces a clean remount (dispose + re-init) when the Ngawi
+          level/seed changes, loading the next level's random map in place. */}
+      {gameStarted && <GameCanvas key={`${selectedMap}-${currentLevel}-${mapSeed}`} />}
       
       {/* Loading Screen - only show after map selection, during game load */}
       {gameStarted && <LoadingScreen />}

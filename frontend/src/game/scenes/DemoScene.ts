@@ -23,6 +23,9 @@ import { WrongWayDetector } from '../systems/WrongWayDetector'
 import { WaypointSystem, getRandomRoute } from '../systems/WaypointSystem'
 import { WaypointMarkers } from '../systems/WaypointMarkers'
 import type { WaypointSessionData } from '../systems/WaypointSystem'
+import { generateNgawiCity, getNgawiLevelParams } from '../components/NgawiCityGenerator'
+import type { NgawiCityPlan } from '../components/NgawiCityGenerator'
+import { generateNgawiRoute } from '../systems/routeGenerator'
 
 export type { MapType }
 
@@ -57,9 +60,16 @@ export class DemoScene implements GameScene {
   private waypointSystem: WaypointSystem | null = null
   private waypointMarkers: WaypointMarkers | null = null
 
-  constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'solo-city') {
+  // Procedural map (Ngawi City). seed + level are unused by hand-authored maps.
+  private seed: number
+  private level: number
+  private ngawiPlan: NgawiCityPlan | null = null
+
+  constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'solo-city', seed: number = 1, level: number = 1) {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
     this.mapType = mapType
+    this.seed = seed
+    this.level = level
   }
 
   /**
@@ -263,6 +273,13 @@ export class DemoScene implements GameScene {
     if (this.mapType === 'sriwedari-park') {
       this.simpleMap.createSriwedariPark()
       console.log('[DemoScene] Loading Sriwedari Park map')
+    } else if (this.mapType === 'ngawi-city') {
+      const params = getNgawiLevelParams(this.level)
+      this.ngawiPlan = generateNgawiCity(this.seed, params)
+      this.simpleMap.buildNgawiCity(this.ngawiPlan)
+      // Feed the procedural street grid to the wrong-way detector.
+      this.wrongWayDetector.loadGridNetwork(this.ngawiPlan.grid, params.roadWidth)
+      console.log(`[DemoScene] Loading Ngawi City (level ${this.level}, seed ${this.seed})`)
     } else {
       this.simpleMap.createSoloCity()
       console.log('[DemoScene] Loading Solo City map')
@@ -274,7 +291,10 @@ export class DemoScene implements GameScene {
       new Color3(0.4, 0.6, 0.9), // Top color (bright blue sky)
       new Color3(0.7, 0.8, 0.95) // Bottom color (light horizon)
     )
-    this.environmentSetup.setupGlowLayer(0.3)
+    // Glow is a per-frame full-screen blur pass; skip it entirely on 'low'.
+    if (this.graphicsConfig.shadowQuality !== 'low') {
+      this.environmentSetup.setupGlowLayer(0.3)
+    }
 
     // Setup post-processing
     if (this.scene.activeCamera) {
@@ -291,9 +311,11 @@ export class DemoScene implements GameScene {
     // Create demo objects (optional, can be removed if you only want the car)
     // this.createDemoObjects()
 
-    // Initialize waypoint system only for Solo City
-    if (this.mapType === 'solo-city') {
-      const route = getRandomRoute(this.mapType)
+    // Initialize waypoint system for Solo City and Ngawi City
+    if (this.mapType === 'solo-city' || this.mapType === 'ngawi-city') {
+      const route = this.mapType === 'ngawi-city' && this.ngawiPlan
+        ? generateNgawiRoute(this.ngawiPlan, this.seed, { targetCheckpoints: getNgawiLevelParams(this.level).targetCheckpoints })
+        : getRandomRoute(this.mapType)
       this.waypointSystem = new WaypointSystem(route)
       console.log(`[DemoScene] Waypoint route selected: ${route.name} (${route.waypoints.length} checkpoints)`)
 
@@ -590,7 +612,11 @@ export class DemoScene implements GameScene {
       const position = this.carController.getPosition()
       const heading = this.carController.getHeading()
       const speed = this.carController.getSpeed()
-      this.wrongWayDetector.update(position, heading, speed, deltaTime)
+      // Wrong-way lane directions exist for Solo City (static) and Ngawi City
+      // (loaded from its procedural grid); Sriwedari Park has none.
+      if (this.mapType === 'solo-city' || this.mapType === 'ngawi-city') {
+        this.wrongWayDetector.update(position, heading, speed, deltaTime)
+      }
 
       // Update waypoint system
       if (this.waypointSystem) {

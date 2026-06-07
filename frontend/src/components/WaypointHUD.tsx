@@ -2,6 +2,7 @@ import { useWaypointStore } from '../stores/waypointStore'
 import { useViolationStore } from '../stores/violationStore'
 import { useSessionStore } from '../stores/sessionStore'
 import { useEEGStore } from '../stores/eegStore'
+import { useGameStore } from '../stores/gameStore'
 import { sessionApi } from '../api/session'
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -27,6 +28,13 @@ export function WaypointHUD() {
   const violations = useViolationStore((s) => s.violations)
   const sessionId = useSessionStore((s) => s.sessionId)
   const eegDataHistory = useEEGStore((s) => s.dataHistory)
+
+  // Level state (Ngawi City has 3 dynamic levels)
+  const selectedMap = useGameStore((s) => s.selectedMap)
+  const currentLevel = useGameStore((s) => s.currentLevel)
+  const totalLevels = useGameStore((s) => s.totalLevels)
+  const isNgawi = selectedMap === 'ngawi-city'
+  const hasNextLevel = isNgawi && currentLevel < totalLevels
 
   // Flash effect when checkpoint reached
   const [showFlash, setShowFlash] = useState(false)
@@ -103,9 +111,10 @@ export function WaypointHUD() {
     navigate('/session-results', { state: completionData })
   }, [isNavigating, sessionId, sessionData, completionTime, violations, totalViolationPoints, eegDataHistory, navigate])
 
-  // Auto-redirect countdown when route completed
+  // Auto-redirect countdown when route completed.
+  // Skipped mid-run on Ngawi City — the player chooses "next level" vs "results".
   useEffect(() => {
-    if (!isRouteCompleted) return
+    if (!isRouteCompleted || hasNextLevel) return
     setCountdown(10)
     const interval = setInterval(() => {
       setCountdown((prev) => {
@@ -118,7 +127,16 @@ export function WaypointHUD() {
       })
     }, 1000)
     return () => clearInterval(interval)
-  }, [isRouteCompleted, navigateToResults])
+  }, [isRouteCompleted, navigateToResults, hasNextLevel])
+
+  // Advance to the next Ngawi level: reset per-level stores then bump level+seed.
+  // gameStore.advanceLevel() changes the seed → Session's GameCanvas key changes
+  // → clean remount loads the next random map in place (no navigation).
+  const handleNextLevel = useCallback(() => {
+    useWaypointStore.getState().resetWaypoints()
+    useViolationStore.getState().resetViolations()
+    useGameStore.getState().advanceLevel()
+  }, [])
 
   if (!sessionData) return null
 
@@ -149,7 +167,7 @@ export function WaypointHUD() {
       <div style={styles.completionOverlay}>
         <div style={styles.completionCard}>
           <div style={styles.completionIcon}>🏁</div>
-          <h2 style={styles.completionTitle}>RUTE SELESAI!</h2>
+          <h2 style={styles.completionTitle}>{isNgawi ? `LEVEL ${currentLevel} SELESAI!` : 'RUTE SELESAI!'}</h2>
           <p style={styles.completionRoute}>{sessionData.routeName}</p>
           <div style={styles.completionStats}>
             <div style={styles.statItem}>
@@ -174,13 +192,28 @@ export function WaypointHUD() {
               </span>
             </div>
           </div>
-          <button onClick={handleGoToResults} disabled={isNavigating} style={{
-            ...styles.dashboardButton,
-            opacity: isNavigating ? 0.7 : 1,
-            cursor: isNavigating ? 'not-allowed' : 'pointer'
-          }}>
-            {isNavigating ? 'Memproses...' : `Lihat Hasil Analisis (${countdown}s)`}
-          </button>
+          {hasNextLevel ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <button onClick={handleNextLevel} style={styles.nextLevelButton}>
+                ▶ Lanjut ke Level {currentLevel + 1}
+              </button>
+              <button onClick={handleGoToResults} disabled={isNavigating} style={{
+                ...styles.resultsSecondaryButton,
+                opacity: isNavigating ? 0.7 : 1,
+                cursor: isNavigating ? 'not-allowed' : 'pointer',
+              }}>
+                {isNavigating ? 'Memproses...' : 'Lihat Hasil Analisis'}
+              </button>
+            </div>
+          ) : (
+            <button onClick={handleGoToResults} disabled={isNavigating} style={{
+              ...styles.dashboardButton,
+              opacity: isNavigating ? 0.7 : 1,
+              cursor: isNavigating ? 'not-allowed' : 'pointer'
+            }}>
+              {isNavigating ? 'Memproses...' : `Lihat Hasil Analisis (${countdown}s)`}
+            </button>
+          )}
         </div>
       </div>
     )
@@ -202,7 +235,9 @@ export function WaypointHUD() {
         {/* Route name */}
         <div style={styles.routeHeader}>
           <span style={styles.routeIcon}>🏁</span>
-          <span style={styles.routeName}>{sessionData.routeName}</span>
+          <span style={styles.routeName}>
+            {sessionData.routeName}{isNgawi ? ` — Lv ${currentLevel}/${totalLevels}` : ''}
+          </span>
         </div>
 
         {/* Progress bar */}
@@ -591,5 +626,26 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     transition: 'transform 0.2s, box-shadow 0.2s',
     boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+  } as React.CSSProperties,
+  nextLevelButton: {
+    padding: '14px 32px',
+    background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '1.05rem',
+    fontWeight: 700,
+    cursor: 'pointer',
+    letterSpacing: '0.02em',
+    boxShadow: '0 4px 15px rgba(34, 197, 94, 0.4)',
+  } as React.CSSProperties,
+  resultsSecondaryButton: {
+    padding: '10px 24px',
+    background: 'transparent',
+    color: 'rgba(255,255,255,0.75)',
+    border: '1px solid rgba(255,255,255,0.25)',
+    borderRadius: '8px',
+    fontSize: '0.9rem',
+    fontWeight: 600,
   } as React.CSSProperties,
 }

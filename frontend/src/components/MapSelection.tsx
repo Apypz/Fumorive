@@ -23,6 +23,12 @@ const maps: MapInfo[] = [
     description: 'Taman terbuka yang luas dengan sedikit obstacle. Sempurna untuk berlatih dan menguji kendaraan dengan bebas.',
     thumbnail: '🌳',
   },
+  {
+    id: 'ngawi-city' as MapType,
+    name: 'Ngawi City',
+    description: 'Kota grid dinamis dengan 3 level. Peta & rute di-generate acak setiap permainan — selalu berbeda. Selesaikan satu level untuk lanjut ke level berikutnya.',
+    thumbnail: '🌆',
+  },
 ]
 
 interface MapSelectionProps {
