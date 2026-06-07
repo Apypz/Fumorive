@@ -8,7 +8,8 @@
 import { useGameStore } from '../stores/gameStore'
 
 export function GearHUD() {
-  const { currentGear, transmissionMode } = useGameStore()
+  const currentGear = useGameStore((s) => s.currentGear)
+  const transmissionMode = useGameStore((s) => s.transmissionMode)
 
   const gearName = currentGear === -1 ? 'R' : currentGear === 0 ? 'N' : `${currentGear}`
 

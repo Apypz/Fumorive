@@ -6,6 +6,7 @@ import {
   PBRMaterial,
   StandardMaterial,
   AbstractMesh,
+  Mesh,
 } from '@babylonjs/core'
 import { LightingSetup } from './LightingSetup'
 import type { NgawiCityPlan } from './NgawiCityGenerator'
@@ -125,7 +126,8 @@ export class SimpleMap {
     this.createBushes()
     this.createSpawnStation()
     this.createMapBoundaryWalls()
-    
+    this.freezeStaticMeshes()
+
     console.log('[SimpleMap] Solo City map created with', this.colliders.length, 'colliders')
   }
 
@@ -142,7 +144,8 @@ export class SimpleMap {
     this.createParkLamps()
     this.createParkSpawnArea()
     this.createMapBoundaryWalls()
-    
+    this.freezeStaticMeshes()
+
     console.log('[SimpleMap] Sriwedari Park map created with', this.colliders.length, 'colliders')
   }
 
@@ -164,6 +167,7 @@ export class SimpleMap {
 
     this.mapBounds = { ...plan.bounds }
     this.spawnPoint = { x: plan.spawn.x, z: plan.spawn.z, rotationY: plan.spawn.rotationY }
+    this.freezeStaticMeshes()
 
     console.log('[SimpleMap] Ngawi City built with', this.colliders.length, 'colliders')
   }
@@ -195,6 +199,11 @@ export class SimpleMap {
     roadMat.metallic = 0.1
     roadMat.roughness = 0.8
 
+    // Collect all road strips + intersection patches, then merge into ONE static
+    // mesh. They all share roadMat and never move, so ~250 separate draw calls
+    // become a single one.
+    const pieces: Mesh[] = []
+
     plan.roadSegments.forEach((seg) => {
       const w = seg.horizontal ? seg.length : seg.width
       const d = seg.horizontal ? seg.width : seg.length
@@ -202,8 +211,7 @@ export class SimpleMap {
       // Vertical strips sit a hair higher to avoid z-fighting at intersections.
       road.position = new Vector3(seg.x, seg.horizontal ? 0.01 : 0.02, seg.z)
       road.material = roadMat
-      road.receiveShadows = true
-      this.meshes.push(road)
+      pieces.push(road)
     })
 
     // Intersection patches fill the corners where perpendicular streets meet and
@@ -218,9 +226,19 @@ export class SimpleMap {
       }, this.scene)
       patch.position = new Vector3(node.x, 0.005, node.z)
       patch.material = roadMat
-      patch.receiveShadows = true
-      this.meshes.push(patch)
+      pieces.push(patch)
     })
+
+    if (pieces.length > 0) {
+      const merged = Mesh.MergeMeshes(pieces, true, true, undefined, false, false)
+      if (merged) {
+        merged.name = 'ngawiRoads_merged'
+        merged.material = roadMat
+        merged.receiveShadows = true
+        merged.freezeWorldMatrix()
+        this.meshes.push(merged)
+      }
+    }
   }
 
   private createNgawiBuildings(plan: NgawiCityPlan): void {
@@ -842,6 +860,10 @@ export class SimpleMap {
     lineMaterial.diffuseColor = new Color3(1, 1, 0.9)
     lineMaterial.emissiveColor = new Color3(0.3, 0.3, 0.25)
 
+    // ~430 dashes all share lineMaterial — collect and merge into ONE mesh
+    // (one draw call instead of hundreds).
+    const dashes: Mesh[] = []
+
     // Dashed center lines for horizontal roads (central district + ring + suburban)
     const horizontalRoads = [
       // Central district
@@ -872,7 +894,7 @@ export class SimpleMap {
         }, this.scene)
         dash.position = new Vector3(i, 0.02, road.z)
         dash.material = lineMaterial
-        this.meshes.push(dash)
+        dashes.push(dash)
       }
     })
 
@@ -903,9 +925,19 @@ export class SimpleMap {
         }, this.scene)
         dash.position = new Vector3(road.x, 0.02, i)
         dash.material = lineMaterial
-        this.meshes.push(dash)
+        dashes.push(dash)
       }
     })
+
+    if (dashes.length > 0) {
+      const merged = Mesh.MergeMeshes(dashes, true, true, undefined, false, false)
+      if (merged) {
+        merged.name = 'roadMarkings_merged'
+        merged.material = lineMaterial
+        merged.freezeWorldMatrix()
+        this.meshes.push(merged)
+      }
+    }
   }
 
   private createRoadBarriers(): void {
@@ -2549,10 +2581,23 @@ export class SimpleMap {
     console.log(`[SimpleMap] Park spawn area created at (${padX}, ${padZ})`)
   }
 
+  /**
+   * Freeze all built map meshes. The city is fully static (only the car moves,
+   * and the car is loaded separately — not in this.meshes), so we can skip the
+   * per-frame world-matrix recompute and pointer-picking checks for every mesh.
+   */
+  private freezeStaticMeshes(): void {
+    for (const mesh of this.meshes) {
+      mesh.freezeWorldMatrix()
+      mesh.isPickable = false
+    }
+  }
+
   dispose(): void {
     this.meshes.forEach(mesh => mesh.dispose())
     this.meshes = []
     this.colliders = []
+    this.roadDetailMat = null
     console.log('[SimpleMap] Disposed')
   }
 }

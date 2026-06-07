@@ -16,7 +16,11 @@ function getCameraModeDisplay(mode: string): string {
 }
 
 export function ControlsHUD() {
-  const { controlMode, cameraMode, engineRunning, transmissionMode, currentGear } = useGameStore()
+  const controlMode = useGameStore((s) => s.controlMode)
+  const cameraMode = useGameStore((s) => s.cameraMode)
+  const engineRunning = useGameStore((s) => s.engineRunning)
+  const transmissionMode = useGameStore((s) => s.transmissionMode)
+  const currentGear = useGameStore((s) => s.currentGear)
   const [isVisible, setIsVisible] = useState(true)
 
   return (

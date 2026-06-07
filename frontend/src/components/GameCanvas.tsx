@@ -84,20 +84,27 @@ export function GameCanvas() {
       let prevWrongWay = false
       let fpsAccumulator = 0
       let lastFpsValue = 0
+      let hudAccumulator = 0
+      const HUD_INTERVAL = 1 / 20 // throttle HUD store writes to ~20Hz
       engine.start((deltaTime) => {
         demoScene.update(deltaTime)
 
-        // Update steering angle for HUD (every frame for smooth animation)
-        setSteeringAngle(demoScene.getSteeringAngle())
-        
-        // Update speed and drift status for speedometer
-        setCurrentSpeed(demoScene.getSpeedKmh())
-        setIsDrifting(demoScene.getIsDrifting())
-        setSlipAngle(demoScene.getSlipAngle())
+        // Throttle HUD store writes (~20Hz). Each write drives React re-renders,
+        // and 60Hz is far more than the gauges/needles need — the CSS transitions
+        // on them keep motion smooth even at 20Hz. Gameplay logic above/below
+        // (physics, collision, checkpoint detection) still runs every frame.
+        hudAccumulator += deltaTime
+        const flushHud = hudAccumulator >= HUD_INTERVAL
+        if (flushHud) hudAccumulator = 0
 
-        // Update gear/transmission info
-        setCurrentGear(demoScene.getCurrentGear())
-        setTransmissionMode(demoScene.getTransmissionMode())
+        if (flushHud) {
+          setSteeringAngle(demoScene.getSteeringAngle())
+          setCurrentSpeed(demoScene.getSpeedKmh())
+          setIsDrifting(demoScene.getIsDrifting())
+          setSlipAngle(demoScene.getSlipAngle())
+          setCurrentGear(demoScene.getCurrentGear())
+          setTransmissionMode(demoScene.getTransmissionMode())
+        }
 
         // Check wrong-way driving (throttled violation trigger every 5 seconds)
         wrongWayViolationCooldown = Math.max(0, wrongWayViolationCooldown - deltaTime)
@@ -112,8 +119,9 @@ export function GameCanvas() {
           wrongWayViolationCooldown = 5 // 5 second cooldown between wrong-way violations
         }
 
-        // Update waypoint store for HUD
-        const wpData = demoScene.getWaypointSessionData()
+        // Update waypoint store for HUD (throttled — these are display-only;
+        // the reach/complete event detection below still runs every frame).
+        const wpData = flushHud ? demoScene.getWaypointSessionData() : null
         if (wpData) {
           useWaypointStore.getState().setSessionData(wpData)
           const dist = demoScene.getDistanceToActiveWaypoint()

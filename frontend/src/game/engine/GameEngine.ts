@@ -75,6 +75,9 @@ export class GameEngine {
     // Enable frustum culling and occlusion queries
     this.scene.skipFrustumClipping = false
 
+    // Gameplay is keyboard-driven; skip per-pointer-move scene picking (CPU).
+    this.scene.skipPointerMovePicking = true
+
     // Freeze materials when possible for better performance
     this.scene.blockfreeActiveMeshesAndRenderingGroups = false
 
