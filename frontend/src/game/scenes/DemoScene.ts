@@ -26,6 +26,7 @@ import type { WaypointSessionData } from '../systems/WaypointSystem'
 import { generateNgawiCity, getNgawiLevelParams } from '../components/NgawiCityGenerator'
 import type { NgawiCityPlan } from '../components/NgawiCityGenerator'
 import { generateNgawiRoute } from '../systems/routeGenerator'
+import { NpcTrafficSystem } from '../systems/NpcTrafficSystem'
 
 export type { MapType }
 
@@ -64,6 +65,7 @@ export class DemoScene implements GameScene {
   private seed: number
   private level: number
   private ngawiPlan: NgawiCityPlan | null = null
+  private npcTraffic: NpcTrafficSystem | null = null
 
   constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'solo-city', seed: number = 1, level: number = 1) {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
@@ -279,6 +281,14 @@ export class DemoScene implements GameScene {
       this.simpleMap.buildNgawiCity(this.ngawiPlan)
       // Feed the procedural street grid to the wrong-way detector.
       this.wrongWayDetector.loadGridNetwork(this.ngawiPlan.grid, params.roadWidth)
+      // Spawn 5 NPC cars that drive the grid, avoiding the player's spawn node.
+      this.npcTraffic = new NpcTrafficSystem(
+        this.scene,
+        this.ngawiPlan.grid,
+        5,
+        this.seed,
+        this.ngawiPlan.spawn.nodeId
+      )
       console.log(`[DemoScene] Loading Ngawi City (level ${this.level}, seed ${this.seed})`)
     } else {
       this.simpleMap.createSoloCity()
@@ -604,6 +614,13 @@ export class DemoScene implements GameScene {
   }
 
   update(deltaTime: number): void {
+    // Move NPC traffic and publish their colliders BEFORE the player physics runs,
+    // so the player collides against the NPCs' current-frame positions.
+    if (this.npcTraffic && this.simpleMap) {
+      this.npcTraffic.update(deltaTime)
+      this.simpleMap.setDynamicColliders(this.npcTraffic.getColliders())
+    }
+
     // Update car controller (physics, movement, and camera)
     this.carController?.update(deltaTime)
 
@@ -631,6 +648,7 @@ export class DemoScene implements GameScene {
     this.lightingSetup?.dispose()
     this.inputManager?.dispose()
     this.carController?.dispose()
+    this.npcTraffic?.dispose()
     if (typeof this.simpleMap?.dispose === 'function') {
       this.simpleMap?.dispose();
     }

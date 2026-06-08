@@ -22,6 +22,7 @@ export class SimpleMap {
   private lightingSetup: LightingSetup | null
   private meshes: AbstractMesh[] = []
   private colliders: Collider[] = []
+  private dynamicColliders: Collider[] = []
   private roadDetailMat: PBRMaterial | null = null
   private spawnPoint: { x: number; z: number; rotationY: number } = { x: 0, z: 0, rotationY: 0 }
   
@@ -42,6 +43,14 @@ export class SimpleMap {
     return this.colliders
   }
 
+  /**
+   * Replace the set of dynamic (moving) colliders, e.g. NPC cars. Refreshed each
+   * frame by DemoScene; checked by checkCollision alongside the static colliders.
+   */
+  setDynamicColliders(colliders: Collider[]): void {
+    this.dynamicColliders = colliders
+  }
+
   getMapBounds() {
     return this.mapBounds
   }
@@ -52,24 +61,36 @@ export class SimpleMap {
   }
 
   checkCollision(position: Vector3, radius: number = 1.5): { collided: boolean; normal: Vector3; penetration: number } {
-    let result = { collided: false, normal: Vector3.Zero(), penetration: 0 }
-    
     // Check map boundaries
     const boundaryCheck = this.checkBoundaryCollision(position, radius)
     if (boundaryCheck.collided) {
       return boundaryCheck
     }
-    
-    // Check colliders
-    for (const collider of this.colliders) {
+
+    // Static colliders (buildings, barriers, walls)
+    const staticHit = this.checkColliderList(position, radius, this.colliders)
+    if (staticHit.collided) return staticHit
+
+    // Dynamic colliders (e.g. moving NPC cars)
+    return this.checkColliderList(position, radius, this.dynamicColliders)
+  }
+
+  private checkColliderList(
+    position: Vector3,
+    radius: number,
+    colliders: Collider[]
+  ): { collided: boolean; normal: Vector3; penetration: number } {
+    let result = { collided: false, normal: Vector3.Zero(), penetration: 0 }
+
+    for (const collider of colliders) {
       const closest = new Vector3(
         Math.max(collider.min.x, Math.min(position.x, collider.max.x)),
         Math.max(collider.min.y, Math.min(position.y, collider.max.y)),
         Math.max(collider.min.z, Math.min(position.z, collider.max.z))
       )
-      
+
       const distance = Vector3.Distance(position, closest)
-      
+
       if (distance < radius) {
         const normal = position.subtract(closest).normalize()
         if (normal.length() === 0) {
@@ -81,16 +102,16 @@ export class SimpleMap {
             normal.z = position.z < (collider.min.z + collider.max.z) / 2 ? -1 : 1
           }
         }
-        
+
         result = {
           collided: true,
           normal: normal,
-          penetration: radius - distance
+          penetration: radius - distance,
         }
         break
       }
     }
-    
+
     return result
   }
 
