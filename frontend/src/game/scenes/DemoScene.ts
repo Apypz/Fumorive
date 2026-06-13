@@ -28,6 +28,7 @@ import type { NgawiCityPlan } from '../components/NgawiCityGenerator'
 import { generateNgawiRoute } from '../systems/routeGenerator'
 import { NpcTrafficSystem } from '../systems/NpcTrafficSystem'
 import { TrafficLightSystem } from '../systems/TrafficLightSystem'
+import { NpcSoundSystem } from '../systems/NpcSoundSystem'
 
 export type { MapType }
 
@@ -68,6 +69,7 @@ export class DemoScene implements GameScene {
   private ngawiPlan: NgawiCityPlan | null = null
   private npcTraffic: NpcTrafficSystem | null = null
   private trafficLights: TrafficLightSystem | null = null
+  private npcSound: NpcSoundSystem | null = null
 
   constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'solo-city', seed: number = 1, level: number = 1) {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
@@ -325,7 +327,14 @@ export class DemoScene implements GameScene {
         this.ngawiPlan.trafficLights,
         this.seed
       )
+      // NPC ambient sound system (engine noise + horn).
+      this.npcSound = new NpcSoundSystem()
+      this.npcSound.setGrid(this.ngawiPlan.grid)
+      this.npcSound.preload().catch((e) => console.warn('[DemoScene] NpcSoundSystem preload error:', e))
+      // Expose for browser console debugging: window.__npcSound.testHorn()
+      ;(window as unknown as Record<string, unknown>)['__npcSound'] = this.npcSound
       console.log(`[DemoScene] Loading Ngawi City (level ${this.level}, seed ${this.seed})`)
+      console.log('[DemoScene] Debug: type window.__npcSound.testHorn() in console to test horn')
     } else {
       this.simpleMap.createSoloCity()
       console.log('[DemoScene] Loading Solo City map')
@@ -663,6 +672,22 @@ export class DemoScene implements GameScene {
         tl ? (x, z, fx, fz) => tl.redStopDistance(x, z, fx, fz) : undefined
       )
       this.simpleMap.setDynamicColliders(this.npcTraffic.getColliders())
+
+      // Update NPC ambient sounds (engine noise + horn).
+      if (this.npcSound) {
+        const playerHeading = this.carController?.getHeading() ?? 0
+        const playerSpeed = this.carController?.getSpeed() ?? 0
+        this.npcSound.update(
+          deltaTime,
+          this.npcTraffic.getSnapshots(),
+          playerPos
+            ? { x: playerPos.x, z: playerPos.z, heading: playerHeading, speed: playerSpeed }
+            : null,
+          2.4,
+          this.npcTraffic.lastCollisionIds,
+          this.trafficLights?.greenTransitions ?? []
+        )
+      }
     }
 
     // Update car controller (physics, movement, and camera)
@@ -694,6 +719,8 @@ export class DemoScene implements GameScene {
     this.carController?.dispose()
     this.npcTraffic?.dispose()
     this.trafficLights?.dispose()
+    this.npcSound?.dispose()
+    this.npcSound = null
     if (typeof this.simpleMap?.dispose === 'function') {
       this.simpleMap?.dispose();
     }

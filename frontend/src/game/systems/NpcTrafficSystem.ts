@@ -31,6 +31,7 @@ import {
 } from '@babylonjs/core'
 import type { NgawiGrid } from '../components/NgawiCityGenerator'
 import { makeRng, randFloat } from '../utils/prng'
+import type { NpcSnapshot } from './NpcSoundSystem'
 
 interface AABB {
   min: Vector3
@@ -100,6 +101,9 @@ export class NpcTrafficSystem {
   private rng: () => number
   private cars: NpcCar[] = []
   private materials: PBRMaterial[] = []
+
+  /** NPC ids that overlapped the player car in the most recent update(). */
+  lastCollisionIds: Set<number> = new Set()
 
   constructor(scene: Scene, grid: NgawiGrid, count: number, seed: number, avoidNodeId?: number) {
     this.scene = scene
@@ -305,6 +309,18 @@ export class NpcTrafficSystem {
    * @param player player car position (or null) — treated as a hard obstacle.
    * @param playerRadius collision radius to keep clear of the player.
    */
+  /** Return lightweight snapshots of all NPC cars for the sound system. */
+  getSnapshots(): NpcSnapshot[] {
+    return this.cars.map((c, i) => ({
+      id: i,
+      x: c.x,
+      z: c.z,
+      heading: c.heading,
+      speed: c.speed,
+      toNode: c.toNode,
+    }))
+  }
+
   update(
     dt: number,
     player: { x: number; z: number } | null,
@@ -313,9 +329,22 @@ export class NpcTrafficSystem {
   ): void {
     const nodes = this.grid.nodes
 
+    this.lastCollisionIds.clear()
+
     const obstacles: Obstacle[] = []
     if (player) obstacles.push({ x: player.x, z: player.z, r: playerRadius, self: null })
     for (const c of this.cars) obstacles.push({ x: c.x, z: c.z, r: NPC_RADIUS, self: c })
+
+    // Detect which NPC cars are currently overlapping the player (collision).
+    if (player) {
+      for (let i = 0; i < this.cars.length; i++) {
+        const c = this.cars[i]
+        const dist = Math.hypot(c.x - player.x, c.z - player.z)
+        if (dist < NPC_RADIUS + playerRadius) {
+          this.lastCollisionIds.add(i)
+        }
+      }
+    }
 
     const edgeLen = this.grid.cellSize
 

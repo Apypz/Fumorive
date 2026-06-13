@@ -60,6 +60,9 @@ export class TrafficLightSystem {
   private time = 0
   private playerPrevFwd: number[] = []
 
+  /** Positions of lights that flipped from non-green → green this frame. */
+  greenTransitions: Array<{ x: number; z: number }> = []
+
   private stopOffset: number
   private laneHalf: number
   private readonly sense = 32
@@ -255,12 +258,19 @@ export class TrafficLightSystem {
   /** Advance the phases; only swap bulb materials when a light's state changes. */
   update(dt: number): void {
     this.time += dt
+    this.greenTransitions = []
     for (const L of this.lights) {
       const p = this.phaseAt(this.time + L.offset)
       if (p.ns !== L.ns || p.ew !== L.ew) {
+        // Detect red→green transition for NS or EW
+        const nsWasRed = L.ns === 'red' && p.ns === 'green'
+        const ewWasRed = L.ew === 'red' && p.ew === 'green'
         L.ns = p.ns
         L.ew = p.ew
         this.applyLight(L)
+        if (nsWasRed || ewWasRed) {
+          this.greenTransitions.push({ x: L.x, z: L.z })
+        }
       }
     }
   }
