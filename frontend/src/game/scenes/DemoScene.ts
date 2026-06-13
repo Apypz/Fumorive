@@ -331,10 +331,10 @@ export class DemoScene implements GameScene {
       this.npcSound = new NpcSoundSystem()
       this.npcSound.setGrid(this.ngawiPlan.grid)
       this.npcSound.preload().catch((e) => console.warn('[DemoScene] NpcSoundSystem preload error:', e))
-      // Expose for browser console debugging: window.__npcSound.testHorn()
+      // Expose for browser console debugging
       ;(window as unknown as Record<string, unknown>)['__npcSound'] = this.npcSound
       console.log(`[DemoScene] Loading Ngawi City (level ${this.level}, seed ${this.seed})`)
-      console.log('[DemoScene] Debug: type window.__npcSound.testHorn() in console to test horn')
+      console.log('[DemoScene] Debug: window.__npcSound.testHorn() | window.__npcSound.testEngine()')
     } else {
       this.simpleMap.createSoloCity()
       console.log('[DemoScene] Loading Solo City map')
