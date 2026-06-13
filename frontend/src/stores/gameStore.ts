@@ -21,7 +21,7 @@ interface GameStoreState {
   // Graphics settings
   graphicsConfig: GraphicsConfig
   setGraphicsConfig: (config: Partial<GraphicsConfig>) => void
-  setGraphicsPreset: (preset: 'low' | 'medium' | 'high' | 'ultra') => void
+  setGraphicsPreset: (preset: 'low' | 'medium' | 'high') => void
 
   // Map
   selectedMap: MapType
@@ -62,6 +62,14 @@ interface GameStoreState {
   // Wrong-way detection
   isWrongWay: boolean
   setIsWrongWay: (wrongWay: boolean) => void
+
+  // Off-road (driving on grass) detection
+  isOffRoad: boolean
+  setIsOffRoad: (offRoad: boolean) => void
+
+  // Traffic light governing the player's approach (null when not near one)
+  trafficLightState: 'red' | 'yellow' | 'green' | null
+  setTrafficLightState: (s: 'red' | 'yellow' | 'green' | null) => void
 
   // Transmission / Gear
   transmissionMode: 'automatic' | 'manual'
@@ -146,6 +154,14 @@ export const useGameStore = create<GameStoreState>((set) => ({
   // Wrong-way detection
   isWrongWay: false,
   setIsWrongWay: (isWrongWay) => set({ isWrongWay }),
+
+  // Off-road detection
+  isOffRoad: false,
+  setIsOffRoad: (isOffRoad) => set({ isOffRoad }),
+
+  // Traffic light state for the player's approach
+  trafficLightState: null,
+  setTrafficLightState: (trafficLightState) => set({ trafficLightState }),
 
   // Transmission / Gear
   transmissionMode: 'automatic',

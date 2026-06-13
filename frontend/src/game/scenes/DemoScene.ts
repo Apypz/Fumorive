@@ -23,10 +23,11 @@ import { WrongWayDetector } from '../systems/WrongWayDetector'
 import { WaypointSystem, getRandomRoute } from '../systems/WaypointSystem'
 import { WaypointMarkers } from '../systems/WaypointMarkers'
 import type { WaypointSessionData } from '../systems/WaypointSystem'
-import { generateNgawiCity, getNgawiLevelParams } from '../components/NgawiCityGenerator'
+import { generateNgawiCity, getNgawiLevelParams, isPointOnNgawiRoad } from '../components/NgawiCityGenerator'
 import type { NgawiCityPlan } from '../components/NgawiCityGenerator'
 import { generateNgawiRoute } from '../systems/routeGenerator'
 import { NpcTrafficSystem } from '../systems/NpcTrafficSystem'
+import { TrafficLightSystem } from '../systems/TrafficLightSystem'
 
 export type { MapType }
 
@@ -66,6 +67,7 @@ export class DemoScene implements GameScene {
   private level: number
   private ngawiPlan: NgawiCityPlan | null = null
   private npcTraffic: NpcTrafficSystem | null = null
+  private trafficLights: TrafficLightSystem | null = null
 
   constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'solo-city', seed: number = 1, level: number = 1) {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
@@ -208,6 +210,33 @@ export class DemoScene implements GameScene {
     return this.wrongWayDetector.isWrongWay
   }
 
+  /** True if the player is driving off the road (on grass) — Ngawi City only. */
+  isPlayerOffRoad(): boolean {
+    if (this.mapType !== 'ngawi-city' || !this.ngawiPlan || !this.carController) return false
+    const pos = this.carController.getPosition()
+    return !isPointOnNgawiRoad(this.ngawiPlan, pos.x, pos.z)
+  }
+
+  /**
+   * Stateful red-light check (Ngawi City). MUST be called every frame so the
+   * stop-line crossing tracker stays in sync. Returns true only on the frame the
+   * player crosses a red light's stop line entering the intersection.
+   */
+  checkPlayerRedLight(): boolean {
+    if (!this.trafficLights || !this.carController) return false
+    const pos = this.carController.getPosition()
+    const heading = this.carController.getHeading()
+    return this.trafficLights.playerCrossedRed(pos.x, pos.z, Math.sin(heading), Math.cos(heading))
+  }
+
+  /** State of the traffic light governing the player's approach, or null. */
+  getApproachingLightState(): 'red' | 'yellow' | 'green' | null {
+    if (!this.trafficLights || !this.carController) return null
+    const pos = this.carController.getPosition()
+    const heading = this.carController.getHeading()
+    return this.trafficLights.approachingState(pos.x, pos.z, Math.sin(heading), Math.cos(heading))
+  }
+
   /**
    * Get the waypoint system instance
    */
@@ -281,13 +310,20 @@ export class DemoScene implements GameScene {
       this.simpleMap.buildNgawiCity(this.ngawiPlan)
       // Feed the procedural street grid to the wrong-way detector.
       this.wrongWayDetector.loadGridNetwork(this.ngawiPlan.grid, params.roadWidth)
-      // Spawn 5 NPC cars that drive the grid, avoiding the player's spawn node.
+      // Spawn 10 NPC cars that drive the grid, avoiding the player's spawn node.
       this.npcTraffic = new NpcTrafficSystem(
         this.scene,
         this.ngawiPlan.grid,
-        5,
+        10,
         this.seed,
         this.ngawiPlan.spawn.nodeId
+      )
+      // Traffic lights at selected intersections.
+      this.trafficLights = new TrafficLightSystem(
+        this.scene,
+        this.ngawiPlan.grid,
+        this.ngawiPlan.trafficLights,
+        this.seed
       )
       console.log(`[DemoScene] Loading Ngawi City (level ${this.level}, seed ${this.seed})`)
     } else {
@@ -616,8 +652,16 @@ export class DemoScene implements GameScene {
   update(deltaTime: number): void {
     // Move NPC traffic and publish their colliders BEFORE the player physics runs,
     // so the player collides against the NPCs' current-frame positions.
+    this.trafficLights?.update(deltaTime)
     if (this.npcTraffic && this.simpleMap) {
-      this.npcTraffic.update(deltaTime)
+      const playerPos = this.carController?.getPosition()
+      const tl = this.trafficLights
+      this.npcTraffic.update(
+        deltaTime,
+        playerPos ? { x: playerPos.x, z: playerPos.z } : null,
+        2.4,
+        tl ? (x, z, fx, fz) => tl.redStopDistance(x, z, fx, fz) : undefined
+      )
       this.simpleMap.setDynamicColliders(this.npcTraffic.getColliders())
     }
 
@@ -649,6 +693,7 @@ export class DemoScene implements GameScene {
     this.inputManager?.dispose()
     this.carController?.dispose()
     this.npcTraffic?.dispose()
+    this.trafficLights?.dispose()
     if (typeof this.simpleMap?.dispose === 'function') {
       this.simpleMap?.dispose();
     }

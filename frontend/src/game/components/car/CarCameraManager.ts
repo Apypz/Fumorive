@@ -306,16 +306,16 @@ export class CarCameraManager {
    * Update cameras each frame
    * @param heading Car heading in radians
    */
-  update(heading: number): void {
+  update(heading: number, dt: number): void {
     switch (this.currentMode) {
       case 'third-person':
-        this.updateThirdPersonCamera(heading)
+        this.updateThirdPersonCamera(heading, dt)
         break
       case 'first-person':
         this.updateFirstPersonCamera(heading)
         break
       case 'free':
-        this.updateFreeCamera()
+        this.updateFreeCamera(dt)
         break
     }
   }
@@ -323,18 +323,24 @@ export class CarCameraManager {
   /**
    * Update Third Person camera - follows behind car
    */
-  private updateThirdPersonCamera(heading: number): void {
+  private updateThirdPersonCamera(heading: number, dt: number): void {
     if (!this.thirdPersonCamera) return
-    
+
     const tpConfig = this.config.thirdPerson
     const targetPosition = this.carMesh.position.add(new Vector3(0, tpConfig.targetHeightOffset, 0))
-    
-    // Smooth follow target
+
+    // Framerate-independent smooth follow. A constant per-frame Lerp factor makes
+    // the car judder when frame times vary (the car advances per-second but the
+    // camera closes a fixed % per-frame); converting followSpeed to a true
+    // per-second rate keeps it smooth at any FPS.
+    const t = 1 - Math.pow(1 - tpConfig.followSpeed, dt * 60)
     this.thirdPersonCamera.target = Vector3.Lerp(
-      this.thirdPersonCamera.target, 
-      targetPosition, 
-      tpConfig.followSpeed
+      this.thirdPersonCamera.target,
+      targetPosition,
+      t
     )
+    // Disable Babylon's own inertial smoothing so it can't re-add lag/judder.
+    this.thirdPersonCamera.inertia = 0
     
     // Lock alpha to follow car heading
     const targetAlpha = -heading - Math.PI / 2
@@ -370,17 +376,18 @@ export class CarCameraManager {
   /**
    * Update Free camera - follows car but user controls rotation
    */
-  private updateFreeCamera(): void {
+  private updateFreeCamera(dt: number): void {
     if (!this.freeCamera) return
-    
+
     const freeConfig = this.config.free
     const targetPosition = this.carMesh.position.add(new Vector3(0, freeConfig.targetHeightOffset, 0))
-    
-    // Smooth follow target only
+
+    // Framerate-independent smooth follow (see updateThirdPersonCamera).
+    const t = 1 - Math.pow(1 - freeConfig.followSpeed, dt * 60)
     this.freeCamera.target = Vector3.Lerp(
-      this.freeCamera.target, 
-      targetPosition, 
-      freeConfig.followSpeed
+      this.freeCamera.target,
+      targetPosition,
+      t
     )
   }
 

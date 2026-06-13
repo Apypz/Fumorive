@@ -453,8 +453,8 @@ export class CarController {
       )
     }
     
-    // Update camera
-    this.cameraManager.update(this.physics.getHeading())
+    // Update camera (dt needed for framerate-independent follow smoothing)
+    this.cameraManager.update(this.physics.getHeading(), dt)
     
     // Update drift particles
     this.driftParticles.update(

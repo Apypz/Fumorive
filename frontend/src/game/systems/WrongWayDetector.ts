@@ -48,7 +48,7 @@ export class WrongWayDetector {
   private correctWayTimer: number = 0
 
   // Thresholds
-  private readonly WRONG_WAY_CONFIRM_TIME = 1.5   // seconds driving wrong way before flagging
+  private readonly WRONG_WAY_CONFIRM_TIME = 1.0   // seconds driving wrong way before flagging
   private readonly CORRECT_WAY_RESET_TIME = 1.0    // seconds driving correct to clear flag
   private readonly MIN_SPEED_CHECK = 3.0            // m/s (~11 km/h) - don't check when slow/stopped
   private readonly HEADING_TOLERANCE = 0.6          // ~34° tolerance for heading angle (cosine threshold)
@@ -162,7 +162,10 @@ export class WrongWayDetector {
         if (dirs[0] !== dirs[1]) isJunction = true
       }
       if (isJunction) {
-        this.junctions.push({ x: node.x, z: node.z, radius: Math.max(10, roadWidth * 0.8) })
+        // Smaller pause zone than Solo City: the grid's intersections are only
+        // ~cellSize apart, so a large radius would pause detection over most of
+        // each street and the wrong-way flag would rarely confirm.
+        this.junctions.push({ x: node.x, z: node.z, radius: Math.max(6, roadWidth * 0.45) })
       }
     }
 

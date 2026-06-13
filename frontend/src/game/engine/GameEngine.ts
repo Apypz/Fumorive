@@ -41,7 +41,10 @@ export class GameEngine {
     // at devicePixelRatio 1.5 the native backbuffer is ~2.25x the pixels, and
     // every per-pixel cost (shadow sampling, glow blur, fill) scales with it.
     // Math.max(1, dpr) only downscales on HiDPI displays; DPR=1 stays native.
-    this.engine.setHardwareScalingLevel(Math.max(1, window.devicePixelRatio || 1))
+    // The preset's renderScale (≥1) downscales further — the 'low' tier renders
+    // at a lower internal resolution for a big performance win.
+    const renderScale = this.graphicsConfig.renderScale ?? 1
+    this.engine.setHardwareScalingLevel(Math.max(1, window.devicePixelRatio || 1) * renderScale)
 
     // Handle window resize
     window.addEventListener('resize', this.handleResize)

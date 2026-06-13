@@ -45,6 +45,21 @@ export interface BuildingBox {
   width: number
   depth: number
   height: number
+  variant: number // 0=box, 1=tiered/setback, 2=tower, 3=podium+slab
+}
+
+/** A tree placed in an empty lot (off the road). */
+export interface TreePoint {
+  x: number
+  z: number
+  scale: number
+}
+
+/** An intersection node that has a 2-phase traffic light. */
+export interface TrafficLightSpot {
+  nodeId: number
+  x: number
+  z: number
 }
 
 export interface NgawiBounds {
@@ -74,6 +89,8 @@ export interface NgawiCityPlan {
   grid: NgawiGrid
   roadSegments: RoadSegment[]
   buildings: BuildingBox[]
+  trees: TreePoint[]
+  trafficLights: TrafficLightSpot[]
   bounds: NgawiBounds
   spawn: NgawiSpawn
 }
@@ -84,6 +101,8 @@ export interface NgawiParams {
   cellSize: number
   roadWidth: number
   buildingDensity: number
+  treeDensity: number
+  trafficLightCount: number
   targetCheckpoints: number
   /**
    * Fraction (0..1) of non-spanning-tree edges added back as loops. Lower =
@@ -108,6 +127,8 @@ export const DEFAULT_NGAWI_PARAMS: NgawiParams = {
   cellSize: 48,
   roadWidth: 16,
   buildingDensity: 0.7,
+  treeDensity: 0.45,
+  trafficLightCount: 6,
   targetCheckpoints: 22,
   extraEdgeRatio: 0.6,
 }
@@ -133,7 +154,7 @@ export function nodeId(r: number, c: number, cols: number): number {
 
 export function generateNgawiCity(seed: number, params: Partial<NgawiParams> = {}): NgawiCityPlan {
   const p = { ...DEFAULT_NGAWI_PARAMS, ...params }
-  const { cols, rows, cellSize, roadWidth, buildingDensity, extraEdgeRatio } = p
+  const { cols, rows, cellSize, roadWidth, buildingDensity, treeDensity, trafficLightCount, extraEdgeRatio } = p
   const rng = makeRng(seed)
 
   // Center the grid on the origin.
@@ -216,21 +237,38 @@ export function generateNgawiCity(seed: number, params: Partial<NgawiParams> = {
     }
   })
 
-  // --- Buildings: one per interior cell (seeded), centered with road margin ---
+  // --- Per interior cell (seeded): a building, else maybe a cluster of trees ---
+  // Footprint kept <= 0.72 * usable so even the widest variant (podium) stays
+  // clear of the road. Empty lots get trees so the city isn't bare grass.
   const buildings: BuildingBox[] = []
+  const trees: TreePoint[] = []
   const usable = cellSize - roadWidth // drivable invariant: keep >= 24
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      if (rng() > buildingDensity) continue
-      const footprint = usable * randFloat(rng, 0.55, 0.8)
-      buildings.push({
-        name: `ngawi_bld_${r}_${c}`,
-        x: (c + 0.5) * cellSize + xOffset,
-        z: (r + 0.5) * cellSize + zOffset,
-        width: footprint,
-        depth: footprint,
-        height: randInt(rng, 8, 21),
-      })
+      const cx = (c + 0.5) * cellSize + xOffset
+      const cz = (r + 0.5) * cellSize + zOffset
+      if (rng() < buildingDensity) {
+        const footprint = usable * randFloat(rng, 0.5, 0.72)
+        buildings.push({
+          name: `ngawi_bld_${r}_${c}`,
+          x: cx,
+          z: cz,
+          width: footprint,
+          depth: footprint,
+          height: randInt(rng, 8, 24),
+          variant: randInt(rng, 0, 4),
+        })
+      } else if (rng() < treeDensity) {
+        const count = randInt(rng, 1, 4)
+        const jitter = usable * 0.32
+        for (let t = 0; t < count; t++) {
+          trees.push({
+            x: cx + randFloat(rng, -jitter, jitter),
+            z: cz + randFloat(rng, -jitter, jitter),
+            scale: randFloat(rng, 0.8, 1.5),
+          })
+        }
+      }
     }
   }
 
@@ -274,5 +312,43 @@ export function generateNgawiCity(seed: number, params: Partial<NgawiParams> = {
     nodeId: sId,
   }
 
-  return { grid: { cols, rows, cellSize, roadWidth, adj, nodes }, roadSegments, buildings, bounds, spawn }
+  // --- Traffic lights at some real intersections (3+ ways), not the spawn node ---
+  const intersections = nodes.filter((n) => (adj.get(n.id)?.size ?? 0) >= 3 && n.id !== sId)
+  for (let i = intersections.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1))
+    const tmp = intersections[i]
+    intersections[i] = intersections[j]
+    intersections[j] = tmp
+  }
+  const trafficLights: TrafficLightSpot[] = intersections
+    .slice(0, trafficLightCount)
+    .map((n) => ({ nodeId: n.id, x: n.x, z: n.z }))
+
+  return {
+    grid: { cols, rows, cellSize, roadWidth, adj, nodes },
+    roadSegments,
+    buildings,
+    trees,
+    trafficLights,
+    bounds,
+    spawn,
+  }
+}
+
+/**
+ * True if the world point (x, z) lies on a Ngawi road — inside any road strip or
+ * intersection patch. Used to flag the player for driving off-road (on grass).
+ */
+export function isPointOnNgawiRoad(plan: NgawiCityPlan, x: number, z: number): boolean {
+  for (const seg of plan.roadSegments) {
+    const hx = (seg.horizontal ? seg.length : seg.width) / 2
+    const hz = (seg.horizontal ? seg.width : seg.length) / 2
+    if (Math.abs(x - seg.x) <= hx && Math.abs(z - seg.z) <= hz) return true
+  }
+  const ph = plan.grid.roadWidth / 2
+  for (const node of plan.grid.nodes) {
+    if ((plan.grid.adj.get(node.id)?.size ?? 0) === 0) continue
+    if (Math.abs(x - node.x) <= ph && Math.abs(z - node.z) <= ph) return true
+  }
+  return false
 }

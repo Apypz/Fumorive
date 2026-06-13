@@ -100,10 +100,16 @@ export class LightingSetup {
   private setupShadows(): void {
     if (!this.directionalLight) return
 
+    // 'low' runs with no real-time shadows at all — the lightest path.
+    if (this.graphicsConfig.shadowQuality === 'low') {
+      console.log('[LightingSetup] Shadows disabled (low)')
+      return
+    }
+
     const shadowMapSize = this.getShadowMapSize()
 
-    // Use Cascaded Shadow Maps for better outdoor shadows
-    if (this.graphicsConfig.shadowQuality === 'ultra' || this.graphicsConfig.shadowQuality === 'high') {
+    if (this.graphicsConfig.shadowQuality === 'high') {
+      // Best-looking: high-res cascaded shadow maps with PCF filtering.
       this.shadowGenerator = new CascadedShadowGenerator(shadowMapSize, this.directionalLight)
       const csmGenerator = this.shadowGenerator as CascadedShadowGenerator
 
@@ -113,28 +119,15 @@ export class LightingSetup {
       csmGenerator.shadowMaxZ = 200
       csmGenerator.depthClamp = true
       csmGenerator.autoCalcDepthBounds = true
-
-      // Quality settings
-      if (this.graphicsConfig.shadowQuality === 'ultra') {
-        csmGenerator.numCascades = 4
-        csmGenerator.filteringQuality = CascadedShadowGenerator.QUALITY_HIGH
-        csmGenerator.usePercentageCloserFiltering = true
-        csmGenerator.penumbraDarkness = 0.8
-      } else {
-        csmGenerator.numCascades = 3
-        csmGenerator.filteringQuality = CascadedShadowGenerator.QUALITY_MEDIUM
-      }
+      csmGenerator.numCascades = 4
+      csmGenerator.filteringQuality = CascadedShadowGenerator.QUALITY_HIGH
+      csmGenerator.usePercentageCloserFiltering = true
+      csmGenerator.penumbraDarkness = 0.8
     } else {
-      // Standard shadow generator for lower quality
+      // 'medium' — standard blurred shadow map.
       this.shadowGenerator = new ShadowGenerator(shadowMapSize, this.directionalLight)
-
-      if (this.graphicsConfig.shadowQuality === 'medium') {
-        this.shadowGenerator.useBlurExponentialShadowMap = true
-        this.shadowGenerator.blurKernel = 32
-      } else {
-        this.shadowGenerator.usePoissonSampling = true
-      }
-
+      this.shadowGenerator.useBlurExponentialShadowMap = true
+      this.shadowGenerator.blurKernel = 32
       this.shadowGenerator.bias = 0.001
       this.shadowGenerator.normalBias = 0.02
     }
@@ -144,10 +137,8 @@ export class LightingSetup {
 
   private getShadowMapSize(): number {
     switch (this.graphicsConfig.shadowQuality) {
-      case 'ultra':
-        return 4096
       case 'high':
-        return 2048
+        return 4096
       case 'medium':
         return 1024
       case 'low':

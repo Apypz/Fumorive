@@ -9,7 +9,7 @@ import {
   Mesh,
 } from '@babylonjs/core'
 import { LightingSetup } from './LightingSetup'
-import type { NgawiCityPlan } from './NgawiCityGenerator'
+import type { NgawiCityPlan, BuildingBox } from './NgawiCityGenerator'
 
 interface Collider {
   min: Vector3
@@ -184,6 +184,7 @@ export class SimpleMap {
     this.createNgawiGround(plan)
     this.createNgawiRoads(plan)
     this.createNgawiBuildings(plan)
+    this.createNgawiTrees(plan)
     this.createNgawiBoundaryWalls(plan)
 
     this.mapBounds = { ...plan.bounds }
@@ -281,20 +282,121 @@ export class SimpleMap {
     })
 
     plan.buildings.forEach((b, i) => {
-      const building = MeshBuilder.CreateBox(b.name, {
-        width: b.width,
-        height: b.height,
-        depth: b.depth,
-      }, this.scene)
-      building.position = new Vector3(b.x, b.height / 2, b.z)
-      building.material = materials[i % materials.length]
-      building.receiveShadows = true
-      this.lightingSetup?.addShadowCaster(building)
-      this.meshes.push(building)
-
-      // Collider — this is what keeps the car on the streets.
-      this.addBoxCollider(building)
+      this.createNgawiBuilding(b, materials[i % materials.length])
     })
+  }
+
+  /** Render one building according to its variant (varied massing like Solo City). */
+  private createNgawiBuilding(b: BuildingBox, mat: PBRMaterial): void {
+    const make = (w: number, h: number, d: number, y: number, suffix: string, collide: boolean) => {
+      const box = MeshBuilder.CreateBox(`${b.name}${suffix}`, { width: w, height: h, depth: d }, this.scene)
+      box.position = new Vector3(b.x, y, b.z)
+      box.material = mat
+      box.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(box)
+      this.meshes.push(box)
+      if (collide) this.addBoxCollider(box) // collide only the widest (base) part
+    }
+
+    const fw = b.width
+    const fd = b.depth
+    const h = b.height
+
+    switch (b.variant) {
+      case 1: {
+        // Tiered / setback: full base + a narrower block on top.
+        const lowerH = h * 0.6
+        const upperH = h * 0.55
+        make(fw, lowerH, fd, lowerH / 2, '_a', true)
+        make(fw * 0.66, upperH, fd * 0.66, lowerH + upperH / 2, '_b', false)
+        break
+      }
+      case 2: {
+        // Tower: narrower + taller, with a small roof cap.
+        const tw = fw * 0.72
+        const td = fd * 0.72
+        const th = h * 1.35
+        make(tw, th, td, th / 2, '_a', true)
+        make(tw * 0.5, 1.6, td * 0.5, th + 0.8, '_cap', false)
+        break
+      }
+      case 3: {
+        // Podium + slab: wide low base with a set-back block above.
+        const podH = 4
+        make(fw * 1.1, podH, fd * 1.1, podH / 2, '_pod', true)
+        make(fw * 0.78, h, fd * 0.78, podH + h / 2, '_slab', false)
+        break
+      }
+      default: {
+        // Plain box.
+        make(fw, h, fd, h / 2, '', true)
+      }
+    }
+  }
+
+  /** Scatter low-poly trees (merged per material) into the empty lots. */
+  private createNgawiTrees(plan: NgawiCityPlan): void {
+    if (plan.trees.length === 0) return
+
+    const trunkMat = new PBRMaterial('ngawiTrunkMat', this.scene)
+    trunkMat.albedoColor = new Color3(0.36, 0.25, 0.16)
+    trunkMat.metallic = 0
+    trunkMat.roughness = 0.9
+
+    const foliageMat = new PBRMaterial('ngawiFoliageMat', this.scene)
+    foliageMat.albedoColor = new Color3(0.24, 0.52, 0.24)
+    foliageMat.metallic = 0
+    foliageMat.roughness = 0.9
+
+    const trunks: Mesh[] = []
+    const crowns: Mesh[] = []
+
+    plan.trees.forEach((t, i) => {
+      const s = t.scale
+      const trunkH = 3 * s
+      const trunk = MeshBuilder.CreateCylinder(`ngawiTrunk_${i}`, {
+        diameter: 0.6 * s,
+        height: trunkH,
+        tessellation: 6,
+      }, this.scene)
+      trunk.position = new Vector3(t.x, trunkH / 2, t.z)
+      trunk.material = trunkMat
+      trunks.push(trunk)
+
+      const crownH = 3.6 * s
+      const crown = MeshBuilder.CreateCylinder(`ngawiCrown_${i}`, {
+        diameterTop: 0,
+        diameterBottom: 3.2 * s,
+        height: crownH,
+        tessellation: 7,
+      }, this.scene)
+      crown.position = new Vector3(t.x, trunkH + crownH / 2, t.z)
+      crown.material = foliageMat
+      crowns.push(crown)
+
+      // Solid collider around the trunk.
+      const cr = 0.9 * s
+      this.colliders.push({
+        min: new Vector3(t.x - cr, 0, t.z - cr),
+        max: new Vector3(t.x + cr, trunkH + crownH, t.z + cr),
+      })
+    })
+
+    // Merge each group (one shared material each) → 2 draw calls for all trees.
+    const mergedTrunks = Mesh.MergeMeshes(trunks, true, true, undefined, false, false)
+    if (mergedTrunks) {
+      mergedTrunks.name = 'ngawiTrunks_merged'
+      mergedTrunks.material = trunkMat
+      mergedTrunks.receiveShadows = true
+      this.meshes.push(mergedTrunks)
+    }
+    const mergedCrowns = Mesh.MergeMeshes(crowns, true, true, undefined, false, false)
+    if (mergedCrowns) {
+      mergedCrowns.name = 'ngawiCrowns_merged'
+      mergedCrowns.material = foliageMat
+      mergedCrowns.receiveShadows = true
+      this.meshes.push(mergedCrowns)
+    }
   }
 
   private createNgawiBoundaryWalls(plan: NgawiCityPlan): void {

@@ -28,6 +28,8 @@ export function GameCanvas() {
   } = useGameStore()
 
   const setIsWrongWay = useGameStore((s) => s.setIsWrongWay)
+  const setIsOffRoad = useGameStore((s) => s.setIsOffRoad)
+  const setTrafficLightState = useGameStore((s) => s.setTrafficLightState)
   const setCurrentGear = useGameStore((s) => s.setCurrentGear)
   const setTransmissionMode = useGameStore((s) => s.setTransmissionMode)
 
@@ -36,6 +38,10 @@ export function GameCanvas() {
     if (!canvasRef.current) return
 
     setLoading(true)
+    // Clear any stale warnings carried over from a previous scene/level.
+    useGameStore.getState().setIsWrongWay(false)
+    useGameStore.getState().setIsOffRoad(false)
+    useGameStore.getState().setTrafficLightState(null)
 
     try {
       // Create engine
@@ -81,7 +87,11 @@ export function GameCanvas() {
 
       // Start render loop
       let wrongWayViolationCooldown = 0
+      let offRoadViolationCooldown = 0
+      let redLightCooldown = 0
       let prevWrongWay = false
+      let prevOffRoad = false
+      let prevLightState: 'red' | 'yellow' | 'green' | null = null
       let fpsAccumulator = 0
       let lastFpsValue = 0
       let hudAccumulator = 0
@@ -117,6 +127,35 @@ export function GameCanvas() {
         if (wrongWayNow && wrongWayViolationCooldown <= 0) {
           useViolationStore.getState().addViolation('wrong-way')
           wrongWayViolationCooldown = 5 // 5 second cooldown between wrong-way violations
+        }
+
+        // Off-road (grass) — Ngawi City only.
+        const offRoadNow = demoScene.isPlayerOffRoad()
+        if (offRoadNow !== prevOffRoad) {
+          prevOffRoad = offRoadNow
+          setIsOffRoad(offRoadNow)
+        }
+        offRoadViolationCooldown = Math.max(0, offRoadViolationCooldown - deltaTime)
+        if (offRoadNow && demoScene.getSpeedKmh() > 5 && offRoadViolationCooldown <= 0) {
+          useViolationStore.getState().addViolation('off-road')
+          offRoadViolationCooldown = 3
+        }
+
+        // Running a red light — Ngawi City only. checkPlayerRedLight is stateful
+        // (tracks stop-line crossings), so it must run every frame, not be
+        // short-circuited away during the cooldown.
+        const ranRed = demoScene.checkPlayerRedLight()
+        redLightCooldown = Math.max(0, redLightCooldown - deltaTime)
+        if (ranRed && redLightCooldown <= 0 && demoScene.getSpeedKmh() > 5) {
+          useViolationStore.getState().addViolation('red-light')
+          redLightCooldown = 4
+        }
+
+        // Traffic-light HUD: state of the light governing the player's approach.
+        const lightState = demoScene.getApproachingLightState()
+        if (lightState !== prevLightState) {
+          prevLightState = lightState
+          setTrafficLightState(lightState)
         }
 
         // Update waypoint store for HUD (throttled — these are display-only;

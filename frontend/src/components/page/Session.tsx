@@ -15,6 +15,9 @@ import { AlertNotification } from '../AlertNotification'
 import { FusionScoreDisplay } from '../FusionScoreDisplay'
 import { ViolationHUD } from '../ViolationHUD'
 import { WrongWayWarning } from '../WrongWayWarning'
+import { OffRoadWarning } from '../OffRoadWarning'
+import { ViolationToast } from '../ViolationToast'
+import { TrafficLightHUD } from '../TrafficLightHUD'
 import { GearHUD } from '../GearHUD'
 import { WaypointHUD } from '../WaypointHUD'
 import { TutorialPopup } from '../TutorialPopup'
@@ -199,6 +202,15 @@ export default function Session() {
 
           {/* Wrong-way warning overlay */}
           <WrongWayWarning />
+
+          {/* Off-road (grass) warning overlay */}
+          <OffRoadWarning />
+
+          {/* Transient toast for instant violations (collision, etc.) */}
+          <ViolationToast />
+
+          {/* Traffic-light status indicator for the player's approach */}
+          <TrafficLightHUD />
 
           {/* Waypoint/Checkpoint navigation HUD */}
           <WaypointHUD />
