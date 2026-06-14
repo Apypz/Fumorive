@@ -325,7 +325,8 @@ export class NpcTrafficSystem {
     dt: number,
     player: { x: number; z: number } | null,
     playerRadius: number,
-    trafficStop?: (x: number, z: number, fx: number, fz: number) => number
+    trafficStop?: (x: number, z: number, fx: number, fz: number) => number,
+    speedBumpLimit?: (x: number, z: number, fx: number, fz: number) => number
   ): void {
     const nodes = this.grid.nodes
 
@@ -456,6 +457,11 @@ export class NpcTrafficSystem {
           const stopSpeed = stop <= 1.5 ? 0 : (stop - 1.5) * GAP_SPEED_K
           desired = Math.min(desired, stopSpeed)
         }
+      }
+      // Slow for speed bumps.
+      if (speedBumpLimit) {
+        const bumpSpd = speedBumpLimit(car.x, car.z, fx, fz)
+        if (bumpSpd !== Infinity) desired = Math.min(desired, bumpSpd)
       }
 
       // --- Integrate speed ---

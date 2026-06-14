@@ -29,6 +29,9 @@ import { generateNgawiRoute } from '../systems/routeGenerator'
 import { NpcTrafficSystem } from '../systems/NpcTrafficSystem'
 import { TrafficLightSystem } from '../systems/TrafficLightSystem'
 import { NpcSoundSystem } from '../systems/NpcSoundSystem'
+import { PedestrianSystem } from '../systems/PedestrianSystem'
+import { SpeedBumpSystem } from '../systems/SpeedBumpSystem'
+import { AmbientSoundSystem } from '../systems/AmbientSoundSystem'
 
 export type { MapType }
 
@@ -70,6 +73,9 @@ export class DemoScene implements GameScene {
   private npcTraffic: NpcTrafficSystem | null = null
   private trafficLights: TrafficLightSystem | null = null
   private npcSound: NpcSoundSystem | null = null
+  private pedestrians: PedestrianSystem | null = null
+  private speedBumps: SpeedBumpSystem | null = null
+  private ambientSound: AmbientSoundSystem | null = null
 
   constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'solo-city', seed: number = 1, level: number = 1) {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
@@ -331,8 +337,34 @@ export class DemoScene implements GameScene {
       this.npcSound = new NpcSoundSystem()
       this.npcSound.setGrid(this.ngawiPlan.grid)
       this.npcSound.preload().catch((e) => console.warn('[DemoScene] NpcSoundSystem preload error:', e))
+
+      // Pejalan kaki di zebra cross.
+      this.pedestrians = new PedestrianSystem(
+        this.scene,
+        this.ngawiPlan.grid,
+        this.seed
+      )
+
+      // Polisi tidur.
+      this.speedBumps = new SpeedBumpSystem(
+        this.scene,
+        this.ngawiPlan.grid,
+        this.seed
+      )
+      this.speedBumps.setOnBumpCross(({ impactSpeed }) => {
+        // Guncang kamera — makin kencang makin keras
+        const intensity = Math.min(0.8, 0.15 + (impactSpeed / 15) * 0.65)
+        const duration  = 0.4 + (impactSpeed / 15) * 0.3
+        this.carController?.triggerCameraShake(intensity, duration)
+      })
+
+      // Ambient suara kota.
+      this.ambientSound = new AmbientSoundSystem()
+
       // Expose for browser console debugging
       ;(window as unknown as Record<string, unknown>)['__npcSound'] = this.npcSound
+      ;(window as unknown as Record<string, unknown>)['__pedestrians'] = this.pedestrians
+      ;(window as unknown as Record<string, unknown>)['__speedBumps'] = this.speedBumps
       console.log(`[DemoScene] Loading Ngawi City (level ${this.level}, seed ${this.seed})`)
       console.log('[DemoScene] Debug: window.__npcSound.testHorn() | window.__npcSound.testEngine()')
     } else {
@@ -669,7 +701,8 @@ export class DemoScene implements GameScene {
         deltaTime,
         playerPos ? { x: playerPos.x, z: playerPos.z } : null,
         2.4,
-        tl ? (x, z, fx, fz) => tl.redStopDistance(x, z, fx, fz) : undefined
+        tl ? (x, z, fx, fz) => tl.redStopDistance(x, z, fx, fz) : undefined,
+        this.speedBumps ? (x, z, fx, fz) => this.speedBumps!.getNpcSpeedLimit(x, z, fx, fz) : undefined
       )
       this.simpleMap.setDynamicColliders(this.npcTraffic.getColliders())
 
@@ -689,6 +722,29 @@ export class DemoScene implements GameScene {
         )
       }
     }
+
+    // Update pedestrians.
+    if (this.pedestrians) {
+      const pos = this.carController?.getPosition()
+      this.pedestrians.update(
+        deltaTime,
+        pos ? { x: pos.x, z: pos.z } : null
+      )
+    }
+
+    // Update speed bumps.
+    if (this.speedBumps) {
+      const pos   = this.carController?.getPosition()
+      const spd   = this.carController?.getSpeed() ?? 0
+      this.speedBumps.update(
+        deltaTime,
+        pos ? { x: pos.x, z: pos.z } : null,
+        spd
+      )
+    }
+
+    // Update ambient sound.
+    this.ambientSound?.update(deltaTime)
 
     // Update car controller (physics, movement, and camera)
     this.carController?.update(deltaTime)
@@ -721,6 +777,12 @@ export class DemoScene implements GameScene {
     this.trafficLights?.dispose()
     this.npcSound?.dispose()
     this.npcSound = null
+    this.pedestrians?.dispose()
+    this.pedestrians = null
+    this.speedBumps?.dispose()
+    this.speedBumps = null
+    this.ambientSound?.dispose()
+    this.ambientSound = null
     if (typeof this.simpleMap?.dispose === 'function') {
       this.simpleMap?.dispose();
     }

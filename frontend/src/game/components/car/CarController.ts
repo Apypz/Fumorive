@@ -576,6 +576,13 @@ export class CarController {
   }
 
   /**
+   * Trigger a camera shake effect (e.g. from speed bumps or big collisions).
+   */
+  triggerCameraShake(intensity: number = 0.35, duration: number = 0.5): void {
+    this.cameraManager.triggerShake(intensity, duration)
+  }
+
+  /**
    * Update mouse control configuration
    */
   updateMouseConfig(config: Partial<MouseControlConfig>): void {
