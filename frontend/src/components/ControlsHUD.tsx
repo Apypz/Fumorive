@@ -54,6 +54,8 @@ export function ControlsHUD() {
         <div style={styles.modeValue}>
           {controlMode === 'keyboard' ? (
             <span style={styles.keyboardMode}>KEYBOARD</span>
+          ) : controlMode === 'wheel' ? (
+            <span style={styles.wheelMode}>KAIJU XR1</span>
           ) : (
             <span style={styles.mouseMode}>MOUSE</span>
           )}
@@ -113,6 +115,21 @@ export function ControlsHUD() {
               <div style={styles.controlRow}>
                 <span style={styles.keyBadge}>D</span>
                 <span style={styles.controlDesc}>Belok Kanan</span>
+              </div>
+            </>
+          ) : controlMode === 'wheel' ? (
+            <>
+              <div style={styles.controlRow}>
+                <span style={styles.wheelBadge}>Setir</span>
+                <span style={styles.controlDesc}>Putar untuk belok</span>
+              </div>
+              <div style={styles.controlRow}>
+                <span style={styles.wheelBadge}>Pedal</span>
+                <span style={styles.controlDesc}>Gas (kanan) / Rem (kiri)</span>
+              </div>
+              <div style={styles.controlRow}>
+                <span style={styles.wheelBadge}>Paddle</span>
+                <span style={styles.controlDesc}>Ganti gigi (manual)</span>
               </div>
             </>
           ) : (
@@ -183,6 +200,15 @@ export function ControlsHUD() {
       )}
 
       {/* Hints */}
+      {controlMode === 'wheel' && (
+        <>
+          <div style={styles.divider} />
+          <div style={styles.hint}>
+            Setir Kaiju XR1 aktif. Pedal kanan = gas, kiri = rem/mundur, paddle untuk ganti gigi.
+          </div>
+        </>
+      )}
+
       {controlMode === 'mouse' && cameraMode !== 'free' && (
         <>
           <div style={styles.divider} />
@@ -272,6 +298,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   mouseMode: {
     color: '#34d399', // Green
+  },
+  wheelMode: {
+    color: '#fb923c', // Orange — racing wheel
   },
   cameraMode: {
     color: '#a78bfa', // Purple
@@ -385,6 +414,20 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.65rem',
     fontWeight: 'bold',
     color: '#34d399',
+  },
+  wheelBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '24px',
+    height: '20px',
+    padding: '0 8px',
+    backgroundColor: 'rgba(251, 146, 60, 0.2)',
+    border: '1px solid rgba(251, 146, 60, 0.45)',
+    borderRadius: '4px',
+    fontSize: '0.65rem',
+    fontWeight: 'bold',
+    color: '#fb923c',
   },
   controlDesc: {
     opacity: 0.8,
