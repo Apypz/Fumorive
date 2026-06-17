@@ -150,16 +150,19 @@ export class SpeedBumpSystem {
       const offset = (s - (stripes - 1) / 2) * stripeW
       const mat = s % 2 === 0 ? yellowMat : blackMat
 
+      // horizontal === true → road runs along X, so the bar must span the road
+      // width along Z (across travel) and stay thin (BUMP_DEPTH) along X. The
+      // stripes are therefore laid out along Z. (Vertical road is the mirror.)
       const mesh = MeshBuilder.CreateBox(`speedBump_${idx}_${s}`, {
-        width:  bump.horizontal ? stripeW : BUMP_DEPTH,
+        width:  bump.horizontal ? BUMP_DEPTH : stripeW,
         height: BUMP_HEIGHT * 2,
-        depth:  bump.horizontal ? BUMP_DEPTH : stripeW,
+        depth:  bump.horizontal ? stripeW : BUMP_DEPTH,
       }, this.scene)
 
       mesh.position = new Vector3(
-        bump.x + (bump.horizontal ? offset : 0),
+        bump.x + (bump.horizontal ? 0 : offset),
         BUMP_HEIGHT,
-        bump.z + (bump.horizontal ? 0 : offset)
+        bump.z + (bump.horizontal ? offset : 0)
       )
       mesh.material = mat
       mesh.receiveShadows = true

@@ -151,6 +151,13 @@ export function GameCanvas() {
           redLightCooldown = 4
         }
 
+        // Hitting a pedestrian — Ngawi City only. Severe penalty, one per person
+        // run over (the system applies a per-pedestrian cooldown internally).
+        const pedHits = demoScene.getPedestrianHits()
+        for (let h = 0; h < pedHits; h++) {
+          useViolationStore.getState().addViolation('pedestrian')
+        }
+
         // Traffic-light HUD: state of the light governing the player's approach.
         const lightState = demoScene.getApproachingLightState()
         if (lightState !== prevLightState) {

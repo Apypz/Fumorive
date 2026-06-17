@@ -61,6 +61,9 @@ const SCARED_SPEED_MUL = 2.5   // kecepatan lari saat takut
 
 const PEDESTRIANS_PER_CROSS = 2
 
+const HIT_RADIUS   = 1.8   // jarak pusat mobil ↔ pejalan untuk dihitung tabrakan (m)
+const HIT_COOLDOWN = 2.5   // detik sebelum pejalan yang sama bisa terhitung lagi
+
 export class PedestrianSystem {
   private scene: Scene
   private grid: NgawiGrid
@@ -70,8 +73,19 @@ export class PedestrianSystem {
   private materials: PBRMaterial[] = []
   private crossMeshes: Mesh[] = []
 
+  // Deteksi tabrakan pejalan kaki (per-pejalan cooldown + counter event baru)
+  private hitCooldowns: number[] = []
+  private pendingHits = 0
+
   // Snapshot zebra cross positions untuk deteksi violasi oleh DemoScene
   getZebraCrossings(): ZebraCross[] { return this.crossings }
+
+  /** Jumlah pejalan kaki yang baru tertabrak sejak terakhir dibaca (auto-reset). */
+  consumePedestrianHits(): number {
+    const n = this.pendingHits
+    this.pendingHits = 0
+    return n
+  }
 
   /** True jika player sedang menghalangi pejalan kaki yang menyebrang. */
   isBlockingPedestrian(playerX: number, playerZ: number, playerRadius: number): boolean {
@@ -89,6 +103,7 @@ export class PedestrianSystem {
     this.rng   = makeRng((seed ^ 0xdeadbeef) >>> 0)
     this.placeCrossings()
     this.spawnPedestrians()
+    this.hitCooldowns = this.pedestrians.map(() => 0)
   }
 
   // ── Setup ────────────────────────────────────────────────────────────────
@@ -283,6 +298,19 @@ export class PedestrianSystem {
     dt: number,
     playerPos: { x: number; z: number } | null
   ): void {
+    // Deteksi tabrakan: mobil menumpuk pejalan kaki yang sedang menyebrang.
+    // Hanya pejalan ber-state 'crossing' (berada di badan jalan) yang dihitung,
+    // jadi melewati orang yang menunggu di trotoar tidak kena pelanggaran.
+    for (let i = 0; i < this.pedestrians.length; i++) {
+      if (this.hitCooldowns[i] > 0) this.hitCooldowns[i] -= dt
+      const p = this.pedestrians[i]
+      if (!playerPos || p.state !== 'crossing' || this.hitCooldowns[i] > 0) continue
+      if (Math.hypot(p.x - playerPos.x, p.z - playerPos.z) < HIT_RADIUS) {
+        this.pendingHits++
+        this.hitCooldowns[i] = HIT_COOLDOWN
+      }
+    }
+
     for (const ped of this.pedestrians) {
       // Tick animasi (bob kepala sederhana)
       this.animatePed(ped, dt)

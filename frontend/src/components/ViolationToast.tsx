@@ -17,6 +17,7 @@ const LABELS: Record<ViolationType, { label: string; color: string }> = {
   speeding: { label: 'Melebihi Kecepatan', color: '#f59e0b' },
   'red-light': { label: 'Melanggar Lampu Merah', color: '#dc2626' },
   'off-road': { label: 'Keluar Jalur', color: '#d97706' },
+  pedestrian: { label: 'Menabrak Pejalan Kaki!', color: '#b91c1c' },
 }
 
 // These have dedicated persistent overlays — don't also toast them.

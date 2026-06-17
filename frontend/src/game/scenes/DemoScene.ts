@@ -237,6 +237,14 @@ export class DemoScene implements GameScene {
     return this.trafficLights.playerCrossedRed(pos.x, pos.z, Math.sin(heading), Math.cos(heading))
   }
 
+  /**
+   * Number of pedestrians freshly run over this frame (Ngawi City). Each one is
+   * a severe violation. Stateful — call every frame; the counter auto-resets.
+   */
+  getPedestrianHits(): number {
+    return this.pedestrians?.consumePedestrianHits() ?? 0
+  }
+
   /** State of the traffic light governing the player's approach, or null. */
   getApproachingLightState(): 'red' | 'yellow' | 'green' | null {
     if (!this.trafficLights || !this.carController) return null

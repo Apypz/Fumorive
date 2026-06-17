@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type ViolationType = 'collision' | 'speeding' | 'wrong-way' | 'red-light' | 'off-road'
+export type ViolationType = 'collision' | 'speeding' | 'wrong-way' | 'red-light' | 'off-road' | 'pedestrian'
 
 export interface Violation {
   id: number
@@ -16,6 +16,8 @@ const VIOLATION_CONFIG: Record<ViolationType, { points: number; description: str
   'wrong-way': { points: 15, description: 'Melawan arah' },
   'red-light': { points: 20, description: 'Melanggar lampu merah' },
   'off-road': { points: 3, description: 'Keluar jalur' },
+  // Menabrak orang = pelanggaran terberat.
+  pedestrian: { points: 50, description: 'Menabrak pejalan kaki' },
 }
 
 interface ViolationStoreState {
