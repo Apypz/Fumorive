@@ -30,6 +30,7 @@ import {
 } from '../../config'
 import { CarPhysics } from './CarPhysics'
 import { CarCameraManager } from './CarCameraManager'
+import { getWheelSteerAxis, getWheelSteerInvert } from '../../utils/wheelConfig'
 import { DriftParticleSystem } from './DriftParticleSystem'
 import { EngineAudio } from '../../engine/EngineAudio'
 import type { SimpleMap } from '../SimpleMap'
@@ -65,10 +66,9 @@ export const DEFAULT_CAMERA_CONFIG_LEGACY: CameraPositionConfig = {
 }
 
 // ── Kaiju XR1 racing wheel (X-Input) → Gamepad API mapping ──────────────────
-// Standard X-Input layout: steering on the left-stick X axis, the pedals on the
-// analog triggers, the paddle shifters on the bumpers. Tweak here if a different
-// wheel reports different indices (check the console log of the detected id).
-const WHEEL_STEER_AXIS = 0       // steering column
+// Pedals/buttons follow the standard X-Input layout below. The STEERING axis is
+// NOT hard-coded — wheels report it on different axis indices — so it is read
+// from wheelConfig (set live via the wheel debug overlay) each frame.
 const WHEEL_GAS_BUTTON = 7       // RT — gas pedal (analog .value 0..1)
 const WHEEL_BRAKE_BUTTON = 6     // LT — brake pedal (analog .value 0..1)
 const WHEEL_SHIFT_UP_BUTTON = 5  // RB / right paddle
@@ -622,8 +622,9 @@ export class CarController {
       return
     }
 
-    // Steering from the wheel axis, with a small deadzone around centre.
-    let steer = gp.axes[WHEEL_STEER_AXIS] ?? 0
+    // Steering from the wheel axis (index/direction set via the debug overlay),
+    // with a small deadzone around centre.
+    let steer = (gp.axes[getWheelSteerAxis()] ?? 0) * (getWheelSteerInvert() ? -1 : 1)
     if (Math.abs(steer) < WHEEL_DEADZONE) steer = 0
     this.input.steering = Math.max(-1, Math.min(1, steer))
 

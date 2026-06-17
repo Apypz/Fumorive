@@ -18,6 +18,7 @@ import { WrongWayWarning } from '../WrongWayWarning'
 import { OffRoadWarning } from '../OffRoadWarning'
 import { ViolationToast } from '../ViolationToast'
 import { TrafficLightHUD } from '../TrafficLightHUD'
+import { WheelDebugOverlay } from '../WheelDebugOverlay'
 import { GearHUD } from '../GearHUD'
 import { WaypointHUD } from '../WaypointHUD'
 import { TutorialPopup } from '../TutorialPopup'
@@ -211,6 +212,10 @@ export default function Session() {
 
           {/* Traffic-light status indicator for the player's approach */}
           <TrafficLightHUD />
+
+          {/* Racing-wheel (Kaiju XR1) live diagnostics + steering-axis calibration.
+              Auto-hides unless a gamepad/wheel is connected. */}
+          <WheelDebugOverlay />
 
           {/* Waypoint/Checkpoint navigation HUD */}
           <WaypointHUD />
