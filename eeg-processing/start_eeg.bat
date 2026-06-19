@@ -20,7 +20,7 @@ if not exist "%~dp0venv310\Scripts\python.exe" (
 :: Catatan: BrainFlow terhubung langsung ke Muse via native BLE.
 :: Tidak perlu lagi menjalankan "muselsl stream" di terminal terpisah.
 echo [INFO] Pastikan Muse menyala/berkedip dan Bluetooth aktif.
-echo        Server akan memindai & terhubung otomatis saat dijalankan.
+echo        Server akan memindai lalu terhubung otomatis saat dijalankan.
 echo.
 
 :: Minta Session ID dari user
