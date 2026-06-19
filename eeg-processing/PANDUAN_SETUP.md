@@ -1,17 +1,19 @@
 # 🧠 Fumorive EEG Server — Panduan Setup
 
-Package ini digunakan untuk mengirimkan data EEG dari headset **Muse 2** ke backend Fumorive secara real-time.
+Package ini digunakan untuk mengirimkan data EEG dari headband **Muse S (Athena)** atau **Muse 2** ke backend Fumorive secara real-time.
+
+> Koneksi ke Muse kini memakai **BrainFlow** (native Bluetooth Windows). Kamu **tidak perlu lagi** menjalankan `muselsl stream` di terminal terpisah — server akan memindai & terhubung ke Muse secara otomatis.
 
 ---
 
 ## ✅ Persyaratan
 
 - Windows 10 / 11
-- Python **3.10** (wajib, versi lain mungkin tidak kompatibel)
-- Headset **Muse 2** + Bluetooth aktif
+- Python **3.8 – 3.12** (disarankan 3.10 atau 3.11)
+- Headband **Muse S (Athena)** atau **Muse 2** + Bluetooth aktif
 - Koneksi internet
 
-**Download Python 3.10:** https://www.python.org/downloads/release/python-3100/
+**Download Python:** https://www.python.org/downloads/
 > Saat install, centang ✅ **"Add Python to PATH"**
 
 ---
@@ -27,11 +29,21 @@ Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 .\setup_venv.ps1
 ```
 
-Script ini akan menginstall semua dependensi otomatis.
+Script ini akan membuat virtual environment dan menginstall semua dependensi (termasuk **BrainFlow**) secara otomatis.
 
 ---
 
-### Langkah 2 — Jalankan EEG Server
+### Langkah 2 — Nyalakan Muse
+
+1. Nyalakan headband Muse.
+2. Pastikan lampu indikator **berkedip** (mode pairing / belum terhubung ke perangkat lain).
+3. Pastikan **Bluetooth** di laptop sudah aktif.
+
+> Tidak perlu mem-pair Muse secara manual lewat Settings Windows — BrainFlow akan menemukannya langsung.
+
+---
+
+### Langkah 3 — Jalankan EEG Server
 
 Cukup double-click file:
 
@@ -40,13 +52,20 @@ start_eeg.bat
 ```
 
 Server akan:
-1. Menyalakan Muse 2 LSL stream
+1. Memindai & terhubung otomatis ke Muse via Bluetooth (BrainFlow)
 2. Meminta kamu memasukkan **Session ID** dari web Fumorive
 3. Mulai mengirim data EEG secara real-time
 
+Saat berhasil, terminal akan menampilkan log seperti:
+
+```
+[SUCCESS] Connected to MUSE_S_BOARD (Board 21)
+          Sampling rate : 256.0 Hz
+```
+
 ---
 
-### Langkah 3 — Dapatkan Session ID
+### Langkah 4 — Dapatkan Session ID
 
 1. Buka [fumorive.app](https://fumorive.app)
 2. Login dengan akun kamu
@@ -61,16 +80,25 @@ Server akan:
 | Masalah | Solusi |
 |---------|--------|
 | `venv tidak ditemukan` | Jalankan `setup_venv.ps1` terlebih dahulu |
-| `Muse 2 tidak terdeteksi` | Pastikan Bluetooth aktif & Muse 2 dinyalakan |
+| `No Muse headband found` | Pastikan Muse menyala & lampu **berkedip**, Bluetooth aktif, dan Muse tidak sedang dipakai aplikasi lain (mis. Muse app di HP) |
+| Koneksi lambat / gagal pertama kali | Matikan lalu nyalakan ulang Muse, jalankan ulang `start_eeg.bat` |
 | `Connection refused` | Pastikan koneksi internet aktif |
 | `Session ID invalid` | Salin ulang Session ID dari web Fumorive |
 
 ---
 
-## 📦 Verifikasi Koneksi EEG Stream
+## 📦 Verifikasi Koneksi Muse
 
-Untuk mengecek apakah Muse 2 sudah terdeteksi sebelum menjalankan server:
+Untuk mengecek apakah Muse sudah bisa terdeteksi sebelum menjalankan server:
 
 ```powershell
 .\venv310\Scripts\python.exe check_stream.py
+```
+
+Jika berhasil akan muncul, misalnya:
+
+```
+✅ Found MUSE_S_BOARD (board id 21)
+   EEG channels: 4
+   Rate: 256 Hz
 ```

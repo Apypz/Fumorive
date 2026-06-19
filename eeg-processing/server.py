@@ -470,7 +470,7 @@ Examples:
 
 Note:
   - Session ID harus UUID yang valid dari backend
-  - Pastikan 'muselsl stream' sudah berjalan sebelum menjalankan server
+  - Pastikan Muse menyala/berkedip & Bluetooth aktif (BrainFlow connect otomatis)
   - Pastikan backend Fumorive sudah berjalan (uvicorn main:app --reload)
         """
     )

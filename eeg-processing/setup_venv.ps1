@@ -93,14 +93,14 @@ if (Test-Path "requirements.txt") {
     Write-Host "[WARNING] requirements.txt not found" -ForegroundColor Yellow
 }
 
-# Verify muselsl installation
+# Verify brainflow installation
 Write-Host ""
-Write-Host "Verifying muselsl installation..." -ForegroundColor Cyan
-$muselslCheck = python -c "import muselsl; print('muselsl version:', muselsl.__version__)" 2>&1
+Write-Host "Verifying brainflow installation..." -ForegroundColor Cyan
+$brainflowCheck = python -c "import brainflow; print('brainflow version:', brainflow.__version__)" 2>&1
 if ($LASTEXITCODE -eq 0) {
-    Write-Host "[OK] $muselslCheck" -ForegroundColor Green
+    Write-Host "[OK] $brainflowCheck" -ForegroundColor Green
 } else {
-    Write-Host "[WARNING] muselsl not properly installed" -ForegroundColor Yellow
+    Write-Host "[WARNING] brainflow not properly installed" -ForegroundColor Yellow
 }
 
 # Create activation shortcut script
@@ -127,8 +127,8 @@ Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Yellow
 Write-Host "  1. Virtual environment is activated in this terminal" -ForegroundColor White
 Write-Host "  2. To activate in the future, run: .\activate.ps1" -ForegroundColor White
-Write-Host "  3. Pair your Muse 2 device via Bluetooth" -ForegroundColor White
-Write-Host "  4. Run: python -m muselsl stream" -ForegroundColor White
+Write-Host "  3. Nyalakan Muse S / Muse 2 (mode pairing / berkedip)" -ForegroundColor White
+Write-Host "  4. Jalankan: .\start_eeg.bat (BrainFlow connect otomatis)" -ForegroundColor White
 Write-Host ""
 Write-Host "Press any key to continue..."
 $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")

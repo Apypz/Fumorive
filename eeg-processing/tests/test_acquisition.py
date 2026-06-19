@@ -31,7 +31,7 @@ def test_basic_acquisition():
         print("[INFO] EEGAcquisition instance created")
         
         eeg.connect()
-        print("[INFO] Connected to LSL stream")
+        print("[INFO] Connected to Muse via BrainFlow")
         
         data, ts = eeg.pull_chunk(duration=2)
         print(f"[INFO] Data shape: {data.shape}")
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     print("\n" + "=" * 60)
     print(" Fumorive EEG Acquisition Tests")
     print("=" * 60)
-    print("\n⚠️  Pastikan 'muselsl stream' sudah berjalan!")
+    print("\n⚠️  Pastikan Muse menyala/berkedip & Bluetooth aktif!")
     
     results = []
     results.append(("Basic Acquisition", test_basic_acquisition()))

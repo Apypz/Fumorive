@@ -5,7 +5,7 @@ color 0B
 
 echo.
 echo ============================================================
-echo   FUMORIVE EEG SERVER - Muse 2 Integration
+echo   FUMORIVE EEG SERVER - Muse S / Muse 2 (BrainFlow)
 echo ============================================================
 echo.
 
@@ -17,16 +17,15 @@ if not exist "%~dp0venv310\Scripts\python.exe" (
     exit /b 1
 )
 
-:: Pastikan muselsl stream sudah jalan
-echo [STEP 1] Memulai Muse 2 LSL Stream...
-echo Pastikan Muse 2 sudah dinyalakan dan Bluetooth aktif.
+:: Catatan: BrainFlow terhubung langsung ke Muse via native BLE.
+:: Tidak perlu lagi menjalankan "muselsl stream" di terminal terpisah.
+echo [INFO] Pastikan Muse menyala/berkedip dan Bluetooth aktif.
+echo        Server akan memindai & terhubung otomatis saat dijalankan.
 echo.
-start "Muse 2 LSL Stream" cmd /k "%~dp0venv310\Scripts\muselsl.exe" stream
-timeout /t 5 /nobreak > nul
 
 :: Minta Session ID dari user
 echo ============================================================
-echo [STEP 2] Masukkan Session ID
+echo [STEP 1] Masukkan Session ID
 echo ============================================================
 echo.
 echo Buka browser dan akses: https://fumorive.app

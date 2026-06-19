@@ -1,16 +1,16 @@
 # ============================================================
 # Fumorive EEG Processing - Python Dependencies
 # ============================================================
-# Python Version: 3.10.x atau 3.11.x (REQUIRED)
-# IMPORTANT: muselsl TIDAK kompatibel dengan Python 3.12+
+# Python Version: 3.8 - 3.12 (BrainFlow supports this range)
+# NOTE: Migrasi dari muselsl/LSL ke BrainFlow membuat batasan
+#       ketat Python 3.10.x tidak lagi diperlukan.
 # Install: pip install -r requirements.txt
 # ============================================================
 
 # ===========================
 # CORE EEG DEPENDENCIES
 # ===========================
-muselsl>=2.2.0              # Muse 2 LSL streaming
-pylsl>=1.16.0               # Lab Streaming Layer protocol
+brainflow>=5.7.0           # Native BLE acquisition for Muse 2 / Muse S (Athena)
 
 # ===========================
 # SIGNAL PROCESSING
