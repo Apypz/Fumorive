@@ -4,8 +4,10 @@
  */
 
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+// Use backend base URL with /api/v1 prefix
+const FACE_API_BASE_URL = `${API_BASE_URL}/api/v1`;
 
 export interface FaceEventData {
     session_id: string;
@@ -45,7 +47,7 @@ export const faceApi = {
      * Log single face detection event
      */
     logEvent: async (data: FaceEventData) => {
-        const response = await axios.post(`${API_BASE_URL}/face/events`, data);
+        const response = await axios.post(`${FACE_API_BASE_URL}/face/event`, data);
         return response.data;
     },
 
