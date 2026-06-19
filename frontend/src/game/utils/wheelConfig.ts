@@ -10,6 +10,7 @@
 
 const AXIS_KEY = 'fumorive_wheel_steer_axis'
 const INVERT_KEY = 'fumorive_wheel_steer_invert'
+const GAMEPAD_KEY = 'fumorive_wheel_gamepad_index'
 
 function loadInt(key: string, fallback: number): number {
   try {
@@ -26,6 +27,9 @@ function loadInt(key: string, fallback: number): number {
 
 let steerAxis = loadInt(AXIS_KEY, 0)
 let steerInvert = loadInt(INVERT_KEY, 0) === 1
+// Which gamepad index the game reads for the wheel. null = auto-detect (some
+// wheels expose the steering and pedals as separate gamepad devices).
+let gamepadIndex: number | null = loadInt(GAMEPAD_KEY, -1) < 0 ? null : loadInt(GAMEPAD_KEY, -1)
 
 export function getWheelSteerAxis(): number {
   return steerAxis
@@ -48,6 +52,20 @@ export function setWheelSteerInvert(value: boolean): void {
   steerInvert = value
   try {
     localStorage.setItem(INVERT_KEY, value ? '1' : '0')
+  } catch {
+    /* ignore */
+  }
+}
+
+export function getWheelGamepadIndex(): number | null {
+  return gamepadIndex
+}
+
+export function setWheelGamepadIndex(index: number | null): void {
+  gamepadIndex = index
+  try {
+    if (index === null) localStorage.removeItem(GAMEPAD_KEY)
+    else localStorage.setItem(GAMEPAD_KEY, String(index))
   } catch {
     /* ignore */
   }

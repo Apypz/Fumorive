@@ -30,7 +30,7 @@ import {
 } from '../../config'
 import { CarPhysics } from './CarPhysics'
 import { CarCameraManager } from './CarCameraManager'
-import { getWheelSteerAxis, getWheelSteerInvert } from '../../utils/wheelConfig'
+import { getWheelSteerAxis, getWheelSteerInvert, getWheelGamepadIndex } from '../../utils/wheelConfig'
 import { DriftParticleSystem } from './DriftParticleSystem'
 import { EngineAudio } from '../../engine/EngineAudio'
 import type { SimpleMap } from '../SimpleMap'
@@ -585,9 +585,20 @@ export class CarController {
 
   /** Is a wheel/controller currently connected and readable? */
   private hasGamepad(): boolean {
-    if (this.gamepadIndex === null) return false
+    return this.activeGamepad() !== null
+  }
+
+  /**
+   * The gamepad the game reads. Honours an explicit device chosen in the wheel
+   * overlay, then the auto-detected one, then any connected pad as a fallback.
+   */
+  private activeGamepad(): Gamepad | null {
     const pads = navigator.getGamepads ? navigator.getGamepads() : []
-    return !!pads[this.gamepadIndex]
+    const chosen = getWheelGamepadIndex()
+    if (chosen !== null && pads[chosen]) return pads[chosen]
+    if (this.gamepadIndex !== null && pads[this.gamepadIndex]) return pads[this.gamepadIndex]
+    for (const p of pads) if (p) return p
+    return null
   }
 
   /** Analog value (0..1) of a gamepad button (trigger pedals report a fraction). */
@@ -613,8 +624,7 @@ export class CarController {
   private updateWheelInput(_dt: number): void {
     if (this.currentControlMode !== 'wheel') return
 
-    const pads = navigator.getGamepads ? navigator.getGamepads() : []
-    const gp = this.gamepadIndex !== null ? pads[this.gamepadIndex] : null
+    const gp = this.activeGamepad()
     if (!gp) {
       // Wheel vanished mid-drive — neutralise inputs.
       this.input.steering = 0
