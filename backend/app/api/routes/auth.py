@@ -10,6 +10,9 @@ from sqlalchemy.orm import Session
 from datetime import timedelta
 import random
 import string
+import logging
+
+logger = logging.getLogger("fumorive")
 
 from app.db.database import get_db
 from app.db.models import User
@@ -23,6 +26,7 @@ from app.core.cache import cache_user_session, blacklist_token, blacklist_refres
 from app.core.firebase import verify_firebase_token, is_firebase_available
 from app.api.dependencies import get_current_user, oauth2_scheme
 from app.core.rate_limiter import limiter, LIMIT_AUTH, LIMIT_READ
+from app.core.email_service import send_password_reset_email
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -449,15 +453,13 @@ async def forgot_password(
         if r:
             r.setex(f"pwd_reset:{data.email}", timedelta(minutes=15), token)
 
-        # DEMO MODE: return token directly
-        # In production this would be sent via email
-        return {
-            "message": "Kode reset berhasil dibuat.",
-            "dev_token": token
-        }
+        # Send email with OTP code
+        email_sent = send_password_reset_email(data.email, token)
+        if not email_sent:
+            logger.warning(f"Could not send reset email to {data.email} — SMTP may not be configured.")
 
-    # Return 200 even for unknown emails (security: don't reveal account existence)
-    return {"message": "Jika email terdaftar, kode reset akan dikirimkan."}
+    # Always return 200 (don't reveal if email is registered)
+    return {"message": "Jika email terdaftar, kode reset akan dikirimkan ke inbox kamu."}
 
 
 @router.post("/reset-password", status_code=status.HTTP_200_OK)

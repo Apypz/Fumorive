@@ -5,8 +5,10 @@
 
 import axios from 'axios';
 import { getAccessToken } from '../utils/auth';
+import { API_BASE_URL } from '../config/api';
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+// Base URL for session API
+const SESSION_API_BASE_URL = `${API_BASE_URL}/api/v1`;
 
 export interface SessionCreate {
     session_name: string;
@@ -90,7 +92,7 @@ export const sessionApi = {
         console.log('📝 Session data:', data);
 
         try {
-            const response = await axios.post(`${API_BASE_URL}/sessions`, data, {
+            const response = await axios.post(`${SESSION_API_BASE_URL}/sessions`, data, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -114,7 +116,7 @@ export const sessionApi = {
         if (!token) {
             throw new Error('Not authenticated. Please log in first.');
         }
-        const response = await axios.get(`${API_BASE_URL}/sessions/${sessionId}`, {
+        const response = await axios.get(`${SESSION_API_BASE_URL}/sessions/${sessionId}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
@@ -131,7 +133,7 @@ export const sessionApi = {
             throw new Error('Not authenticated. Please log in first.');
         }
         const response = await axios.patch(
-            `${API_BASE_URL}/sessions/${sessionId}/end`,
+            `${SESSION_API_BASE_URL}/sessions/${sessionId}/end`,
             {},
             {
                 headers: {
@@ -150,11 +152,11 @@ export const sessionApi = {
         if (!token) {
             throw new Error('Not authenticated. Please log in first.');
         }
-        
+
         // First update session with final stats if provided
         if (data) {
             await axios.patch(
-                `${API_BASE_URL}/sessions/${sessionId}`,
+                `${SESSION_API_BASE_URL}/sessions/${sessionId}`,
                 data,
                 {
                     headers: {
@@ -163,10 +165,10 @@ export const sessionApi = {
                 }
             );
         }
-        
+
         // Then mark as complete
         const response = await axios.post(
-            `${API_BASE_URL}/sessions/${sessionId}/complete`,
+            `${SESSION_API_BASE_URL}/sessions/${sessionId}/complete`,
             {},
             {
                 headers: {
@@ -186,7 +188,7 @@ export const sessionApi = {
             throw new Error('Not authenticated. Please log in first.');
         }
         const response = await axios.patch(
-            `${API_BASE_URL}/sessions/${sessionId}`,
+            `${SESSION_API_BASE_URL}/sessions/${sessionId}`,
             data,
             {
                 headers: {
@@ -205,7 +207,7 @@ export const sessionApi = {
         if (!token) {
             throw new Error('Not authenticated. Please log in first.');
         }
-        
+
         const params = new URLSearchParams({
             page: page.toString(),
             page_size: pageSize.toString(),
@@ -213,9 +215,9 @@ export const sessionApi = {
         if (status) {
             params.append('status', status);
         }
-        
+
         const response = await axios.get(
-            `${API_BASE_URL}/sessions?${params.toString()}`,
+            `${SESSION_API_BASE_URL}/sessions?${params.toString()}`,
             {
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -234,7 +236,7 @@ export const sessionApi = {
             throw new Error('Not authenticated. Please log in first.');
         }
         await axios.delete(
-            `${API_BASE_URL}/sessions/${sessionId}`,
+            `${SESSION_API_BASE_URL}/sessions/${sessionId}`,
             {
                 headers: {
                     'Authorization': `Bearer ${token}`

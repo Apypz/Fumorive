@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../stores/gameStore'
 import type { MapType } from '../game/types/map.types'
+import { EEG_DOWNLOAD_URL } from '../config/api'
 
 interface MapInfo {
   id: MapType
@@ -127,7 +128,7 @@ export function MapSelection({ onStartGame }: MapSelectionProps) {
                   title: 'Download EEG Server Package',
                   desc: 'Download package dan extract ke folder mana saja.',
                   action: (
-                    <a href="https://github.com/Apypz/Fumorive/releases/latest" target="_blank" rel="noopener noreferrer" style={styles.downloadLink}>
+                    <a href={EEG_DOWNLOAD_URL} target="_blank" rel="noopener noreferrer" download style={styles.downloadLink}>
                       ⬇ Download EEG Package
                     </a>
                   ),

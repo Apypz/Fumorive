@@ -1,4 +1,4 @@
-﻿"""
+"""
 FastAPI Backend Application
 Main application entry point with all routes and middleware
 """
@@ -30,6 +30,7 @@ from app.api.routes.playback import router as playback_router
 from app.api.routes.export import router as export_router
 from app.api.routes.health import router as health_router
 from app.api.routes.reporting import router as reporting_router
+from app.api.routes.downloads import router as downloads_router
 
 
 # ============================================
@@ -233,23 +234,25 @@ async def log_requests(request: Request, call_next):
 # 3. CORS Middleware (added LAST = processed FIRST!)
 # This must come after all @app.middleware decorators
 # Note: Cannot use ["*"] with allow_credentials=True
-ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://localhost:3001",  # Vite dev server (main)
-    "http://localhost:5173",  # Vite default port
-    "http://localhost:5174",  # Vite alternative port
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:3001",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:5174",
-]
+#
+# allow_origin_regex matches all Vercel preview / branch deploy URLs
+# so you don't have to list every preview URL manually.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_origin_regex=r"https://fumorive(-[a-z0-9-]+)?\.vercel\.app",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
     expose_headers=["X-Request-ID", "X-Process-Time"],
+)
+
+logger.info(
+    "CORS configured",
+    extra={
+        "explicit_origins": settings.CORS_ORIGINS,
+        "origin_regex": r"https://fumorive(-[a-z0-9-]+)?\.vercel\.app",
+    },
 )
 
 
@@ -265,8 +268,9 @@ app.include_router(face_router, prefix=API_V1_PREFIX)
 app.include_router(alerts_router, prefix=API_V1_PREFIX)
 app.include_router(playback_router, prefix=API_V1_PREFIX)
 app.include_router(export_router, prefix=API_V1_PREFIX)
-app.include_router(health_router, prefix=API_V1_PREFIX)
+app.include_router(health_router)  # No prefix — /health/* must be at root for Railway health check
 app.include_router(reporting_router, prefix=API_V1_PREFIX)
+app.include_router(downloads_router, prefix=API_V1_PREFIX)
 
 # Register global exception handlers (after routers so they don't shadow 404s)
 register_exception_handlers(app)
@@ -329,6 +333,9 @@ async def startup_event():
     print("[START] Fumorive Backend API Starting...")
     print(f"[ENV] Environment: {settings.ENVIRONMENT}")
     print(f"[CORS] Origins: {settings.CORS_ORIGINS}")
+    import os
+    resend_key = os.environ.get("RESEND_API_KEY", "")
+    print(f"[EMAIL] RESEND_API_KEY set: {bool(resend_key)} (len={len(resend_key)})")
 
     # Initialize Redis
     print("\n[REDIS] Initializing Redis...")
