@@ -30,8 +30,8 @@ import {
 } from '../../config'
 import { CarPhysics } from './CarPhysics'
 import { CarCameraManager } from './CarCameraManager'
-import { getWheelMapping, readPedalValue } from '../../utils/wheelConfig'
-import type { WheelMode } from '../../utils/wheelConfig'
+import { getWheelMapping } from '../../utils/wheelConfig'
+import type { WheelMode, PedalSource } from '../../utils/wheelConfig'
 import { DriftParticleSystem } from './DriftParticleSystem'
 import { EngineAudio } from '../../engine/EngineAudio'
 import type { SimpleMap } from '../SimpleMap'
@@ -117,6 +117,8 @@ export class CarController {
   private gamepadIndex: number | null = null
   private wheelButtonPrev: boolean[] = []
   private wheelHornPrev = false
+  // Captured rest value per pedal axis, for auto-ranged D-Input pedals.
+  private pedalRest = new Map<number, number>()
   private _gamepadConnectHandler: ((e: GamepadEvent) => void) | null = null
   private _gamepadDisconnectHandler: ((e: GamepadEvent) => void) | null = null
 
@@ -260,6 +262,8 @@ export class CarController {
     // Clear pedals/throttle so a held input from the previous mode doesn't stick.
     this.input.throttle = 0
     this.input.brake = false
+    // Re-baseline pedal rest positions (pedals are assumed released on switch).
+    this.pedalRest.clear()
 
     console.log(`[CarController] Switched to ${mode} control`)
 
@@ -634,8 +638,8 @@ export class CarController {
     this.input.steering = Math.max(-1, Math.min(1, steer))
 
     // Gas pedal drives forward; brake pedal decelerates / reverses (mirrors S).
-    const gas = readPedalValue(gp.axes, gp.buttons, map.gas)
-    const brake = readPedalValue(gp.axes, gp.buttons, map.brake)
+    const gas = this.readPedal(gp, map.gas)
+    const brake = this.readPedal(gp, map.brake)
     this.input.throttle = Math.max(-1, Math.min(1, gas - brake))
     this.input.brake = false
 
@@ -648,6 +652,30 @@ export class CarController {
     if (hornNow && !this.wheelHornPrev) this.engineAudio.playHorn()
     else if (!hornNow && this.wheelHornPrev) this.engineAudio.stopHorn()
     this.wheelHornPrev = hornNow
+  }
+
+  /** Read a pedal as 0..1 from its source (analog button, or auto-ranged axis). */
+  private readPedal(gp: Gamepad, src: PedalSource): number {
+    let v = src.type === 'button' ? gp.buttons[src.index]?.value ?? 0 : this.readPedalAxis(gp, src.index)
+    if (src.invert) v = 1 - v
+    return Math.max(0, Math.min(1, v))
+  }
+
+  /**
+   * Axis pedals (D-Input) rest at one end of [-1, 1] and travel to the other.
+   * The resting value is captured on first read after a mode switch; the pedal
+   * reads as the deflection from rest toward the far end, so it is 0 when
+   * released and 1 when fully pressed regardless of which end is the rest
+   * position (no manual invert needed).
+   */
+  private readPedalAxis(gp: Gamepad, idx: number): number {
+    const raw = gp.axes[idx] ?? 0
+    if (!this.pedalRest.has(idx)) this.pedalRest.set(idx, raw)
+    const rest = this.pedalRest.get(idx)!
+    const far = rest <= 0 ? 1 : -1
+    const range = far - rest
+    if (Math.abs(range) < 0.1) return 0
+    return (raw - rest) / range
   }
 
   // === PUBLIC GETTERS ===

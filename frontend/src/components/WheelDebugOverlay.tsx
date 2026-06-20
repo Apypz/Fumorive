@@ -14,6 +14,7 @@ import { useGameStore } from '../stores/gameStore'
 import {
   getWheelMapping,
   setWheelMapping,
+  resetWheelMapping,
   type WheelMode,
   type PedalSource,
 } from '../game/utils/wheelConfig'
@@ -193,6 +194,9 @@ export function WheelDebugOverlay() {
       <MapRow label="Setir" value={`GP${map.gamepadIndex ?? 'auto'} · AX${map.steerAxis}`} inverted={map.steerInvert} onInvert={toggleSteerInvert} />
       <MapRow label="Gas" value={srcLabel(map.gas)} inverted={map.gas.invert} onInvert={() => togglePedalInvert('gas')} />
       <MapRow label="Rem" value={srcLabel(map.brake)} inverted={map.brake.invert} onInvert={() => togglePedalInvert('brake')} />
+      <button style={styles.resetBtn} onClick={() => resetWheelMapping(calibMode)}>
+        ↺ Reset mode {calibMode === 'dinput' ? 'D-INPUT' : 'X-INPUT'} ke default
+      </button>
 
       {/* Device list */}
       <div style={styles.sectionLabel}>DEVICE ({pads.length})</div>
@@ -362,6 +366,18 @@ const styles: Record<string, React.CSSProperties> = {
   mapRow: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' },
   mapLabel: { width: '34px', fontSize: '10px', color: '#94a3b8', fontWeight: 700 },
   mapValue: { flex: 1, fontFamily: 'monospace', fontSize: '11px', color: '#e2e8f0' },
+  resetBtn: {
+    width: '100%',
+    marginTop: '5px',
+    fontSize: '10px',
+    fontWeight: 700,
+    border: '1px solid rgba(248,113,113,0.4)',
+    background: 'rgba(248,113,113,0.12)',
+    color: '#fca5a5',
+    borderRadius: '5px',
+    padding: '4px',
+    cursor: 'pointer',
+  },
   tabs: { display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '4px' },
   tab: {
     fontSize: '10px',

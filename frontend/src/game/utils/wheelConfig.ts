@@ -27,7 +27,7 @@ export interface WheelMapping {
   brake: PedalSource
 }
 
-const STORAGE_KEY = 'fumorive_wheel_mappings_v1'
+const STORAGE_KEY = 'fumorive_wheel_mappings_v2'
 
 const DEFAULTS: Record<WheelMode, WheelMapping> = {
   xinput: {
@@ -41,8 +41,9 @@ const DEFAULTS: Record<WheelMode, WheelMapping> = {
     gamepadIndex: null,
     steerAxis: 0,
     steerInvert: false,
-    gas: { type: 'axis', index: 1, invert: false },
-    brake: { type: 'axis', index: 2, invert: false },
+    // Kaiju XR1 in D-Input: pedals are on separate axes (clutch=ax6 is unused).
+    gas: { type: 'axis', index: 2, invert: false },
+    brake: { type: 'axis', index: 5, invert: false },
   },
 }
 
@@ -98,22 +99,8 @@ export function setWheelMapping(mode: WheelMode, patch: Partial<WheelMapping>): 
   persist()
 }
 
-/**
- * Read a pedal as 0..1 from its configured source. Buttons report 0..1 directly;
- * axes rest at -1 (released) and are remapped to 0..1. `invert` flips direction.
- */
-export function readPedalValue(
-  axes: readonly number[],
-  buttons: readonly { value: number }[],
-  src: PedalSource
-): number {
-  let v: number
-  if (src.type === 'button') {
-    v = buttons[src.index]?.value ?? 0
-  } else {
-    const raw = axes[src.index] ?? -1
-    v = (raw + 1) / 2
-  }
-  if (src.invert) v = 1 - v
-  return Math.max(0, Math.min(1, v))
+/** Restore a mode's mapping to the built-in defaults. */
+export function resetWheelMapping(mode: WheelMode): void {
+  mappings[mode] = clone(DEFAULTS[mode])
+  persist()
 }
