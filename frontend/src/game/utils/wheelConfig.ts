@@ -1,72 +1,119 @@
 /**
  * wheelConfig
  * ===========
- * Runtime calibration for the racing wheel (Kaiju XR1). Different wheels expose
- * the steering on different Gamepad-API axis indices (it is NOT always axis 0),
- * and the direction can be reversed. Rather than hard-code it, the steering axis
- * and its direction are chosen at runtime via the on-screen wheel debug overlay
- * and persisted to localStorage so the choice survives reloads.
+ * Per-mode calibration for the racing wheel (Kaiju XR1). The wheel can run in
+ * two USB modes that expose very different Gamepad-API layouts:
+ *   - 'xinput' → pedals on the analog triggers (buttons), steering on a stick axis
+ *   - 'dinput' → pedals on separate axes, steering on an axis
+ * Each mode keeps its own steering axis + pedal sources so both can be calibrated
+ * independently (via the wheel overlay) and switched with the C key. Persisted to
+ * localStorage.
  */
 
-const AXIS_KEY = 'fumorive_wheel_steer_axis'
-const INVERT_KEY = 'fumorive_wheel_steer_invert'
-const GAMEPAD_KEY = 'fumorive_wheel_gamepad_index'
+export type WheelMode = 'dinput' | 'xinput'
+export type SourceType = 'axis' | 'button'
 
-function loadInt(key: string, fallback: number): number {
-  try {
-    const v = localStorage.getItem(key)
-    if (v !== null) {
-      const n = parseInt(v, 10)
-      if (!Number.isNaN(n)) return n
+export interface PedalSource {
+  type: SourceType
+  index: number
+  invert: boolean
+}
+
+export interface WheelMapping {
+  gamepadIndex: number | null // which connected device; null = auto-detect
+  steerAxis: number
+  steerInvert: boolean
+  gas: PedalSource
+  brake: PedalSource
+}
+
+const STORAGE_KEY = 'fumorive_wheel_mappings_v1'
+
+const DEFAULTS: Record<WheelMode, WheelMapping> = {
+  xinput: {
+    gamepadIndex: null,
+    steerAxis: 0,
+    steerInvert: false,
+    gas: { type: 'button', index: 7, invert: false }, // RT
+    brake: { type: 'button', index: 6, invert: false }, // LT
+  },
+  dinput: {
+    gamepadIndex: null,
+    steerAxis: 0,
+    steerInvert: false,
+    gas: { type: 'axis', index: 1, invert: false },
+    brake: { type: 'axis', index: 2, invert: false },
+  },
+}
+
+function clone(m: WheelMapping): WheelMapping {
+  return { ...m, gas: { ...m.gas }, brake: { ...m.brake } }
+}
+
+const mappings: Record<WheelMode, WheelMapping> = {
+  xinput: clone(DEFAULTS.xinput),
+  dinput: clone(DEFAULTS.dinput),
+}
+
+// Load persisted mappings, merging over the defaults so new fields keep a value.
+try {
+  const raw = localStorage.getItem(STORAGE_KEY)
+  if (raw) {
+    const parsed = JSON.parse(raw) as Partial<Record<WheelMode, Partial<WheelMapping>>>
+    for (const mode of ['xinput', 'dinput'] as WheelMode[]) {
+      const p = parsed[mode]
+      if (p) {
+        mappings[mode] = {
+          ...mappings[mode],
+          ...p,
+          gas: { ...mappings[mode].gas, ...(p.gas ?? {}) },
+          brake: { ...mappings[mode].brake, ...(p.brake ?? {}) },
+        }
+      }
     }
-  } catch {
-    /* localStorage unavailable */
   }
-  return fallback
+} catch {
+  /* localStorage unavailable / bad JSON — keep defaults */
 }
 
-let steerAxis = loadInt(AXIS_KEY, 0)
-let steerInvert = loadInt(INVERT_KEY, 0) === 1
-// Which gamepad index the game reads for the wheel. null = auto-detect (some
-// wheels expose the steering and pedals as separate gamepad devices).
-let gamepadIndex: number | null = loadInt(GAMEPAD_KEY, -1) < 0 ? null : loadInt(GAMEPAD_KEY, -1)
-
-export function getWheelSteerAxis(): number {
-  return steerAxis
-}
-
-export function setWheelSteerAxis(index: number): void {
-  steerAxis = index
+function persist(): void {
   try {
-    localStorage.setItem(AXIS_KEY, String(index))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mappings))
   } catch {
     /* ignore */
   }
 }
 
-export function getWheelSteerInvert(): boolean {
-  return steerInvert
+export function getWheelMapping(mode: WheelMode): WheelMapping {
+  return mappings[mode]
 }
 
-export function setWheelSteerInvert(value: boolean): void {
-  steerInvert = value
-  try {
-    localStorage.setItem(INVERT_KEY, value ? '1' : '0')
-  } catch {
-    /* ignore */
+export function setWheelMapping(mode: WheelMode, patch: Partial<WheelMapping>): void {
+  mappings[mode] = {
+    ...mappings[mode],
+    ...patch,
+    gas: { ...mappings[mode].gas, ...(patch.gas ?? {}) },
+    brake: { ...mappings[mode].brake, ...(patch.brake ?? {}) },
   }
+  persist()
 }
 
-export function getWheelGamepadIndex(): number | null {
-  return gamepadIndex
-}
-
-export function setWheelGamepadIndex(index: number | null): void {
-  gamepadIndex = index
-  try {
-    if (index === null) localStorage.removeItem(GAMEPAD_KEY)
-    else localStorage.setItem(GAMEPAD_KEY, String(index))
-  } catch {
-    /* ignore */
+/**
+ * Read a pedal as 0..1 from its configured source. Buttons report 0..1 directly;
+ * axes rest at -1 (released) and are remapped to 0..1. `invert` flips direction.
+ */
+export function readPedalValue(
+  axes: readonly number[],
+  buttons: readonly { value: number }[],
+  src: PedalSource
+): number {
+  let v: number
+  if (src.type === 'button') {
+    v = buttons[src.index]?.value ?? 0
+  } else {
+    const raw = axes[src.index] ?? -1
+    v = (raw + 1) / 2
   }
+  if (src.invert) v = 1 - v
+  return Math.max(0, Math.min(1, v))
 }

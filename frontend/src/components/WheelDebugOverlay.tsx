@@ -1,22 +1,21 @@
 /**
  * WheelDebugOverlay
  * =================
- * Live diagnostics + calibration for the racing wheel (Kaiju XR1). Renders while
- * any gamepad is connected. It scans EVERY connected gamepad and, when you move
- * the wheel, reports exactly which device + axis/button changed — so the
- * steering input can be located even when it isn't on axis 0 (or is on a
- * separate device from the pedals). One click then assigns it, saved to
- * localStorage and picked up by the car controller live.
+ * Live diagnostics + per-mode calibration for the racing wheel (Kaiju XR1).
+ * Renders while any gamepad is connected. It scans every connected gamepad and,
+ * when you move a control, reports exactly which device + axis/button changed —
+ * then lets you assign that input to steering / gas / brake for the selected
+ * wheel mode (D-Input or X-Input). Saved per mode to localStorage and picked up
+ * by the car controller live.
  */
 
 import { useEffect, useRef, useState } from 'react'
+import { useGameStore } from '../stores/gameStore'
 import {
-  getWheelSteerAxis,
-  setWheelSteerAxis,
-  getWheelSteerInvert,
-  setWheelSteerInvert,
-  getWheelGamepadIndex,
-  setWheelGamepadIndex,
+  getWheelMapping,
+  setWheelMapping,
+  type WheelMode,
+  type PedalSource,
 } from '../game/utils/wheelConfig'
 
 interface PadSnapshot {
@@ -35,17 +34,28 @@ interface Moved {
 
 const CHANGE_THRESHOLD = 0.15
 
+function srcLabel(s: PedalSource): string {
+  return `${s.type === 'axis' ? 'AX' : 'BTN'}${s.index}${s.invert ? ' ↺' : ''}`
+}
+
 export function WheelDebugOverlay() {
+  const controlMode = useGameStore((s) => s.controlMode)
   const [pads, setPads] = useState<PadSnapshot[]>([])
   const [selected, setSelected] = useState(0)
   const [moved, setMoved] = useState<Moved | null>(null)
   const [collapsed, setCollapsed] = useState(false)
-  const [steerAxis, setSteerAxisState] = useState(getWheelSteerAxis())
-  const [invert, setInvertState] = useState(getWheelSteerInvert())
-  const [activeGp, setActiveGp] = useState<number | null>(getWheelGamepadIndex())
+  const [calibMode, setCalibMode] = useState<WheelMode>(
+    controlMode === 'wheel-xinput' ? 'xinput' : 'dinput'
+  )
 
   const rafRef = useRef(0)
   const prevRef = useRef<Map<number, { axes: number[]; buttons: number[] }>>(new Map())
+
+  // Follow the active game mode when the player switches wheel modes with C.
+  useEffect(() => {
+    if (controlMode === 'wheel-dinput') setCalibMode('dinput')
+    else if (controlMode === 'wheel-xinput') setCalibMode('xinput')
+  }, [controlMode])
 
   useEffect(() => {
     const poll = () => {
@@ -62,7 +72,6 @@ export function WheelDebugOverlay() {
           axes: Array.from(p.axes),
           buttons: p.buttons.map((b) => ({ pressed: b.pressed, value: b.value })),
         })
-
         const prev = prevRef.current.get(p.index)
         if (prev) {
           p.axes.forEach((v, i) => {
@@ -79,7 +88,6 @@ export function WheelDebugOverlay() {
           buttons: p.buttons.map((b) => b.value),
         })
       }
-
       if (best.m) setMoved(best.m)
       setPads(snaps)
       rafRef.current = requestAnimationFrame(poll)
@@ -98,22 +106,34 @@ export function WheelDebugOverlay() {
     )
   }
 
+  const map = getWheelMapping(calibMode)
   const pad = pads.find((p) => p.index === selected) ?? pads[0]
 
-  const pickAxis = (gp: number, axis: number) => {
-    setWheelGamepadIndex(gp)
-    setActiveGp(gp)
-    setWheelSteerAxis(axis)
-    setSteerAxisState(axis)
+  const assignFromMoved = (role: 'steer' | 'gas' | 'brake') => {
+    if (!moved) return
+    if (role === 'steer') {
+      if (moved.kind !== 'AX') return
+      setWheelMapping(calibMode, { gamepadIndex: moved.gp, steerAxis: moved.idx })
+      return
+    }
+    const cur = getWheelMapping(calibMode)
+    const src: PedalSource = {
+      type: moved.kind === 'AX' ? 'axis' : 'button',
+      index: moved.idx,
+      invert: (role === 'gas' ? cur.gas : cur.brake).invert,
+    }
+    if (role === 'gas') setWheelMapping(calibMode, { gamepadIndex: moved.gp, gas: src })
+    else setWheelMapping(calibMode, { gamepadIndex: moved.gp, brake: src })
   }
-  const useDevice = (gp: number) => {
-    setWheelGamepadIndex(gp)
-    setActiveGp(gp)
-  }
-  const toggleInvert = () => {
-    const v = !invert
-    setWheelSteerInvert(v)
-    setInvertState(v)
+
+  const toggleSteerInvert = () =>
+    setWheelMapping(calibMode, { steerInvert: !getWheelMapping(calibMode).steerInvert })
+  const togglePedalInvert = (role: 'gas' | 'brake') => {
+    const cur = getWheelMapping(calibMode)
+    const src = role === 'gas' ? cur.gas : cur.brake
+    const next: PedalSource = { ...src, invert: !src.invert }
+    if (role === 'gas') setWheelMapping(calibMode, { gas: next })
+    else setWheelMapping(calibMode, { brake: next })
   }
 
   return (
@@ -125,27 +145,56 @@ export function WheelDebugOverlay() {
         </button>
       </div>
 
-      {/* Live "what moved" — the key diagnostic */}
+      {/* Which mode are we calibrating */}
+      <div style={styles.modeRow}>
+        {(['dinput', 'xinput'] as WheelMode[]).map((m) => (
+          <button
+            key={m}
+            style={{ ...styles.modeBtn, ...(m === calibMode ? styles.modeBtnActive : {}) }}
+            onClick={() => setCalibMode(m)}
+          >
+            {m === 'dinput' ? 'D-INPUT' : 'X-INPUT'}
+          </button>
+        ))}
+      </div>
+
+      {/* Live "what moved" + assign */}
       <div style={styles.movedBox}>
-        <div style={styles.movedLabel}>Putar setir — yang bergerak:</div>
+        <div style={styles.movedLabel}>Gerakkan setir/pedal — terdeteksi:</div>
         {moved ? (
-          <div style={styles.movedValue}>
-            GP{moved.gp} · {moved.kind}
-            {moved.idx}
-            {moved.kind === 'AX' ? (
-              <button style={styles.useThisBtn} onClick={() => pickAxis(moved.gp, moved.idx)}>
-                Jadikan setir
+          <>
+            <div style={styles.movedValue}>
+              GP{moved.gp} · {moved.kind}
+              {moved.idx}
+            </div>
+            <div style={styles.assignRow}>
+              <button
+                style={{ ...styles.assignBtn, ...(moved.kind !== 'AX' ? styles.assignDisabled : {}) }}
+                onClick={() => assignFromMoved('steer')}
+                disabled={moved.kind !== 'AX'}
+              >
+                → Setir
               </button>
-            ) : (
-              <span style={styles.btnNote}>terbaca sbg tombol</span>
-            )}
-          </div>
+              <button style={styles.assignBtn} onClick={() => assignFromMoved('gas')}>
+                → Gas
+              </button>
+              <button style={styles.assignBtn} onClick={() => assignFromMoved('brake')}>
+                → Rem
+              </button>
+            </div>
+          </>
         ) : (
           <div style={styles.movedNone}>— belum ada gerakan terdeteksi —</div>
         )}
       </div>
 
-      {/* Device tabs */}
+      {/* Current mapping summary for the selected mode */}
+      <div style={styles.sectionLabel}>MAPPING {calibMode === 'dinput' ? 'D-INPUT' : 'X-INPUT'}</div>
+      <MapRow label="Setir" value={`GP${map.gamepadIndex ?? 'auto'} · AX${map.steerAxis}`} inverted={map.steerInvert} onInvert={toggleSteerInvert} />
+      <MapRow label="Gas" value={srcLabel(map.gas)} inverted={map.gas.invert} onInvert={() => togglePedalInvert('gas')} />
+      <MapRow label="Rem" value={srcLabel(map.brake)} inverted={map.brake.invert} onInvert={() => togglePedalInvert('brake')} />
+
+      {/* Device list */}
       <div style={styles.sectionLabel}>DEVICE ({pads.length})</div>
       <div style={styles.tabs}>
         {pads.map((p) => (
@@ -156,25 +205,25 @@ export function WheelDebugOverlay() {
             title={p.id}
           >
             GP{p.index}
-            {activeGp === p.index ? ' ●' : ''}
+            {map.gamepadIndex === p.index ? ' ●' : ''}
           </button>
         ))}
       </div>
       <div style={styles.device} title={pad.id}>
-        {pad.id} · {pad.mapping} · {pad.axes.length} axes / {pad.buttons.length} btn
+        {pad.id} · {pad.axes.length} axes / {pad.buttons.length} btn
       </div>
       <button
-        style={{ ...styles.useDeviceBtn, ...(activeGp === pad.index ? styles.useDeviceBtnActive : {}) }}
-        onClick={() => useDevice(pad.index)}
+        style={{ ...styles.useDeviceBtn, ...(map.gamepadIndex === pad.index ? styles.useDeviceBtnActive : {}) }}
+        onClick={() => setWheelMapping(calibMode, { gamepadIndex: pad.index })}
       >
-        {activeGp === pad.index ? '● Device kontrol aktif' : 'Pakai device ini untuk kontrol'}
+        {map.gamepadIndex === pad.index ? '● Device kontrol mode ini' : 'Pakai device ini'}
       </button>
 
       {/* Axes */}
       <div style={styles.sectionLabel}>AXES</div>
       {pad.axes.length === 0 && <div style={styles.movedNone}>device ini tidak punya axis</div>}
       {pad.axes.map((v, i) => {
-        const isSteer = activeGp === pad.index && i === steerAxis
+        const isSteer = map.gamepadIndex === pad.index && i === map.steerAxis
         const pct = (Math.max(-1, Math.min(1, v)) * 0.5 + 0.5) * 100
         return (
           <div key={i} style={styles.axisRow}>
@@ -194,19 +243,15 @@ export function WheelDebugOverlay() {
               />
             </div>
             <span style={styles.axisVal}>{v.toFixed(2)}</span>
-            <button style={styles.setBtn} onClick={() => pickAxis(pad.index, i)}>
+            <button
+              style={styles.setBtn}
+              onClick={() => setWheelMapping(calibMode, { gamepadIndex: pad.index, steerAxis: i })}
+            >
               Setir
             </button>
           </div>
         )
       })}
-
-      <div style={styles.invertRow}>
-        <span style={styles.controlDesc}>Arah belok kebalik?</span>
-        <button style={{ ...styles.invertBtn, ...(invert ? styles.invertBtnOn : {}) }} onClick={toggleInvert}>
-          {invert ? 'DIBALIK' : 'NORMAL'}
-        </button>
-      </div>
 
       {/* Buttons */}
       <div style={styles.sectionLabel}>BUTTONS</div>
@@ -229,6 +274,32 @@ export function WheelDebugOverlay() {
   )
 }
 
+function MapRow({
+  label,
+  value,
+  inverted,
+  onInvert,
+}: {
+  label: string
+  value: string
+  inverted: boolean
+  onInvert: () => void
+}) {
+  return (
+    <div style={styles.mapRow}>
+      <span style={styles.mapLabel}>{label}</span>
+      <span style={styles.mapValue}>{value}</span>
+      <button
+        style={{ ...styles.invertBtn, ...(inverted ? styles.invertBtnOn : {}) }}
+        onClick={onInvert}
+        title="Balik arah"
+      >
+        {inverted ? 'DIBALIK' : 'balik'}
+      </button>
+    </div>
+  )
+}
+
 const styles: Record<string, React.CSSProperties> = {
   panel: {
     position: 'fixed',
@@ -236,7 +307,7 @@ const styles: Record<string, React.CSSProperties> = {
     left: '1rem',
     zIndex: 300,
     width: '280px',
-    maxHeight: '70vh',
+    maxHeight: '74vh',
     overflowY: 'auto',
     background: 'rgba(10, 15, 25, 0.94)',
     border: '1px solid rgba(251, 146, 60, 0.5)',
@@ -251,6 +322,19 @@ const styles: Record<string, React.CSSProperties> = {
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' },
   title: { fontSize: '11px', fontWeight: 800, letterSpacing: '0.05em', color: '#fb923c' },
   collapseBtn: { background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '12px' },
+  modeRow: { display: 'flex', gap: '6px', marginBottom: '8px' },
+  modeBtn: {
+    flex: 1,
+    fontSize: '11px',
+    fontWeight: 800,
+    border: '1px solid rgba(255,255,255,0.2)',
+    background: 'rgba(255,255,255,0.06)',
+    color: '#cbd5e1',
+    borderRadius: '6px',
+    padding: '5px',
+    cursor: 'pointer',
+  },
+  modeBtnActive: { background: 'rgba(251,146,60,0.22)', borderColor: '#fb923c', color: '#fb923c' },
   movedBox: {
     background: 'rgba(59, 130, 246, 0.12)',
     border: '1px solid rgba(59, 130, 246, 0.4)',
@@ -259,29 +343,25 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: '8px',
   },
   movedLabel: { fontSize: '10px', color: '#93c5fd', marginBottom: '3px' },
-  movedValue: {
-    fontSize: '13px',
-    fontWeight: 800,
-    fontFamily: 'monospace',
-    color: '#bfdbfe',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    flexWrap: 'wrap',
-  },
+  movedValue: { fontSize: '14px', fontWeight: 800, fontFamily: 'monospace', color: '#bfdbfe' },
   movedNone: { fontSize: '11px', color: '#64748b', fontStyle: 'italic' },
-  useThisBtn: {
+  assignRow: { display: 'flex', gap: '5px', marginTop: '6px' },
+  assignBtn: {
+    flex: 1,
     fontSize: '10px',
     fontWeight: 700,
-    border: '1px solid #34d399',
-    background: 'rgba(52,211,153,0.2)',
-    color: '#34d399',
+    border: '1px solid rgba(52,211,153,0.5)',
+    background: 'rgba(52,211,153,0.18)',
+    color: '#6ee7b7',
     borderRadius: '4px',
-    padding: '2px 8px',
+    padding: '3px 4px',
     cursor: 'pointer',
   },
-  btnNote: { fontSize: '9px', color: '#f59e0b', fontWeight: 600 },
+  assignDisabled: { opacity: 0.35, cursor: 'not-allowed' },
   sectionLabel: { fontSize: '9px', letterSpacing: '0.08em', color: '#64748b', margin: '8px 0 4px', fontWeight: 700 },
+  mapRow: { display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' },
+  mapLabel: { width: '34px', fontSize: '10px', color: '#94a3b8', fontWeight: 700 },
+  mapValue: { flex: 1, fontFamily: 'monospace', fontSize: '11px', color: '#e2e8f0' },
   tabs: { display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '4px' },
   tab: {
     fontSize: '10px',
@@ -339,16 +419,14 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     whiteSpace: 'nowrap',
   },
-  invertRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px' },
-  controlDesc: { fontSize: '10px', color: '#cbd5e1' },
   invertBtn: {
-    fontSize: '10px',
+    fontSize: '9px',
     fontWeight: 700,
     border: '1px solid rgba(255,255,255,0.2)',
     background: 'rgba(255,255,255,0.06)',
-    color: '#e2e8f0',
+    color: '#cbd5e1',
     borderRadius: '4px',
-    padding: '3px 10px',
+    padding: '2px 7px',
     cursor: 'pointer',
   },
   invertBtnOn: { background: 'rgba(251, 146, 60, 0.25)', borderColor: '#fb923c', color: '#fb923c' },

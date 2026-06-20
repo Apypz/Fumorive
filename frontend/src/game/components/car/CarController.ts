@@ -30,7 +30,8 @@ import {
 } from '../../config'
 import { CarPhysics } from './CarPhysics'
 import { CarCameraManager } from './CarCameraManager'
-import { getWheelSteerAxis, getWheelSteerInvert, getWheelGamepadIndex } from '../../utils/wheelConfig'
+import { getWheelMapping, readPedalValue } from '../../utils/wheelConfig'
+import type { WheelMode } from '../../utils/wheelConfig'
 import { DriftParticleSystem } from './DriftParticleSystem'
 import { EngineAudio } from '../../engine/EngineAudio'
 import type { SimpleMap } from '../SimpleMap'
@@ -65,12 +66,9 @@ export const DEFAULT_CAMERA_CONFIG_LEGACY: CameraPositionConfig = {
   },
 }
 
-// ── Kaiju XR1 racing wheel (X-Input) → Gamepad API mapping ──────────────────
-// Pedals/buttons follow the standard X-Input layout below. The STEERING axis is
-// NOT hard-coded — wheels report it on different axis indices — so it is read
-// from wheelConfig (set live via the wheel debug overlay) each frame.
-const WHEEL_GAS_BUTTON = 7       // RT — gas pedal (analog .value 0..1)
-const WHEEL_BRAKE_BUTTON = 6     // LT — brake pedal (analog .value 0..1)
+// ── Kaiju XR1 racing wheel → Gamepad API ────────────────────────────────────
+// Steering axis and pedals are configured per mode in wheelConfig (calibrated
+// via the wheel overlay). These buttons are the shared paddle/horn defaults.
 const WHEEL_SHIFT_UP_BUTTON = 5  // RB / right paddle
 const WHEEL_SHIFT_DOWN_BUTTON = 4 // LB / left paddle
 const WHEEL_HORN_BUTTON = 0      // A
@@ -233,17 +231,22 @@ export class CarController {
   }
 
   /**
-   * Cycle control modes with the "C" key: keyboard → mouse → wheel → keyboard.
-   * The 'wheel' (Kaiju XR1) step is only included while a wheel/controller is
-   * actually connected, so without one the toggle still flips keyboard/mouse.
+   * Cycle control modes with the "C" key:
+   * keyboard → mouse → wheel (D-Input) → wheel (X-Input) → keyboard.
+   * The two Kaiju XR1 steps are only included while a wheel/controller is
+   * connected, so without one the toggle still just flips keyboard/mouse.
    */
   toggleControlMode(): void {
     const modes: ControlMode[] = this.hasGamepad()
-      ? ['keyboard', 'mouse', 'wheel']
+      ? ['keyboard', 'mouse', 'wheel-dinput', 'wheel-xinput']
       : ['keyboard', 'mouse']
     const idx = modes.indexOf(this.currentControlMode)
     const next = modes[(idx + 1) % modes.length]
     this.setControlMode(next)
+  }
+
+  private isWheelMode(): boolean {
+    return this.currentControlMode === 'wheel-dinput' || this.currentControlMode === 'wheel-xinput'
   }
 
   /**
@@ -552,7 +555,7 @@ export class CarController {
   /**
    * Listen for the racing wheel / controller connecting. The Gamepad API only
    * surfaces a device after the page receives input from it, so the first pedal
-   * press or button tap is what makes 'wheel' available on the "C" cycle.
+   * press or button tap is what makes the wheel modes available on the "C" cycle.
    */
   private setupGamepad(): void {
     // Pick up a device that is already live (e.g. after a scene remount).
@@ -572,7 +575,7 @@ export class CarController {
     const onDisconnect = (e: GamepadEvent) => {
       if (this.gamepadIndex === e.gamepad.index) {
         this.gamepadIndex = null
-        if (this.currentControlMode === 'wheel') this.setControlMode('keyboard')
+        if (this.isWheelMode()) this.setControlMode('keyboard')
         console.log('[CarController] Racing wheel disconnected')
       }
     }
@@ -590,22 +593,14 @@ export class CarController {
 
   /**
    * The gamepad the game reads. Honours an explicit device chosen in the wheel
-   * overlay, then the auto-detected one, then any connected pad as a fallback.
+   * overlay (per mode), then the auto-detected one, then any connected pad.
    */
-  private activeGamepad(): Gamepad | null {
+  private activeGamepad(chosen?: number | null): Gamepad | null {
     const pads = navigator.getGamepads ? navigator.getGamepads() : []
-    const chosen = getWheelGamepadIndex()
-    if (chosen !== null && pads[chosen]) return pads[chosen]
+    if (chosen !== undefined && chosen !== null && pads[chosen]) return pads[chosen]
     if (this.gamepadIndex !== null && pads[this.gamepadIndex]) return pads[this.gamepadIndex]
     for (const p of pads) if (p) return p
     return null
-  }
-
-  /** Analog value (0..1) of a gamepad button (trigger pedals report a fraction). */
-  private readButton(gp: Gamepad, i: number): number {
-    const b = gp.buttons[i]
-    if (!b) return 0
-    return typeof b === 'number' ? b : b.value
   }
 
   /** Fire `action` once on the rising edge of a wheel button press. */
@@ -616,15 +611,16 @@ export class CarController {
   }
 
   /**
-   * Read the Kaiju XR1 each frame while in 'wheel' mode and translate it into
-   * the same input the keyboard/mouse produce: steering from the wheel axis,
-   * throttle from the gas pedal, reverse/brake from the brake pedal, gear shifts
-   * from the paddles, and the horn from a face button.
+   * Read the Kaiju XR1 each frame while in a wheel mode and translate it into the
+   * same input the keyboard/mouse produce. Steering axis and pedals come from the
+   * per-mode mapping (D-Input vs X-Input) calibrated in the wheel overlay.
    */
   private updateWheelInput(_dt: number): void {
-    if (this.currentControlMode !== 'wheel') return
+    if (!this.isWheelMode()) return
 
-    const gp = this.activeGamepad()
+    const mode: WheelMode = this.currentControlMode === 'wheel-dinput' ? 'dinput' : 'xinput'
+    const map = getWheelMapping(mode)
+    const gp = this.activeGamepad(map.gamepadIndex)
     if (!gp) {
       // Wheel vanished mid-drive — neutralise inputs.
       this.input.steering = 0
@@ -632,15 +628,14 @@ export class CarController {
       return
     }
 
-    // Steering from the wheel axis (index/direction set via the debug overlay),
-    // with a small deadzone around centre.
-    let steer = (gp.axes[getWheelSteerAxis()] ?? 0) * (getWheelSteerInvert() ? -1 : 1)
+    // Steering from the configured wheel axis, with a small deadzone around centre.
+    let steer = (gp.axes[map.steerAxis] ?? 0) * (map.steerInvert ? -1 : 1)
     if (Math.abs(steer) < WHEEL_DEADZONE) steer = 0
     this.input.steering = Math.max(-1, Math.min(1, steer))
 
     // Gas pedal drives forward; brake pedal decelerates / reverses (mirrors S).
-    const gas = this.readButton(gp, WHEEL_GAS_BUTTON)
-    const brake = this.readButton(gp, WHEEL_BRAKE_BUTTON)
+    const gas = readPedalValue(gp.axes, gp.buttons, map.gas)
+    const brake = readPedalValue(gp.axes, gp.buttons, map.brake)
     this.input.throttle = Math.max(-1, Math.min(1, gas - brake))
     this.input.brake = false
 
