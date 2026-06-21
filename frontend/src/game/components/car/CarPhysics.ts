@@ -560,6 +560,11 @@ export class CarPhysics {
     return this.velocity.length()
   }
 
+  /** Scale current velocity — a jolt when crossing a speed bump too fast. */
+  applySpeedBumpJolt(retain: number): void {
+    this.velocity.scaleInPlace(Math.max(0, Math.min(1, retain)))
+  }
+
   getSpeedKmh(): number {
     return Math.round(this.velocity.length() * 3.6)
   }

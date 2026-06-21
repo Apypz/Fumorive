@@ -113,8 +113,11 @@ export class SpeedBumpSystem {
         const dist = Math.hypot(nb.x - na.x, nb.z - na.z)
         if (dist < grid.cellSize * 0.4) continue
 
-        const mx = (na.x + nb.x) / 2
-        const mz = (na.z + nb.z) / 2
+        // Offset the bump away from the segment midpoint (where zebra crossings
+        // sit) and clear of the intersections — ~1/3 or ~2/3 along the segment.
+        const t = this.rng() < 0.5 ? 0.32 : 0.68
+        const mx = na.x + (nb.x - na.x) * t
+        const mz = na.z + (nb.z - na.z) * t
         const horizontal = na.r === nb.r
 
         const bump: SpeedBump = { x: mx, z: mz, horizontal, width: grid.roadWidth }
@@ -210,9 +213,13 @@ export class SpeedBumpSystem {
       if (!playerPos || this.cooldowns[i] > 0) continue
 
       const bump = this.bumps[i]
-      const dist = Math.hypot(playerPos.x - bump.x, playerPos.z - bump.z)
+      // Detect crossing the bump bar anywhere across the road width: a thin band
+      // along the travel axis, the full road width laterally. Fixes off-centre
+      // crossings being missed by the old single-point radius check.
+      const along = bump.horizontal ? Math.abs(playerPos.x - bump.x) : Math.abs(playerPos.z - bump.z)
+      const lateral = bump.horizontal ? Math.abs(playerPos.z - bump.z) : Math.abs(playerPos.x - bump.x)
 
-      if (dist < BUMP_DETECT_R) {
+      if (along < BUMP_DETECT_R && lateral < bump.width / 2) {
         this.cooldowns[i] = BUMP_COOLDOWN
         this.onBumpCross?.({ impactSpeed: playerSpeed })
 

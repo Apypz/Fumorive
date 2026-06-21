@@ -364,6 +364,8 @@ export class DemoScene implements GameScene {
         const intensity = Math.min(0.8, 0.15 + (impactSpeed / 15) * 0.65)
         const duration  = 0.4 + (impactSpeed / 15) * 0.3
         this.carController?.triggerCameraShake(intensity, duration)
+        // Lewat terlalu kencang (> ~16 km/h) → mobil terhentak melambat.
+        if (impactSpeed > 4.5) this.carController?.applySpeedBumpJolt(0.62)
       })
 
       // Ambient suara kota.

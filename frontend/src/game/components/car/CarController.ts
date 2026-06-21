@@ -700,6 +700,11 @@ export class CarController {
     return this.physics.getForwardSpeed()
   }
 
+  /** Damp speed when crossing a speed bump too fast (retain 0..1 of velocity). */
+  applySpeedBumpJolt(retain: number): void {
+    this.physics.applySpeedBumpJolt(retain)
+  }
+
   getSteerAngle(): number {
     return this.physics.getSteerAngle()
   }
