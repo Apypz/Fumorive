@@ -25,6 +25,7 @@ import {
   Scene,
   TransformNode,
   MeshBuilder,
+  Mesh,
   Vector3,
   Color3,
   PBRMaterial,
@@ -47,6 +48,10 @@ interface Obstacle {
 
 interface NpcCar {
   root: TransformNode
+  type: VehicleType
+  halfLength: number
+  halfWidth: number
+  radius: number
   x: number
   z: number
   heading: number
@@ -64,11 +69,28 @@ interface NpcCar {
   overtakePlayer: boolean
 }
 
-// --- Car geometry ---
-const NPC_SCALE = 1.35 // uniform scale of the whole car model
-const CAR_HALF_LENGTH = 2.45 * NPC_SCALE
-const CAR_HALF_WIDTH = 1.05 * NPC_SCALE
-const NPC_RADIUS = 1.7 * NPC_SCALE
+// --- Vehicle types (varied silhouettes & sizes, built at real-world metres) ---
+export type VehicleType = 'sedan' | 'hatchback' | 'suv' | 'van' | 'bus' | 'truck'
+
+interface VehicleSpec {
+  halfLength: number
+  halfWidth: number
+  radius: number // circular extent for lateral sensing & car-following spacing
+  weight: number // random selection weight (sum ≈ 1)
+}
+
+// halfLength matches each model's furthest body/bumper extent (the truck model
+// is recentred on the root so this symmetric box fits it without phantom volume).
+const VEHICLE_SPECS: Record<VehicleType, VehicleSpec> = {
+  sedan: { halfLength: 2.4, halfWidth: 0.95, radius: 1.6, weight: 0.26 },
+  hatchback: { halfLength: 2.13, halfWidth: 0.92, radius: 1.5, weight: 0.2 },
+  suv: { halfLength: 2.6, halfWidth: 1.0, radius: 1.7, weight: 0.18 },
+  van: { halfLength: 2.82, halfWidth: 1.0, radius: 1.8, weight: 0.12 },
+  bus: { halfLength: 4.85, halfWidth: 1.25, radius: 2.3, weight: 0.1 },
+  truck: { halfLength: 3.9, halfWidth: 1.2, radius: 2.3, weight: 0.14 },
+}
+
+const VEHICLE_TYPES = Object.keys(VEHICLE_SPECS) as VehicleType[]
 
 // --- Lane / road ---
 const LANE_OFFSET = 3.4 // left-lane distance from centreline (road ~16m wide)
@@ -152,6 +174,7 @@ export class NpcTrafficSystem {
     const bodyMats = bodyColors.map((c, i) => this.makeMaterial(`npcBody_${i}`, c, 0.4, 0.4))
     const wheelMat = this.makeMaterial('npcWheel', new Color3(0.04, 0.04, 0.05), 0.1, 0.85)
     const glassMat = this.makeMaterial('npcGlass', new Color3(0.08, 0.11, 0.18), 0.3, 0.15)
+    const trimMat = this.makeMaterial('npcTrim', new Color3(0.28, 0.28, 0.3), 0.3, 0.6)
     const headMat = this.makeEmissive('npcHeadlight', new Color3(1, 0.96, 0.82))
     const tailMat = this.makeEmissive('npcTaillight', new Color3(0.95, 0.12, 0.12))
 
@@ -176,14 +199,22 @@ export class NpcTrafficSystem {
       const x = start.x + -edz * LANE_OFFSET // start in the left lane
       const z = start.z + edx * LANE_OFFSET
 
-      const root = this.buildCar(bodyMats[i % bodyMats.length], wheelMat, glassMat, headMat, tailMat, i)
+      const type = this.pickType()
+      const spec = VEHICLE_SPECS[type]
+      const root = this.buildCar(type, bodyMats[i % bodyMats.length], wheelMat, glassMat, headMat, tailMat, trimMat, i)
       root.position = new Vector3(x, 0, z)
       root.rotation.y = heading
 
-      // Wide spread so some cars are clearly slow and others fast.
-      const cruise = randFloat(this.rng, 6, 15)
+      // Wide spread so some cars are clearly slow and others fast. Big vehicles
+      // (bus/truck) cruise a little slower.
+      const speedScale = type === 'bus' || type === 'truck' ? 0.8 : 1
+      const cruise = randFloat(this.rng, 6, 15) * speedScale
       this.cars.push({
         root,
+        type,
+        halfLength: spec.halfLength,
+        halfWidth: spec.halfWidth,
+        radius: spec.radius,
         x,
         z,
         heading,
@@ -203,69 +234,153 @@ export class NpcTrafficSystem {
     }
   }
 
+  /** Weighted-random vehicle type. */
+  private pickType(): VehicleType {
+    let r = this.rng()
+    for (const t of VEHICLE_TYPES) {
+      r -= VEHICLE_SPECS[t].weight
+      if (r <= 0) return t
+    }
+    return 'sedan'
+  }
+
+  /**
+   * Build a detailed procedural model for the given type. Parts are grouped by
+   * material and each group is merged into ONE mesh parented to the car root, so
+   * a whole car is only a handful of draw calls even with the extra detail.
+   * Local frame: forward = +Z, width = X, up = Y; ground at y = 0.
+   */
   private buildCar(
+    type: VehicleType,
     bodyMat: PBRMaterial,
     wheelMat: PBRMaterial,
     glassMat: PBRMaterial,
     headMat: PBRMaterial,
     tailMat: PBRMaterial,
+    trimMat: PBRMaterial,
     idx: number
   ): TransformNode {
     const root = new TransformNode(`npcCar_${idx}`, this.scene)
-    root.scaling = new Vector3(NPC_SCALE, NPC_SCALE, NPC_SCALE)
 
-    // Lower body (forward = +Z).
-    const body = MeshBuilder.CreateBox(`npcBody_${idx}`, { width: 2.1, height: 0.6, depth: 4.8 }, this.scene)
-    body.position.y = 0.5
-    body.material = bodyMat
-    body.parent = root
+    const body: Mesh[] = []
+    const glass: Mesh[] = []
+    const wheels: Mesh[] = []
+    const heads: Mesh[] = []
+    const tails: Mesh[] = []
+    const trim: Mesh[] = []
+    let pid = 0
 
-    // Glass cabin.
-    const cabin = MeshBuilder.CreateBox(`npcCabin_${idx}`, { width: 1.85, height: 0.7, depth: 2.4 }, this.scene)
-    cabin.position = new Vector3(0, 1.15, -0.15)
-    cabin.material = glassMat
-    cabin.parent = root
+    const box = (arr: Mesh[], w: number, h: number, d: number, x: number, y: number, z: number) => {
+      const m = MeshBuilder.CreateBox(`np_${idx}_${pid++}`, { width: w, height: h, depth: d }, this.scene)
+      m.position = new Vector3(x, y, z)
+      arr.push(m)
+    }
+    const wheel = (x: number, z: number, dia: number) => {
+      const m = MeshBuilder.CreateCylinder(`nw_${idx}_${pid++}`, { diameter: dia, height: 0.42, tessellation: 10 }, this.scene)
+      m.rotation.z = Math.PI / 2
+      m.position = new Vector3(x, dia / 2, z)
+      wheels.push(m)
+    }
+    const headlights = (x: number, z: number) => [x, -x].forEach((hx) => box(heads, 0.36, 0.24, 0.12, hx, 0.6, z))
+    const taillights = (x: number, z: number) => [x, -x].forEach((tx) => box(tails, 0.42, 0.28, 0.12, tx, 0.6, z))
 
-    // Body-coloured roof cap on top of the glass.
-    const roof = MeshBuilder.CreateBox(`npcRoof_${idx}`, { width: 1.9, height: 0.14, depth: 2.05 }, this.scene)
-    roof.position = new Vector3(0, 1.53, -0.15)
-    roof.material = bodyMat
-    roof.parent = root
+    switch (type) {
+      case 'sedan': {
+        box(body, 1.9, 0.55, 4.5, 0, 0.5, 0)
+        box(glass, 1.74, 0.62, 2.0, 0, 1.02, -0.15)
+        box(body, 1.82, 0.12, 1.75, 0, 1.4, -0.15)
+        box(trim, 1.92, 0.22, 0.4, 0, 0.32, 2.2)
+        box(trim, 1.92, 0.22, 0.4, 0, 0.32, -2.2)
+        headlights(0.62, 2.27)
+        taillights(0.7, -2.27)
+        wheel(0.92, 1.45, 0.72); wheel(-0.92, 1.45, 0.72); wheel(0.92, -1.45, 0.72); wheel(-0.92, -1.45, 0.72)
+        break
+      }
+      case 'hatchback': {
+        box(body, 1.84, 0.55, 4.0, 0, 0.5, 0)
+        box(glass, 1.7, 0.64, 2.2, 0, 1.0, -0.2)
+        box(body, 1.78, 0.12, 2.0, 0, 1.38, -0.25)
+        box(trim, 1.86, 0.22, 0.35, 0, 0.32, 1.95)
+        box(trim, 1.86, 0.22, 0.35, 0, 0.32, -1.95)
+        headlights(0.58, 2.0)
+        taillights(0.66, -2.0)
+        wheel(0.9, 1.3, 0.7); wheel(-0.9, 1.3, 0.7); wheel(0.9, -1.3, 0.7); wheel(-0.9, -1.3, 0.7)
+        break
+      }
+      case 'suv': {
+        box(body, 2.0, 0.85, 4.9, 0, 0.62, 0)
+        box(glass, 1.85, 0.72, 2.3, 0, 1.32, -0.1)
+        box(body, 1.95, 0.14, 2.4, 0, 1.75, -0.1)
+        box(body, 0.08, 0.1, 1.8, 0.82, 1.86, -0.1) // roof rails
+        box(body, 0.08, 0.1, 1.8, -0.82, 1.86, -0.1)
+        box(trim, 2.02, 0.3, 0.4, 0, 0.4, 2.4)
+        box(trim, 2.02, 0.3, 0.4, 0, 0.4, -2.4)
+        headlights(0.7, 2.47)
+        taillights(0.78, -2.47)
+        wheel(0.95, 1.6, 0.86); wheel(-0.95, 1.6, 0.86); wheel(0.95, -1.6, 0.86); wheel(-0.95, -1.6, 0.86)
+        break
+      }
+      case 'van': {
+        box(body, 2.0, 1.5, 5.3, 0, 0.95, 0)
+        box(glass, 1.86, 0.55, 0.9, 0, 1.45, 2.0) // windshield
+        box(glass, 0.08, 0.5, 2.6, 0.98, 1.45, 0.2) // side glass
+        box(glass, 0.08, 0.5, 2.6, -0.98, 1.45, 0.2)
+        box(trim, 2.02, 0.3, 0.4, 0, 0.45, 2.62)
+        box(trim, 2.02, 0.3, 0.4, 0, 0.45, -2.62)
+        headlights(0.72, 2.65)
+        taillights(0.8, -2.65)
+        wheel(0.95, 1.7, 0.8); wheel(-0.95, 1.7, 0.8); wheel(0.95, -1.7, 0.8); wheel(-0.95, -1.7, 0.8)
+        break
+      }
+      case 'bus': {
+        box(body, 2.5, 2.0, 9.4, 0, 1.25, 0)
+        box(glass, 0.08, 0.7, 8.2, 1.23, 1.7, 0) // side window strips
+        box(glass, 0.08, 0.7, 8.2, -1.23, 1.7, 0)
+        box(glass, 2.3, 0.85, 0.1, 0, 1.7, 4.66) // windshield
+        box(trim, 2.52, 0.4, 0.4, 0, 0.5, 4.65)
+        box(trim, 2.52, 0.4, 0.4, 0, 0.5, -4.65)
+        headlights(0.85, 4.68)
+        taillights(0.95, -4.68)
+        wheel(1.18, 3.3, 0.96); wheel(-1.18, 3.3, 0.96)
+        wheel(1.18, -2.6, 0.96); wheel(-1.18, -2.6, 0.96)
+        wheel(1.18, -3.75, 0.96); wheel(-1.18, -3.75, 0.96)
+        break
+      }
+      case 'truck':
+      default: {
+        // Coloured cab up front, grey cargo box behind — recentred on the root
+        // (body spans z ±3.8) so the symmetric collider has no phantom volume.
+        box(body, 2.3, 1.7, 2.4, 0, 1.0, 2.6)
+        box(glass, 2.1, 0.7, 0.1, 0, 1.45, 3.76) // windshield
+        box(glass, 0.08, 0.6, 1.6, 1.13, 1.45, 2.6) // cab sides
+        box(glass, 0.08, 0.6, 1.6, -1.13, 1.45, 2.6)
+        box(trim, 2.4, 2.1, 5.2, 0, 1.4, -1.2) // cargo box
+        box(trim, 2.42, 0.32, 0.35, 0, 0.42, 3.92) // bumper
+        headlights(0.8, 3.85)
+        taillights(0.9, -3.8)
+        wheel(1.12, 2.6, 0.96); wheel(-1.12, 2.6, 0.96)
+        wheel(1.12, -2.0, 0.96); wheel(-1.12, -2.0, 0.96)
+        wheel(1.12, -3.2, 0.96); wheel(-1.12, -3.2, 0.96)
+        break
+      }
+    }
 
-    // Wheels.
-    const wheelSpots = [
-      { x: 0.97, z: 1.55 },
-      { x: -0.97, z: 1.55 },
-      { x: 0.97, z: -1.55 },
-      { x: -0.97, z: -1.55 },
-    ]
-    wheelSpots.forEach((w, j) => {
-      const wheel = MeshBuilder.CreateCylinder(
-        `npcWheel_${idx}_${j}`,
-        { diameter: 0.92, height: 0.4, tessellation: 10 },
-        this.scene
-      )
-      wheel.rotation.z = Math.PI / 2
-      wheel.position = new Vector3(w.x, 0.44, w.z)
-      wheel.material = wheelMat
-      wheel.parent = root
-    })
-
-    // Headlights (front).
-    ;[0.72, -0.72].forEach((hx, j) => {
-      const hl = MeshBuilder.CreateBox(`npcHL_${idx}_${j}`, { width: 0.36, height: 0.26, depth: 0.12 }, this.scene)
-      hl.position = new Vector3(hx, 0.58, 2.42)
-      hl.material = headMat
-      hl.parent = root
-    })
-
-    // Taillights (rear).
-    ;[0.78, -0.78].forEach((tx, j) => {
-      const tl = MeshBuilder.CreateBox(`npcTL_${idx}_${j}`, { width: 0.42, height: 0.3, depth: 0.12 }, this.scene)
-      tl.position = new Vector3(tx, 0.58, -2.42)
-      tl.material = tailMat
-      tl.parent = root
-    })
+    const mergeTo = (arr: Mesh[], name: string, mat: PBRMaterial) => {
+      if (arr.length === 0) return
+      const m = Mesh.MergeMeshes(arr, true, true, undefined, false, false)
+      if (m) {
+        m.name = `${name}_${idx}`
+        m.material = mat
+        m.isPickable = false
+        m.parent = root
+      }
+    }
+    mergeTo(body, 'npcBody', bodyMat)
+    mergeTo(glass, 'npcGlass', glassMat)
+    mergeTo(wheels, 'npcWheels', wheelMat)
+    mergeTo(heads, 'npcHead', headMat)
+    mergeTo(tails, 'npcTail', tailMat)
+    mergeTo(trim, 'npcTrim', trimMat)
 
     return root
   }
@@ -280,7 +395,8 @@ export class NpcTrafficSystem {
     minFwd: number,
     maxFwd: number,
     excludeCar: NpcCar | null,
-    excludePlayer: boolean
+    excludePlayer: boolean,
+    selfHalfLength: number
   ): { gap: number; ob: Obstacle | null } {
     const perpX = ez
     const perpZ = -ex
@@ -295,7 +411,7 @@ export class NpcTrafficSystem {
       if (fwd < minFwd || fwd > maxFwd) continue
       const lat = dx * perpX + dz * perpZ
       if (Math.abs(lat) > LANE_HALF + o.r) continue
-      const gap = fwd - o.r - CAR_HALF_LENGTH
+      const gap = fwd - o.r - selfHalfLength
       if (gap < minGap) {
         minGap = gap
         nearest = o
@@ -334,14 +450,18 @@ export class NpcTrafficSystem {
 
     const obstacles: Obstacle[] = []
     if (player) obstacles.push({ x: player.x, z: player.z, r: playerRadius, self: null })
-    for (const c of this.cars) obstacles.push({ x: c.x, z: c.z, r: NPC_RADIUS, self: c })
+    for (const c of this.cars) obstacles.push({ x: c.x, z: c.z, r: c.radius, self: c })
 
-    // Detect which NPC cars are currently overlapping the player (collision).
+    // Detect which NPC cars overlap the player (collision) using each car's
+    // oriented box — accurate for long vehicles like buses/trucks.
     if (player) {
       for (let i = 0; i < this.cars.length; i++) {
         const c = this.cars[i]
-        const dist = Math.hypot(c.x - player.x, c.z - player.z)
-        if (dist < NPC_RADIUS + playerRadius) {
+        const dx = player.x - c.x
+        const dz = player.z - c.z
+        const fwd = Math.abs(dx * Math.sin(c.heading) + dz * Math.cos(c.heading))
+        const lat = Math.abs(dx * Math.cos(c.heading) - dz * Math.sin(c.heading))
+        if (fwd < c.halfLength + playerRadius && lat < c.halfWidth + playerRadius) {
           this.lastCollisionIds.add(i)
         }
       }
@@ -418,7 +538,8 @@ export class NpcTrafficSystem {
         0.2,
         SENSE_DIST,
         overtaking ? car.overtakeCar : car,
-        overtaking ? car.overtakePlayer : false
+        overtaking ? car.overtakePlayer : false,
+        car.halfLength
       )
 
       // --- Decide to start an overtake ---
@@ -431,7 +552,7 @@ export class NpcTrafficSystem {
         if (car.blockedTime > OVERTAKE_DELAY && sense.ob) {
           const rightX = car.x + edz * (OVERTAKE_OFFSET + LANE_OFFSET)
           const rightZ = car.z - edx * (OVERTAKE_OFFSET + LANE_OFFSET)
-          const laneCheck = this.nearestAhead(rightX, rightZ, fx, fz, obstacles, -6, 14, car, false)
+          const laneCheck = this.nearestAhead(rightX, rightZ, fx, fz, obstacles, -6, 14, car, false, car.halfLength)
           if (laneCheck.gap >= 9) {
             car.overtakeTime = OVERTAKE_DURATION
             car.overtakeCar = sense.ob.self
@@ -498,11 +619,11 @@ export class NpcTrafficSystem {
     return this.cars.map((car) => {
       const s = Math.abs(Math.sin(car.heading))
       const c = Math.abs(Math.cos(car.heading))
-      const halfX = CAR_HALF_LENGTH * s + CAR_HALF_WIDTH * c
-      const halfZ = CAR_HALF_LENGTH * c + CAR_HALF_WIDTH * s
+      const halfX = car.halfLength * s + car.halfWidth * c
+      const halfZ = car.halfLength * c + car.halfWidth * s
       return {
         min: new Vector3(car.x - halfX, 0, car.z - halfZ),
-        max: new Vector3(car.x + halfX, 2, car.z + halfZ),
+        max: new Vector3(car.x + halfX, 2.5, car.z + halfZ),
       }
     })
   }
