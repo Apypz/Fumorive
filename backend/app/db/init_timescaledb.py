@@ -18,15 +18,15 @@ def create_hypertables():
     """
     
     with engine.connect() as conn:
-        print("🔧 Initializing TimescaleDB extension...")
+        print("[REDIS] Initializing TimescaleDB extension...")
         
         # Enable TimescaleDB extension
         try:
             conn.execute(text("CREATE EXTENSION IF NOT EXISTS timescaledb;"))
             conn.commit()
-            print("✅ TimescaleDB extension enabled")
+            print("[OK] TimescaleDB extension enabled")
         except Exception as e:
-            print(f"⚠️  TimescaleDB extension might already exist: {e}")
+            print(f"[WARN]  TimescaleDB extension might already exist: {e}")
         
         # Convert tables to hypertables
         hypertables = [
@@ -38,7 +38,7 @@ def create_hypertables():
         
         for table_name, time_column in hypertables:
             try:
-                print(f"📊 Converting {table_name} to hypertable...")
+                print(f"[DATA] Converting {table_name} to hypertable...")
                 
                 # Create hypertable
                 conn.execute(text(f"""
@@ -51,13 +51,13 @@ def create_hypertables():
                 """))
                 conn.commit()
                 
-                print(f"✅ {table_name} is now a hypertable")
+                print(f"[OK] {table_name} is now a hypertable")
                 
             except Exception as e:
-                print(f"⚠️  Could not create hypertable for {table_name}: {e}")
+                print(f"[WARN]  Could not create hypertable for {table_name}: {e}")
         
         # Create composite indexes for better query performance
-        print("\n🔍 Creating composite indexes...")
+        print("\n[SEARCH] Creating composite indexes...")
         
         indexes = [
             ("idx_eeg_session_timestamp", "eeg_data", ["session_id", "timestamp"]),
@@ -74,11 +74,11 @@ def create_hypertables():
                     ON {table_name} ({columns_str});
                 """))
                 conn.commit()
-                print(f"✅ Index {index_name} created")
+                print(f"[OK] Index {index_name} created")
             except Exception as e:
-                print(f"⚠️  Could not create index {index_name}: {e}")
+                print(f"[WARN]  Could not create index {index_name}: {e}")
         
-        print("\n✨ TimescaleDB initialization complete!")
+        print("\n[NEW] TimescaleDB initialization complete!")
 
 
 if __name__ == "__main__":

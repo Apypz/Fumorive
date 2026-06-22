@@ -30,6 +30,8 @@ import {
 } from '../../config'
 import { CarPhysics } from './CarPhysics'
 import { CarCameraManager } from './CarCameraManager'
+import { getWheelMapping } from '../../utils/wheelConfig'
+import type { WheelMode, PedalSource } from '../../utils/wheelConfig'
 import { DriftParticleSystem } from './DriftParticleSystem'
 import { EngineAudio } from '../../engine/EngineAudio'
 import type { SimpleMap } from '../SimpleMap'
@@ -63,6 +65,14 @@ export const DEFAULT_CAMERA_CONFIG_LEGACY: CameraPositionConfig = {
     lookAheadDistance: DEFAULT_CAMERA_CONFIG.firstPerson.lookAheadDistance,
   },
 }
+
+// ── Kaiju XR1 racing wheel → Gamepad API ────────────────────────────────────
+// Steering axis and pedals are configured per mode in wheelConfig (calibrated
+// via the wheel overlay). These buttons are the shared paddle/horn defaults.
+const WHEEL_SHIFT_UP_BUTTON = 5  // RB / right paddle
+const WHEEL_SHIFT_DOWN_BUTTON = 4 // LB / left paddle
+const WHEEL_HORN_BUTTON = 0      // A
+const WHEEL_DEADZONE = 0.06
 
 export class CarController {
   private scene: Scene
@@ -102,6 +112,15 @@ export class CarController {
     steering: 0,
     brake: false,
   }
+
+  // Racing wheel (Kaiju XR1) state — read via the Gamepad API
+  private gamepadIndex: number | null = null
+  private wheelButtonPrev: boolean[] = []
+  private wheelHornPrev = false
+  // Captured rest value per pedal axis, for auto-ranged D-Input pedals.
+  private pedalRest = new Map<number, number>()
+  private _gamepadConnectHandler: ((e: GamepadEvent) => void) | null = null
+  private _gamepadDisconnectHandler: ((e: GamepadEvent) => void) | null = null
 
   constructor(
     scene: Scene, 
@@ -155,7 +174,8 @@ export class CarController {
     
     // Setup input handling
     this.setupInput()
-    
+    this.setupGamepad()
+
     console.log('[CarController] Initialized with modular physics and camera')
   }
 
@@ -213,10 +233,22 @@ export class CarController {
   }
 
   /**
-   * Toggle between control modes
+   * Cycle control modes with the "C" key:
+   * keyboard → mouse → wheel (D-Input) → wheel (X-Input) → keyboard.
+   * The two Kaiju XR1 steps are only included while a wheel/controller is
+   * connected, so without one the toggle still just flips keyboard/mouse.
    */
   toggleControlMode(): void {
-    this.setControlMode(this.currentControlMode === 'keyboard' ? 'mouse' : 'keyboard')
+    const modes: ControlMode[] = this.hasGamepad()
+      ? ['keyboard', 'mouse', 'wheel-dinput', 'wheel-xinput']
+      : ['keyboard', 'mouse']
+    const idx = modes.indexOf(this.currentControlMode)
+    const next = modes[(idx + 1) % modes.length]
+    this.setControlMode(next)
+  }
+
+  private isWheelMode(): boolean {
+    return this.currentControlMode === 'wheel-dinput' || this.currentControlMode === 'wheel-xinput'
   }
 
   /**
@@ -227,7 +259,12 @@ export class CarController {
     this.mouseSteeringTarget = 0
     this.mouseSteeringValue = 0
     this.input.steering = 0
-    
+    // Clear pedals/throttle so a held input from the previous mode doesn't stick.
+    this.input.throttle = 0
+    this.input.brake = false
+    // Re-baseline pedal rest positions (pedals are assumed released on switch).
+    this.pedalRest.clear()
+
     console.log(`[CarController] Switched to ${mode} control`)
 
     if (this.onControlModeChange) {
@@ -435,7 +472,10 @@ export class CarController {
     
     // Handle mouse steering
     this.updateMouseSteering(dt)
-    
+
+    // Handle racing-wheel (Kaiju XR1) input
+    this.updateWheelInput(dt)
+
     // Create effective input - block throttle if engine is off
     const effectiveInput: CarInputState = {
       ...this.input,
@@ -453,8 +493,8 @@ export class CarController {
       )
     }
     
-    // Update camera
-    this.cameraManager.update(this.physics.getHeading())
+    // Update camera (dt needed for framerate-independent follow smoothing)
+    this.cameraManager.update(this.physics.getHeading(), dt)
     
     // Update drift particles
     this.driftParticles.update(
@@ -514,6 +554,130 @@ export class CarController {
     }
   }
 
+  // === RACING WHEEL (KAIJU XR1) ===
+
+  /**
+   * Listen for the racing wheel / controller connecting. The Gamepad API only
+   * surfaces a device after the page receives input from it, so the first pedal
+   * press or button tap is what makes the wheel modes available on the "C" cycle.
+   */
+  private setupGamepad(): void {
+    // Pick up a device that is already live (e.g. after a scene remount).
+    const pads = navigator.getGamepads ? navigator.getGamepads() : []
+    for (const p of pads) {
+      if (p) {
+        this.gamepadIndex = p.index
+        console.log(`[CarController] Racing wheel detected: ${p.id}`)
+        break
+      }
+    }
+
+    const onConnect = (e: GamepadEvent) => {
+      this.gamepadIndex = e.gamepad.index
+      console.log(`[CarController] Racing wheel connected: ${e.gamepad.id} — press C to use it`)
+    }
+    const onDisconnect = (e: GamepadEvent) => {
+      if (this.gamepadIndex === e.gamepad.index) {
+        this.gamepadIndex = null
+        if (this.isWheelMode()) this.setControlMode('keyboard')
+        console.log('[CarController] Racing wheel disconnected')
+      }
+    }
+
+    window.addEventListener('gamepadconnected', onConnect)
+    window.addEventListener('gamepaddisconnected', onDisconnect)
+    this._gamepadConnectHandler = onConnect
+    this._gamepadDisconnectHandler = onDisconnect
+  }
+
+  /** Is a wheel/controller currently connected and readable? */
+  private hasGamepad(): boolean {
+    return this.activeGamepad() !== null
+  }
+
+  /**
+   * The gamepad the game reads. Honours an explicit device chosen in the wheel
+   * overlay (per mode), then the auto-detected one, then any connected pad.
+   */
+  private activeGamepad(chosen?: number | null): Gamepad | null {
+    const pads = navigator.getGamepads ? navigator.getGamepads() : []
+    if (chosen !== undefined && chosen !== null && pads[chosen]) return pads[chosen]
+    if (this.gamepadIndex !== null && pads[this.gamepadIndex]) return pads[this.gamepadIndex]
+    for (const p of pads) if (p) return p
+    return null
+  }
+
+  /** Fire `action` once on the rising edge of a wheel button press. */
+  private wheelButtonEdge(gp: Gamepad, i: number, action: () => void): void {
+    const pressed = gp.buttons[i]?.pressed ?? false
+    if (pressed && !this.wheelButtonPrev[i]) action()
+    this.wheelButtonPrev[i] = pressed
+  }
+
+  /**
+   * Read the Kaiju XR1 each frame while in a wheel mode and translate it into the
+   * same input the keyboard/mouse produce. Steering axis and pedals come from the
+   * per-mode mapping (D-Input vs X-Input) calibrated in the wheel overlay.
+   */
+  private updateWheelInput(_dt: number): void {
+    if (!this.isWheelMode()) return
+
+    const mode: WheelMode = this.currentControlMode === 'wheel-dinput' ? 'dinput' : 'xinput'
+    const map = getWheelMapping(mode)
+    const gp = this.activeGamepad(map.gamepadIndex)
+    if (!gp) {
+      // Wheel vanished mid-drive — neutralise inputs.
+      this.input.steering = 0
+      this.input.throttle = 0
+      return
+    }
+
+    // Steering from the configured wheel axis, with a small deadzone around centre.
+    let steer = (gp.axes[map.steerAxis] ?? 0) * (map.steerInvert ? -1 : 1)
+    if (Math.abs(steer) < WHEEL_DEADZONE) steer = 0
+    this.input.steering = Math.max(-1, Math.min(1, steer))
+
+    // Gas pedal drives forward; brake pedal decelerates / reverses (mirrors S).
+    const gas = this.readPedal(gp, map.gas)
+    const brake = this.readPedal(gp, map.brake)
+    this.input.throttle = Math.max(-1, Math.min(1, gas - brake))
+    this.input.brake = false
+
+    // Paddle shifters → manual gear up/down (no-op in automatic).
+    this.wheelButtonEdge(gp, WHEEL_SHIFT_UP_BUTTON, () => this.physics.shiftUp())
+    this.wheelButtonEdge(gp, WHEEL_SHIFT_DOWN_BUTTON, () => this.physics.shiftDown())
+
+    // Horn button (play on press, stop on release).
+    const hornNow = gp.buttons[WHEEL_HORN_BUTTON]?.pressed ?? false
+    if (hornNow && !this.wheelHornPrev) this.engineAudio.playHorn()
+    else if (!hornNow && this.wheelHornPrev) this.engineAudio.stopHorn()
+    this.wheelHornPrev = hornNow
+  }
+
+  /** Read a pedal as 0..1 from its source (analog button, or auto-ranged axis). */
+  private readPedal(gp: Gamepad, src: PedalSource): number {
+    let v = src.type === 'button' ? gp.buttons[src.index]?.value ?? 0 : this.readPedalAxis(gp, src.index)
+    if (src.invert) v = 1 - v
+    return Math.max(0, Math.min(1, v))
+  }
+
+  /**
+   * Axis pedals (D-Input) rest at one end of [-1, 1] and travel to the other.
+   * The resting value is captured on first read after a mode switch; the pedal
+   * reads as the deflection from rest toward the far end, so it is 0 when
+   * released and 1 when fully pressed regardless of which end is the rest
+   * position (no manual invert needed).
+   */
+  private readPedalAxis(gp: Gamepad, idx: number): number {
+    const raw = gp.axes[idx] ?? 0
+    if (!this.pedalRest.has(idx)) this.pedalRest.set(idx, raw)
+    const rest = this.pedalRest.get(idx)!
+    const far = rest <= 0 ? 1 : -1
+    const range = far - rest
+    if (Math.abs(range) < 0.1) return 0
+    return (raw - rest) / range
+  }
+
   // === PUBLIC GETTERS ===
 
   getSpeed(): number {
@@ -534,6 +698,11 @@ export class CarController {
 
   getForwardSpeed(): number {
     return this.physics.getForwardSpeed()
+  }
+
+  /** Damp speed when crossing a speed bump too fast (retain 0..1 of velocity). */
+  applySpeedBumpJolt(retain: number): void {
+    this.physics.applySpeedBumpJolt(retain)
   }
 
   getSteerAngle(): number {
@@ -573,6 +742,13 @@ export class CarController {
    */
   updatePhysicsConfig(config: Partial<CarPhysicsConfig>): void {
     this.physics.updateConfig(config)
+  }
+
+  /**
+   * Trigger a camera shake effect (e.g. from speed bumps or big collisions).
+   */
+  triggerCameraShake(intensity: number = 0.35, duration: number = 0.5): void {
+    this.cameraManager.triggerShake(intensity, duration)
   }
 
   /**
@@ -618,6 +794,16 @@ export class CarController {
     if ((this as any)._mouseHandler) {
       window.removeEventListener('mousemove', (this as any)._mouseHandler)
       ;(this as any)._mouseHandler = null
+    }
+
+    // Remove gamepad listeners
+    if (this._gamepadConnectHandler) {
+      window.removeEventListener('gamepadconnected', this._gamepadConnectHandler)
+      this._gamepadConnectHandler = null
+    }
+    if (this._gamepadDisconnectHandler) {
+      window.removeEventListener('gamepaddisconnected', this._gamepadDisconnectHandler)
+      this._gamepadDisconnectHandler = null
     }
     
     // Dispose engine audio

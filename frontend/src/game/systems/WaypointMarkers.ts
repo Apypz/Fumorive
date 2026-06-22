@@ -102,6 +102,7 @@ export class WaypointMarkers {
       )
       pillar.material = isFirst ? this.activeMaterial : this.upcomingMaterial
       pillar.isPickable = false
+      pillar.isVisible = isFirst // only the active (next) checkpoint is shown
 
       // Ground ring
       const ring = MeshBuilder.CreateTorus(
@@ -116,6 +117,7 @@ export class WaypointMarkers {
       ring.position = new Vector3(wp.position.x, 0.15, wp.position.z)
       ring.material = isFirst ? this.activeMaterial : this.upcomingMaterial
       ring.isPickable = false
+      ring.isVisible = isFirst // only the active (next) checkpoint is shown
 
       // Add glow to active marker
       if (isFirst && this.glowLayer) {
@@ -130,8 +132,6 @@ export class WaypointMarkers {
 
       this.markers.push({ pillar, ring, waypointId: wp.id })
     })
-
-    this.currentActiveIndex = 0
   }
 
   /**
@@ -157,10 +157,10 @@ export class WaypointMarkers {
           break
 
         case 'upcoming':
-          marker.pillar.material = this.upcomingMaterial
-          marker.ring.material = this.upcomingMaterial
-          marker.pillar.isVisible = true
-          marker.ring.isVisible = true
+          // Hidden until it becomes the active target — only the next
+          // checkpoint is ever shown on screen.
+          marker.pillar.isVisible = false
+          marker.ring.isVisible = false
           break
 
         case 'reached':

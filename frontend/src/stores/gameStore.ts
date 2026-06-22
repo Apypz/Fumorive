@@ -21,11 +21,19 @@ interface GameStoreState {
   // Graphics settings
   graphicsConfig: GraphicsConfig
   setGraphicsConfig: (config: Partial<GraphicsConfig>) => void
-  setGraphicsPreset: (preset: 'low' | 'medium' | 'high' | 'ultra') => void
+  setGraphicsPreset: (preset: 'low' | 'medium' | 'high') => void
 
   // Map
   selectedMap: MapType
   setSelectedMap: (map: MapType) => void
+
+  // Levels (Ngawi City — 3 dynamic levels). Each level = a fresh random seed.
+  currentLevel: number
+  totalLevels: number
+  mapSeed: number
+  startNgawiRun: () => void   // begin at level 1 with a fresh seed
+  advanceLevel: () => void    // go to next level with a new seed (capped)
+  resetLevels: () => void     // back to level 1, clear seed
 
   // Camera
   cameraMode: CameraMode
@@ -54,6 +62,14 @@ interface GameStoreState {
   // Wrong-way detection
   isWrongWay: boolean
   setIsWrongWay: (wrongWay: boolean) => void
+
+  // Off-road (driving on grass) detection
+  isOffRoad: boolean
+  setIsOffRoad: (offRoad: boolean) => void
+
+  // Traffic light governing the player's approach (null when not near one)
+  trafficLightState: 'red' | 'yellow' | 'green' | null
+  setTrafficLightState: (s: 'red' | 'yellow' | 'green' | null) => void
 
   // Transmission / Gear
   transmissionMode: 'automatic' | 'manual'
@@ -98,6 +114,19 @@ export const useGameStore = create<GameStoreState>((set) => ({
   selectedMap: 'solo-city',
   setSelectedMap: (selectedMap) => set({ selectedMap }),
 
+  // Levels (Ngawi City)
+  currentLevel: 1,
+  totalLevels: 3,
+  mapSeed: 0,
+  startNgawiRun: () => set({ currentLevel: 1, mapSeed: Date.now() >>> 0 }),
+  advanceLevel: () =>
+    set((state) => ({
+      currentLevel: Math.min(state.currentLevel + 1, state.totalLevels),
+      // Mix in the level so two rapid calls can never collide on the same seed.
+      mapSeed: (Date.now() + state.currentLevel * 104729) >>> 0,
+    })),
+  resetLevels: () => set({ currentLevel: 1, mapSeed: 0 }),
+
   // Camera
   cameraMode: 'third-person',
   setCameraMode: (cameraMode) => set({ cameraMode }),
@@ -125,6 +154,14 @@ export const useGameStore = create<GameStoreState>((set) => ({
   // Wrong-way detection
   isWrongWay: false,
   setIsWrongWay: (isWrongWay) => set({ isWrongWay }),
+
+  // Off-road detection
+  isOffRoad: false,
+  setIsOffRoad: (isOffRoad) => set({ isOffRoad }),
+
+  // Traffic light state for the player's approach
+  trafficLightState: null,
+  setTrafficLightState: (trafficLightState) => set({ trafficLightState }),
 
   // Transmission / Gear
   transmissionMode: 'automatic',

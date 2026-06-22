@@ -6,8 +6,10 @@ import {
   PBRMaterial,
   StandardMaterial,
   AbstractMesh,
+  Mesh,
 } from '@babylonjs/core'
 import { LightingSetup } from './LightingSetup'
+import type { NgawiCityPlan } from './NgawiCityGenerator'
 
 interface Collider {
   min: Vector3
@@ -20,6 +22,8 @@ export class SimpleMap {
   private lightingSetup: LightingSetup | null
   private meshes: AbstractMesh[] = []
   private colliders: Collider[] = []
+  private dynamicColliders: Collider[] = []
+  private roadDetailMat: PBRMaterial | null = null
   private spawnPoint: { x: number; z: number; rotationY: number } = { x: 0, z: 0, rotationY: 0 }
   
   // Map boundaries - diperluas untuk objektif game
@@ -39,6 +43,14 @@ export class SimpleMap {
     return this.colliders
   }
 
+  /**
+   * Replace the set of dynamic (moving) colliders, e.g. NPC cars. Refreshed each
+   * frame by DemoScene; checked by checkCollision alongside the static colliders.
+   */
+  setDynamicColliders(colliders: Collider[]): void {
+    this.dynamicColliders = colliders
+  }
+
   getMapBounds() {
     return this.mapBounds
   }
@@ -49,24 +61,36 @@ export class SimpleMap {
   }
 
   checkCollision(position: Vector3, radius: number = 1.5): { collided: boolean; normal: Vector3; penetration: number } {
-    let result = { collided: false, normal: Vector3.Zero(), penetration: 0 }
-    
     // Check map boundaries
     const boundaryCheck = this.checkBoundaryCollision(position, radius)
     if (boundaryCheck.collided) {
       return boundaryCheck
     }
-    
-    // Check colliders
-    for (const collider of this.colliders) {
+
+    // Static colliders (buildings, barriers, walls)
+    const staticHit = this.checkColliderList(position, radius, this.colliders)
+    if (staticHit.collided) return staticHit
+
+    // Dynamic colliders (e.g. moving NPC cars)
+    return this.checkColliderList(position, radius, this.dynamicColliders)
+  }
+
+  private checkColliderList(
+    position: Vector3,
+    radius: number,
+    colliders: Collider[]
+  ): { collided: boolean; normal: Vector3; penetration: number } {
+    let result = { collided: false, normal: Vector3.Zero(), penetration: 0 }
+
+    for (const collider of colliders) {
       const closest = new Vector3(
         Math.max(collider.min.x, Math.min(position.x, collider.max.x)),
         Math.max(collider.min.y, Math.min(position.y, collider.max.y)),
         Math.max(collider.min.z, Math.min(position.z, collider.max.z))
       )
-      
+
       const distance = Vector3.Distance(position, closest)
-      
+
       if (distance < radius) {
         const normal = position.subtract(closest).normalize()
         if (normal.length() === 0) {
@@ -78,16 +102,16 @@ export class SimpleMap {
             normal.z = position.z < (collider.min.z + collider.max.z) / 2 ? -1 : 1
           }
         }
-        
+
         result = {
           collided: true,
           normal: normal,
-          penetration: radius - distance
+          penetration: radius - distance,
         }
         break
       }
     }
-    
+
     return result
   }
 
@@ -123,7 +147,8 @@ export class SimpleMap {
     this.createBushes()
     this.createSpawnStation()
     this.createMapBoundaryWalls()
-    
+    this.freezeStaticMeshes()
+
     console.log('[SimpleMap] Solo City map created with', this.colliders.length, 'colliders')
   }
 
@@ -140,8 +165,768 @@ export class SimpleMap {
     this.createParkLamps()
     this.createParkSpawnArea()
     this.createMapBoundaryWalls()
-    
+    this.freezeStaticMeshes()
+
     console.log('[SimpleMap] Sriwedari Park map created with', this.colliders.length, 'colliders')
+  }
+
+  // ============================================
+  // NGAWI CITY (procedural / dynamic)
+  // ============================================
+
+  /**
+   * Build the procedurally-generated "Ngawi City" map from a pre-computed plan
+   * (see NgawiCityGenerator.generateNgawiCity). Roads are collider-free ground
+   * meshes (drivable); building blocks get AABB colliders (obstacles). Overrides
+   * mapBounds + spawnPoint so collision and spawn match the generated layout.
+   */
+  buildNgawiCity(plan: NgawiCityPlan): void {
+    this.createNgawiGround(plan)
+    this.createNgawiRoads(plan)
+    this.createNgawiRoadMarkings(plan)
+    this.createNgawiBuildings(plan)
+    this.createNgawiTrees(plan)
+    this.createNgawiBushes(plan)
+    this.createNgawiStreetLamps(plan)
+    this.createNgawiBarriers(plan)
+    this.createNgawiBenches(plan)
+    this.createNgawiStreetProps(plan)
+    this.createNgawiBoundaryWalls(plan)
+
+    this.mapBounds = { ...plan.bounds }
+    this.spawnPoint = { x: plan.spawn.x, z: plan.spawn.z, rotationY: plan.spawn.rotationY }
+    this.freezeStaticMeshes()
+
+    console.log('[SimpleMap] Ngawi City built with', this.colliders.length, 'colliders')
+  }
+
+  private createNgawiGround(plan: NgawiCityPlan): void {
+    const { bounds } = plan
+    const width = bounds.maxX - bounds.minX + 40
+    const depth = bounds.maxZ - bounds.minZ + 40
+
+    const ground = MeshBuilder.CreateGround('ngawiGround', {
+      width,
+      height: depth,
+      subdivisions: 1, // flat plane — no subdivisions needed
+    }, this.scene)
+
+    const mat = new PBRMaterial('ngawiGroundMat', this.scene)
+    mat.albedoColor = new Color3(0.32, 0.42, 0.28) // grass green
+    mat.metallic = 0
+    mat.roughness = 0.95
+    ground.material = mat
+    ground.receiveShadows = true
+    ground.position = new Vector3((bounds.minX + bounds.maxX) / 2, -0.02, (bounds.minZ + bounds.maxZ) / 2)
+    this.meshes.push(ground)
+  }
+
+  private createNgawiRoads(plan: NgawiCityPlan): void {
+    const roadMat = new PBRMaterial('ngawiRoadMat', this.scene)
+    roadMat.albedoColor = new Color3(0.16, 0.16, 0.18) // asphalt
+    roadMat.metallic = 0.1
+    roadMat.roughness = 0.8
+
+    // Collect all road strips + intersection patches, then merge into ONE static
+    // mesh. They all share roadMat and never move, so ~250 separate draw calls
+    // become a single one.
+    const pieces: Mesh[] = []
+
+    plan.roadSegments.forEach((seg) => {
+      const w = seg.horizontal ? seg.length : seg.width
+      const d = seg.horizontal ? seg.width : seg.length
+      const road = MeshBuilder.CreateGround(seg.name, { width: w, height: d }, this.scene)
+      // Vertical strips sit a hair higher to avoid z-fighting at intersections.
+      road.position = new Vector3(seg.x, seg.horizontal ? 0.01 : 0.02, seg.z)
+      road.material = roadMat
+      pieces.push(road)
+    })
+
+    // Intersection patches fill the corners where perpendicular streets meet and
+    // any hairline gaps between abutting per-edge strips. Sit just below the
+    // strips so the strips always render on top.
+    const roadWidth = plan.grid.roadWidth
+    plan.grid.nodes.forEach((node) => {
+      if ((plan.grid.adj.get(node.id)?.size ?? 0) === 0) return
+      const patch = MeshBuilder.CreateGround(`ngawiNode_${node.id}`, {
+        width: roadWidth,
+        height: roadWidth,
+      }, this.scene)
+      patch.position = new Vector3(node.x, 0.005, node.z)
+      patch.material = roadMat
+      pieces.push(patch)
+    })
+
+    if (pieces.length > 0) {
+      const merged = Mesh.MergeMeshes(pieces, true, true, undefined, false, false)
+      if (merged) {
+        merged.name = 'ngawiRoads_merged'
+        merged.material = roadMat
+        merged.receiveShadows = true
+        merged.freezeWorldMatrix()
+        this.meshes.push(merged)
+      }
+    }
+  }
+
+  /** Painted lane markings — dashed centre line + solid edge lines per segment. */
+  private createNgawiRoadMarkings(plan: NgawiCityPlan): void {
+    if (plan.roadSegments.length === 0) return
+
+    const mat = new StandardMaterial('ngawiLineMat', this.scene)
+    mat.diffuseColor = new Color3(0.95, 0.95, 0.92)
+    mat.emissiveColor = new Color3(0.25, 0.25, 0.22)
+    mat.specularColor = new Color3(0, 0, 0)
+
+    const rw = plan.grid.roadWidth
+    const endGap = rw / 2 + 1.5 // keep markings out of the intersection box
+    const dashLen = 3
+    const dashGap = 4
+    const lineW = 0.22
+    const edgeOff = rw / 2 - 0.7
+    const y = 0.03
+    const pieces: Mesh[] = []
+    let di = 0
+
+    plan.roadSegments.forEach((seg, si) => {
+      const usableHalf = seg.length / 2 - endGap
+      if (usableHalf <= 0.5) return
+
+      // Centre dashed line.
+      for (let pos = -usableHalf; pos < usableHalf; pos += dashLen + dashGap) {
+        const dEnd = Math.min(pos + dashLen, usableHalf)
+        const dLen = dEnd - pos
+        if (dLen < 0.3) continue
+        const dMid = (pos + dEnd) / 2
+        const dash = MeshBuilder.CreateBox(`ngawiDash_${si}_${di++}`, {
+          width: seg.horizontal ? dLen : lineW,
+          height: 0.02,
+          depth: seg.horizontal ? lineW : dLen,
+        }, this.scene)
+        dash.position = new Vector3(
+          seg.x + (seg.horizontal ? dMid : 0),
+          y,
+          seg.z + (seg.horizontal ? 0 : dMid)
+        )
+        pieces.push(dash)
+      }
+
+      // Solid edge lines on both sides.
+      for (const s of [-1, 1]) {
+        const edge = MeshBuilder.CreateBox(`ngawiEdge_${si}_${s}`, {
+          width: seg.horizontal ? usableHalf * 2 : lineW,
+          height: 0.02,
+          depth: seg.horizontal ? lineW : usableHalf * 2,
+        }, this.scene)
+        edge.position = new Vector3(
+          seg.x + (seg.horizontal ? 0 : s * edgeOff),
+          y,
+          seg.z + (seg.horizontal ? s * edgeOff : 0)
+        )
+        pieces.push(edge)
+      }
+    })
+
+    if (pieces.length > 0) {
+      const merged = Mesh.MergeMeshes(pieces, true, true, undefined, false, false)
+      if (merged) {
+        merged.name = 'ngawiRoadMarkings_merged'
+        merged.material = mat
+        merged.freezeWorldMatrix()
+        this.meshes.push(merged)
+      }
+    }
+  }
+
+  /**
+   * Render the building stock with variety + detail: houses (pitched roofs),
+   * shops (shopfront + signboard), apartments and offices (window grids, flat
+   * roofs with rooftop props). Everything is collected into per-material groups
+   * and merged into a handful of frozen static meshes for performance.
+   */
+  private createNgawiBuildings(plan: NgawiCityPlan): void {
+    if (plan.buildings.length === 0) return
+
+    // ---- facade colours (materials are built lazily at merge time so a seed
+    // that omits a building type never leaves an unused material behind) ----
+    const facadePalette = [
+      new Color3(0.82, 0.55, 0.45),
+      new Color3(0.56, 0.64, 0.78),
+      new Color3(0.88, 0.82, 0.6),
+      new Color3(0.62, 0.7, 0.6),
+      new Color3(0.8, 0.78, 0.8),
+      new Color3(0.72, 0.52, 0.44),
+    ]
+
+    // ---- geometry collectors (one merged mesh per material) ----
+    const facadeBuckets: Mesh[][] = facadePalette.map(() => [])
+    const glass: Mesh[] = []
+    const lit: Mesh[] = []
+    const roofs: Mesh[] = []
+    const parapets: Mesh[] = []
+    const doors: Mesh[] = []
+    const signs: Mesh[] = []
+    const rooftops: Mesh[] = []
+    let mid = 0
+
+    const faceNormal = (face: number): [number, number] =>
+      face === 0 ? [1, 0] : face === 1 ? [-1, 0] : face === 2 ? [0, 1] : [0, -1]
+
+    // Grid of windows across all four facades between fromY and toY.
+    const addWindowGrid = (cx: number, cz: number, bw: number, bd: number, fromY: number, toY: number, bi: number) => {
+      const span = toY - fromY
+      if (span < 2) return
+      const floors = Math.max(1, Math.round(span / 3.6))
+      const floorH = span / floors
+      const faces = [
+        { onX: true, n: 1, faceW: bd, surf: bw / 2 },
+        { onX: true, n: -1, faceW: bd, surf: bw / 2 },
+        { onX: false, n: 1, faceW: bw, surf: bd / 2 },
+        { onX: false, n: -1, faceW: bw, surf: bd / 2 },
+      ]
+      for (const f of faces) {
+        const cols = Math.max(1, Math.round(f.faceW / 3.6))
+        const colW = f.faceW / cols
+        const winSize = Math.min(1.3, colW * 0.55)
+        const winH = Math.min(1.5, floorH * 0.5)
+        for (let fl = 0; fl < floors; fl++) {
+          const wy = fromY + floorH * (fl + 0.5)
+          for (let cc = 0; cc < cols; cc++) {
+            const along = -f.faceW / 2 + colW * (cc + 0.5)
+            const wx = f.onX ? cx + f.n * (f.surf + 0.05) : cx + along
+            const wz = f.onX ? cz + along : cz + f.n * (f.surf + 0.05)
+            const win = MeshBuilder.CreateBox(`ngawiWin_${mid++}`, {
+              width: f.onX ? 0.12 : winSize,
+              height: winH,
+              depth: f.onX ? winSize : 0.12,
+            }, this.scene)
+            win.position = new Vector3(wx, wy, wz)
+            const isLit = (bi * 131 + fl * 17 + cc * 7 + (f.n + 2) * 53) % 9 === 0
+            ;(isLit ? lit : glass).push(win)
+          }
+        }
+      }
+    }
+
+    const addDoor = (cx: number, cz: number, bw: number, bd: number, face: number) => {
+      const [nx, nz] = faceNormal(face)
+      const onX = nx !== 0
+      const surf = onX ? bw / 2 : bd / 2
+      const door = MeshBuilder.CreateBox(`ngawiDoor_${mid++}`, {
+        width: onX ? 0.1 : 1.1,
+        height: 2.1,
+        depth: onX ? 1.1 : 0.1,
+      }, this.scene)
+      door.position = new Vector3(cx + nx * (surf + 0.05), 1.05, cz + nz * (surf + 0.05))
+      doors.push(door)
+    }
+
+    // Square (hip) pyramid roof for houses.
+    const addPyramidRoof = (cx: number, cz: number, bw: number, bd: number, topY: number) => {
+      const maxDim = Math.max(bw, bd)
+      const roof = MeshBuilder.CreateCylinder(`ngawiRoofP_${mid++}`, {
+        diameterTop: 0,
+        diameterBottom: maxDim * 1.62,
+        height: maxDim * 0.55,
+        tessellation: 4,
+      }, this.scene)
+      roof.rotation.y = Math.PI / 4 // align the 4-sided pyramid to the square footprint
+      roof.position = new Vector3(cx, topY + maxDim * 0.275, cz)
+      roofs.push(roof)
+    }
+
+    // Flat roof cap (cornice/parapet lip) + optional rooftop props.
+    const addFlatRoof = (cx: number, cz: number, bw: number, bd: number, topY: number, props: boolean, bi: number) => {
+      const cap = MeshBuilder.CreateBox(`ngawiCap_${mid++}`, { width: bw + 0.5, height: 0.5, depth: bd + 0.5 }, this.scene)
+      cap.position = new Vector3(cx, topY + 0.25, cz)
+      parapets.push(cap)
+      if (props) {
+        const tank = MeshBuilder.CreateBox(`ngawiTank_${mid++}`, { width: bw * 0.28, height: 1.6, depth: bd * 0.28 }, this.scene)
+        tank.position = new Vector3(cx + bw * 0.16, topY + 1.3, cz - bd * 0.16)
+        rooftops.push(tank)
+        if (bi % 3 === 0) {
+          const ant = MeshBuilder.CreateBox(`ngawiAnt_${mid++}`, { width: 0.12, height: 2.6, depth: 0.12 }, this.scene)
+          ant.position = new Vector3(cx - bw * 0.18, topY + 1.8, cz + bd * 0.18)
+          rooftops.push(ant)
+        }
+      }
+    }
+
+    // Shop ground floor: wide glass shopfront + signboard band above.
+    const addShopfront = (cx: number, cz: number, bw: number, bd: number, face: number) => {
+      const [nx, nz] = faceNormal(face)
+      const onX = nx !== 0
+      const faceW = onX ? bd : bw
+      const surf = onX ? bw / 2 : bd / 2
+      const stripW = faceW * 0.8
+      const glassStrip = MeshBuilder.CreateBox(`ngawiShop_${mid++}`, {
+        width: onX ? 0.1 : stripW,
+        height: 1.8,
+        depth: onX ? stripW : 0.1,
+      }, this.scene)
+      glassStrip.position = new Vector3(cx + nx * (surf + 0.04), 1.2, cz + nz * (surf + 0.04))
+      glass.push(glassStrip)
+      const sign = MeshBuilder.CreateBox(`ngawiSign_${mid++}`, {
+        width: onX ? 0.12 : faceW * 0.86,
+        height: 0.7,
+        depth: onX ? faceW * 0.86 : 0.12,
+      }, this.scene)
+      sign.position = new Vector3(cx + nx * (surf + 0.06), 2.85, cz + nz * (surf + 0.06))
+      signs.push(sign)
+    }
+
+    // Houses are single-storey: a couple of explicit windows instead of a grid.
+    const addHouseWindows = (cx: number, cz: number, bw: number, bd: number, h: number, doorFace: number) => {
+      const wy = Math.min(h * 0.55, 2.3)
+      for (let face = 0; face < 4; face++) {
+        if (face === doorFace) continue
+        const [nx, nz] = faceNormal(face)
+        const onX = nx !== 0
+        const surf = onX ? bw / 2 : bd / 2
+        const win = MeshBuilder.CreateBox(`ngawiHWin_${mid++}`, {
+          width: onX ? 0.1 : 1.2,
+          height: 1.1,
+          depth: onX ? 1.2 : 0.1,
+        }, this.scene)
+        win.position = new Vector3(cx + nx * (surf + 0.05), wy, cz + nz * (surf + 0.05))
+        glass.push(win)
+      }
+    }
+
+    plan.buildings.forEach((b, bi) => {
+      const cx = b.x
+      const cz = b.z
+      const bw = b.width
+      const bd = b.depth
+      const h = b.height
+
+      const body = MeshBuilder.CreateBox(`${b.name}_body`, { width: bw, height: h, depth: bd }, this.scene)
+      body.position = new Vector3(cx, h / 2, cz)
+      facadeBuckets[bi % facadePalette.length].push(body)
+
+      // One footprint collider per building (full height) — keeps roads clear.
+      this.colliders.push({
+        min: new Vector3(cx - bw / 2, 0, cz - bd / 2),
+        max: new Vector3(cx + bw / 2, h, cz + bd / 2),
+      })
+
+      switch (b.type) {
+        case 'house':
+          addPyramidRoof(cx, cz, bw, bd, h)
+          addDoor(cx, cz, bw, bd, b.doorFace)
+          addHouseWindows(cx, cz, bw, bd, h, b.doorFace)
+          break
+        case 'shop':
+          addFlatRoof(cx, cz, bw, bd, h, false, bi)
+          addShopfront(cx, cz, bw, bd, b.doorFace)
+          addDoor(cx, cz, bw, bd, b.doorFace)
+          addWindowGrid(cx, cz, bw, bd, 3.4, h, bi)
+          break
+        case 'apartment':
+          addFlatRoof(cx, cz, bw, bd, h, true, bi)
+          addDoor(cx, cz, bw, bd, b.doorFace)
+          addWindowGrid(cx, cz, bw, bd, 1.0, h, bi)
+          break
+        case 'office':
+        default:
+          addFlatRoof(cx, cz, bw, bd, h, true, bi)
+          addDoor(cx, cz, bw, bd, b.doorFace)
+          addWindowGrid(cx, cz, bw, bd, 1.0, h, bi)
+          break
+      }
+    })
+
+    // ---- merge each material group into one frozen static mesh ----
+    const mergePush = (arr: Mesh[], name: string, makeMat: () => PBRMaterial, shadow: boolean) => {
+      if (arr.length === 0) return
+      const m = Mesh.MergeMeshes(arr, true, true, undefined, false, false)
+      if (m) {
+        m.name = name
+        m.material = makeMat()
+        m.receiveShadows = true
+        if (shadow) this.lightingSetup?.addShadowCaster(m)
+        this.meshes.push(m)
+      }
+    }
+
+    const pbr = (name: string, albedo: Color3, metallic: number, roughness: number): PBRMaterial => {
+      const m = new PBRMaterial(name, this.scene)
+      m.albedoColor = albedo
+      m.metallic = metallic
+      m.roughness = roughness
+      return m
+    }
+
+    facadePalette.forEach((color, i) =>
+      mergePush(facadeBuckets[i], `ngawiFacade_${i}`, () => pbr(`ngawiFacadeMat_${i}`, color, 0.04, 0.86), true)
+    )
+    mergePush(roofs, 'ngawiRoofs', () => pbr('ngawiRoofMat', new Color3(0.58, 0.27, 0.2), 0, 0.9), true)
+    mergePush(parapets, 'ngawiParapets', () => pbr('ngawiParapetMat', new Color3(0.6, 0.6, 0.62), 0.05, 0.85), true)
+    mergePush(rooftops, 'ngawiRooftops', () => pbr('ngawiRooftopMat', new Color3(0.4, 0.42, 0.45), 0.2, 0.7), true)
+    mergePush(glass, 'ngawiGlass', () => {
+      const m = pbr('ngawiGlassMat', new Color3(0.32, 0.45, 0.58), 0.5, 0.22)
+      m.emissiveColor = new Color3(0.05, 0.09, 0.14)
+      return m
+    }, false)
+    mergePush(lit, 'ngawiWindowsLit', () => {
+      const m = pbr('ngawiWindowLitMat', new Color3(1, 0.93, 0.72), 0, 0.6)
+      m.emissiveColor = new Color3(0.95, 0.8, 0.5)
+      m.emissiveIntensity = 0.6
+      return m
+    }, false)
+    mergePush(doors, 'ngawiDoors', () => pbr('ngawiDoorMat', new Color3(0.24, 0.17, 0.12), 0.1, 0.6), false)
+    mergePush(signs, 'ngawiSigns', () => pbr('ngawiSignMat', new Color3(0.85, 0.34, 0.2), 0.1, 0.55), false)
+  }
+
+  /** Scatter low-poly trees (merged per material) into the empty lots. */
+  private createNgawiTrees(plan: NgawiCityPlan): void {
+    if (plan.trees.length === 0) return
+
+    const trunkMat = new PBRMaterial('ngawiTrunkMat', this.scene)
+    trunkMat.albedoColor = new Color3(0.36, 0.25, 0.16)
+    trunkMat.metallic = 0
+    trunkMat.roughness = 0.9
+
+    const foliageMat = new PBRMaterial('ngawiFoliageMat', this.scene)
+    foliageMat.albedoColor = new Color3(0.24, 0.52, 0.24)
+    foliageMat.metallic = 0
+    foliageMat.roughness = 0.9
+
+    const trunks: Mesh[] = []
+    const crowns: Mesh[] = []
+
+    plan.trees.forEach((t, i) => {
+      const s = t.scale
+      const trunkH = 3 * s
+      const trunk = MeshBuilder.CreateCylinder(`ngawiTrunk_${i}`, {
+        diameter: 0.6 * s,
+        height: trunkH,
+        tessellation: 6,
+      }, this.scene)
+      trunk.position = new Vector3(t.x, trunkH / 2, t.z)
+      trunk.material = trunkMat
+      trunks.push(trunk)
+
+      const crownH = 3.6 * s
+      const crown = MeshBuilder.CreateCylinder(`ngawiCrown_${i}`, {
+        diameterTop: 0,
+        diameterBottom: 3.2 * s,
+        height: crownH,
+        tessellation: 7,
+      }, this.scene)
+      crown.position = new Vector3(t.x, trunkH + crownH / 2, t.z)
+      crown.material = foliageMat
+      crowns.push(crown)
+
+      // Solid collider around the trunk.
+      const cr = 0.9 * s
+      this.colliders.push({
+        min: new Vector3(t.x - cr, 0, t.z - cr),
+        max: new Vector3(t.x + cr, trunkH + crownH, t.z + cr),
+      })
+    })
+
+    // Merge each group (one shared material each) → 2 draw calls for all trees.
+    const mergedTrunks = Mesh.MergeMeshes(trunks, true, true, undefined, false, false)
+    if (mergedTrunks) {
+      mergedTrunks.name = 'ngawiTrunks_merged'
+      mergedTrunks.material = trunkMat
+      mergedTrunks.receiveShadows = true
+      this.meshes.push(mergedTrunks)
+    }
+    const mergedCrowns = Mesh.MergeMeshes(crowns, true, true, undefined, false, false)
+    if (mergedCrowns) {
+      mergedCrowns.name = 'ngawiCrowns_merged'
+      mergedCrowns.material = foliageMat
+      mergedCrowns.receiveShadows = true
+      this.meshes.push(mergedCrowns)
+    }
+  }
+
+  /** Low shrubs scattered in lots/parks (one merged mesh, no colliders). */
+  private createNgawiBushes(plan: NgawiCityPlan): void {
+    if (plan.bushes.length === 0) return
+    const mat = new PBRMaterial('ngawiBushMat', this.scene)
+    mat.albedoColor = new Color3(0.2, 0.46, 0.2)
+    mat.metallic = 0
+    mat.roughness = 0.95
+
+    const pieces: Mesh[] = []
+    plan.bushes.forEach((bu, i) => {
+      const d = 1.6 * bu.scale
+      const bush = MeshBuilder.CreateSphere(`ngawiBush_${i}`, { diameter: d, segments: 6 }, this.scene)
+      bush.position = new Vector3(bu.x, d * 0.38, bu.z)
+      bush.scaling = new Vector3(1, 0.7, 1)
+      pieces.push(bush)
+    })
+    const merged = Mesh.MergeMeshes(pieces, true, true, undefined, false, false)
+    if (merged) {
+      merged.name = 'ngawiBushes_merged'
+      merged.material = mat
+      merged.receiveShadows = true
+      this.meshes.push(merged)
+    }
+  }
+
+  /** Roadside street lamps: poles+arms (one mesh) and emissive heads (one mesh). */
+  private createNgawiStreetLamps(plan: NgawiCityPlan): void {
+    if (plan.streetLamps.length === 0) return
+
+    const poleMat = new PBRMaterial('ngawiLampPoleMat', this.scene)
+    poleMat.albedoColor = new Color3(0.22, 0.23, 0.26)
+    poleMat.metallic = 0.5
+    poleMat.roughness = 0.55
+
+    const headMat = new PBRMaterial('ngawiLampHeadMat', this.scene)
+    headMat.albedoColor = new Color3(1, 0.92, 0.7)
+    headMat.emissiveColor = new Color3(1, 0.82, 0.45)
+    headMat.emissiveIntensity = 1.1
+    headMat.metallic = 0
+    headMat.roughness = 0.4
+
+    const poleH = 7
+    const armLen = 1.6
+    const poles: Mesh[] = []
+    const heads: Mesh[] = []
+
+    plan.streetLamps.forEach((lamp, i) => {
+      const dx = Math.sin(lamp.rotationY)
+      const dz = Math.cos(lamp.rotationY)
+
+      const pole = MeshBuilder.CreateCylinder(`ngawiLampPole_${i}`, { diameter: 0.34, height: poleH, tessellation: 8 }, this.scene)
+      pole.position = new Vector3(lamp.x, poleH / 2, lamp.z)
+      poles.push(pole)
+
+      const arm = MeshBuilder.CreateBox(`ngawiLampArm_${i}`, { width: 0.16, height: 0.16, depth: armLen }, this.scene)
+      arm.position = new Vector3(lamp.x + dx * armLen / 2, poleH - 0.3, lamp.z + dz * armLen / 2)
+      arm.rotation.y = lamp.rotationY
+      poles.push(arm)
+
+      const head = MeshBuilder.CreateBox(`ngawiLampHead_${i}`, { width: 0.7, height: 0.32, depth: 1.0 }, this.scene)
+      head.position = new Vector3(lamp.x + dx * armLen, poleH - 0.55, lamp.z + dz * armLen)
+      head.rotation.y = lamp.rotationY
+      heads.push(head)
+
+      // Thin pole collider (set back from the road, so only hit when off-road).
+      this.colliders.push({
+        min: new Vector3(lamp.x - 0.3, 0, lamp.z - 0.3),
+        max: new Vector3(lamp.x + 0.3, poleH, lamp.z + 0.3),
+      })
+    })
+
+    const mergedPoles = Mesh.MergeMeshes(poles, true, true, undefined, false, false)
+    if (mergedPoles) {
+      mergedPoles.name = 'ngawiLampPoles_merged'
+      mergedPoles.material = poleMat
+      mergedPoles.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(mergedPoles)
+      this.meshes.push(mergedPoles)
+    }
+    const mergedHeads = Mesh.MergeMeshes(heads, true, true, undefined, false, false)
+    if (mergedHeads) {
+      mergedHeads.name = 'ngawiLampHeads_merged'
+      mergedHeads.material = headMat
+      this.meshes.push(mergedHeads)
+    }
+  }
+
+  /** Roadside jersey barriers (one merged mesh + per-barrier colliders). */
+  private createNgawiBarriers(plan: NgawiCityPlan): void {
+    if (plan.barriers.length === 0) return
+
+    const mat = new PBRMaterial('ngawiBarrierMat', this.scene)
+    mat.albedoColor = new Color3(0.85, 0.85, 0.82)
+    mat.metallic = 0.05
+    mat.roughness = 0.85
+
+    const h = 0.85
+    const thickness = 0.4
+    const pieces: Mesh[] = []
+
+    plan.barriers.forEach((b, i) => {
+      const w = b.horizontal ? b.length : thickness
+      const d = b.horizontal ? thickness : b.length
+      const bar = MeshBuilder.CreateBox(`ngawiBarrier_${i}`, { width: w, height: h, depth: d }, this.scene)
+      bar.position = new Vector3(b.x, h / 2, b.z)
+      pieces.push(bar)
+
+      this.colliders.push({
+        min: new Vector3(b.x - w / 2, 0, b.z - d / 2),
+        max: new Vector3(b.x + w / 2, h, b.z + d / 2),
+      })
+    })
+
+    const merged = Mesh.MergeMeshes(pieces, true, true, undefined, false, false)
+    if (merged) {
+      merged.name = 'ngawiBarriers_merged'
+      merged.material = mat
+      merged.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(merged)
+      this.meshes.push(merged)
+    }
+  }
+
+  /** Park benches: wooden seat/back (one mesh) and metal legs (one mesh). */
+  private createNgawiBenches(plan: NgawiCityPlan): void {
+    if (plan.benches.length === 0) return
+
+    const woodMat = new PBRMaterial('ngawiBenchWoodMat', this.scene)
+    woodMat.albedoColor = new Color3(0.5, 0.32, 0.18)
+    woodMat.metallic = 0
+    woodMat.roughness = 0.85
+
+    const metalMat = new PBRMaterial('ngawiBenchMetalMat', this.scene)
+    metalMat.albedoColor = new Color3(0.18, 0.2, 0.22)
+    metalMat.metallic = 0.6
+    metalMat.roughness = 0.5
+
+    const wood: Mesh[] = []
+    const metal: Mesh[] = []
+    const seatLen = 1.7
+    const seatDepth = 0.5
+    const seatY = 0.5
+
+    plan.benches.forEach((bn, i) => {
+      const fx = Math.sin(bn.rotationY) // facing (seat depth axis)
+      const fz = Math.cos(bn.rotationY)
+      const px = Math.cos(bn.rotationY) // seat length axis (perpendicular)
+      const pz = -Math.sin(bn.rotationY)
+
+      const seat = MeshBuilder.CreateBox(`ngawiBenchSeat_${i}`, { width: seatLen, height: 0.12, depth: seatDepth }, this.scene)
+      seat.position = new Vector3(bn.x, seatY, bn.z)
+      seat.rotation.y = bn.rotationY
+      wood.push(seat)
+
+      const back = MeshBuilder.CreateBox(`ngawiBenchBack_${i}`, { width: seatLen, height: 0.5, depth: 0.1 }, this.scene)
+      back.position = new Vector3(bn.x - fx * (seatDepth / 2 - 0.05), seatY + 0.32, bn.z - fz * (seatDepth / 2 - 0.05))
+      back.rotation.y = bn.rotationY
+      wood.push(back)
+
+      for (const s of [-1, 1]) {
+        const leg = MeshBuilder.CreateBox(`ngawiBenchLeg_${i}_${s}`, { width: 0.1, height: seatY, depth: seatDepth * 0.8 }, this.scene)
+        leg.position = new Vector3(bn.x + px * s * (seatLen / 2 - 0.2), seatY / 2, bn.z + pz * s * (seatLen / 2 - 0.2))
+        leg.rotation.y = bn.rotationY
+        metal.push(leg)
+      }
+
+      const cr = seatLen / 2
+      this.colliders.push({
+        min: new Vector3(bn.x - cr, 0, bn.z - cr),
+        max: new Vector3(bn.x + cr, seatY + 0.6, bn.z + cr),
+      })
+    })
+
+    const mergedWood = Mesh.MergeMeshes(wood, true, true, undefined, false, false)
+    if (mergedWood) {
+      mergedWood.name = 'ngawiBenchWood_merged'
+      mergedWood.material = woodMat
+      mergedWood.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(mergedWood)
+      this.meshes.push(mergedWood)
+    }
+    const mergedMetal = Mesh.MergeMeshes(metal, true, true, undefined, false, false)
+    if (mergedMetal) {
+      mergedMetal.name = 'ngawiBenchMetal_merged'
+      mergedMetal.material = metalMat
+      this.meshes.push(mergedMetal)
+    }
+  }
+
+  /** Small street props (cones, bins, hydrants), merged per material. No colliders. */
+  private createNgawiStreetProps(plan: NgawiCityPlan): void {
+    if (plan.streetProps.length === 0) return
+
+    const cones: Mesh[] = []
+    const bins: Mesh[] = []
+    const hydrants: Mesh[] = []
+
+    plan.streetProps.forEach((pr, i) => {
+      if (pr.kind === 'cone') {
+        const cone = MeshBuilder.CreateCylinder(`ngawiCone_${i}`, { diameterTop: 0.05, diameterBottom: 0.55, height: 0.7, tessellation: 8 }, this.scene)
+        cone.position = new Vector3(pr.x, 0.35, pr.z)
+        cones.push(cone)
+      } else if (pr.kind === 'bin') {
+        const bin = MeshBuilder.CreateCylinder(`ngawiBin_${i}`, { diameter: 0.55, height: 0.95, tessellation: 10 }, this.scene)
+        bin.position = new Vector3(pr.x, 0.475, pr.z)
+        bins.push(bin)
+      } else {
+        const body = MeshBuilder.CreateCylinder(`ngawiHydrant_${i}`, { diameter: 0.34, height: 0.85, tessellation: 8 }, this.scene)
+        body.position = new Vector3(pr.x, 0.425, pr.z)
+        hydrants.push(body)
+        const cap = MeshBuilder.CreateSphere(`ngawiHydrantCap_${i}`, { diameter: 0.36, segments: 6 }, this.scene)
+        cap.position = new Vector3(pr.x, 0.85, pr.z)
+        hydrants.push(cap)
+      }
+    })
+
+    // Materials built lazily so a seed that omits a prop kind doesn't leak unused ones.
+    const mergeInto = (arr: Mesh[], name: string, makeMat: () => PBRMaterial) => {
+      if (arr.length === 0) return
+      const m = Mesh.MergeMeshes(arr, true, true, undefined, false, false)
+      if (m) {
+        m.name = name
+        m.material = makeMat()
+        m.receiveShadows = true
+        this.meshes.push(m)
+      }
+    }
+    mergeInto(cones, 'ngawiCones_merged', () => {
+      const m = new PBRMaterial('ngawiConeMat', this.scene)
+      m.albedoColor = new Color3(0.95, 0.35, 0.05)
+      m.metallic = 0
+      m.roughness = 0.7
+      return m
+    })
+    mergeInto(bins, 'ngawiBins_merged', () => {
+      const m = new PBRMaterial('ngawiBinMat', this.scene)
+      m.albedoColor = new Color3(0.2, 0.35, 0.45)
+      m.metallic = 0.2
+      m.roughness = 0.7
+      return m
+    })
+    mergeInto(hydrants, 'ngawiHydrants_merged', () => {
+      const m = new PBRMaterial('ngawiHydrantMat', this.scene)
+      m.albedoColor = new Color3(0.8, 0.12, 0.12)
+      m.metallic = 0.2
+      m.roughness = 0.6
+      return m
+    })
+  }
+
+  private createNgawiBoundaryWalls(plan: NgawiCityPlan): void {
+    const { bounds } = plan
+    const wallMat = new PBRMaterial('ngawiBoundaryMat', this.scene)
+    wallMat.albedoColor = new Color3(0.45, 0.47, 0.5)
+    wallMat.metallic = 0.2
+    wallMat.roughness = 0.8
+
+    const wallHeight = 4
+    const t = 2
+    const cx = (bounds.minX + bounds.maxX) / 2
+    const cz = (bounds.minZ + bounds.maxZ) / 2
+    const spanX = bounds.maxX - bounds.minX + t * 2
+    const spanZ = bounds.maxZ - bounds.minZ + t * 2
+
+    const walls = [
+      { name: 'ngawi_wall_n', x: cx, z: bounds.maxZ + t / 2, w: spanX, d: t },
+      { name: 'ngawi_wall_s', x: cx, z: bounds.minZ - t / 2, w: spanX, d: t },
+      { name: 'ngawi_wall_e', x: bounds.maxX + t / 2, z: cz, w: t, d: spanZ },
+      { name: 'ngawi_wall_w', x: bounds.minX - t / 2, z: cz, w: t, d: spanZ },
+    ]
+
+    walls.forEach((wall) => {
+      const mesh = MeshBuilder.CreateBox(wall.name, {
+        width: wall.w,
+        height: wallHeight,
+        depth: wall.d,
+      }, this.scene)
+      mesh.position = new Vector3(wall.x, wallHeight / 2, wall.z)
+      mesh.material = wallMat
+      mesh.receiveShadows = true
+      this.lightingSetup?.addShadowCaster(mesh)
+      this.meshes.push(mesh)
+      this.addBoxCollider(mesh)
+    })
   }
 
   // Legacy method - creates Solo City
@@ -162,7 +947,7 @@ export class SimpleMap {
     const ground = MeshBuilder.CreateGround('parkGround', {
       width: 800,
       height: 1000,
-      subdivisions: 32,
+      subdivisions: 1, // flat plane — no subdivisions needed
     }, this.scene)
 
     const groundMaterial = new PBRMaterial('parkGroundMaterial', this.scene)
@@ -476,7 +1261,7 @@ export class SimpleMap {
     const ground = MeshBuilder.CreateGround('ground', {
       width: 800,
       height: 1000,
-      subdivisions: 32,
+      subdivisions: 1, // flat plane — no subdivisions needed
     }, this.scene)
 
     const groundMaterial = new PBRMaterial('groundMaterial', this.scene)
@@ -639,6 +1424,18 @@ export class SimpleMap {
     this.meshes.push(road)
   }
 
+  /** Shared asphalt-grey material for junctions & curves (all identical). */
+  private getRoadDetailMat(): PBRMaterial {
+    if (!this.roadDetailMat) {
+      const m = new PBRMaterial('roadDetailMat', this.scene)
+      m.albedoColor = new Color3(0.45, 0.48, 0.42)
+      m.metallic = 0.05
+      m.roughness = 0.85
+      this.roadDetailMat = m
+    }
+    return this.roadDetailMat
+  }
+
   private createCurveRoad(
     name: string,
     x: number,
@@ -647,10 +1444,7 @@ export class SimpleMap {
     endAngle: number,
     roadWidth: number
   ): void {
-    const material = new PBRMaterial(`${name}_mat`, this.scene)
-    material.albedoColor = new Color3(0.45, 0.48, 0.42)
-    material.metallic = 0.05
-    material.roughness = 0.85
+    const material = this.getRoadDetailMat()
 
     const curve = MeshBuilder.CreateDisc(name, {
       radius: roadWidth / 2 + 1,
@@ -666,10 +1460,7 @@ export class SimpleMap {
   }
 
   private createJunction(x: number, z: number, size: number): void {
-    const material = new PBRMaterial(`junction_${x}_${z}`, this.scene)
-    material.albedoColor = new Color3(0.45, 0.48, 0.42)
-    material.metallic = 0.05
-    material.roughness = 0.85
+    const material = this.getRoadDetailMat()
 
     const junction = MeshBuilder.CreateGround(`junction_${x}_${z}`, {
       width: size + 4,
@@ -685,6 +1476,10 @@ export class SimpleMap {
     const lineMaterial = new StandardMaterial('lineMaterial', this.scene)
     lineMaterial.diffuseColor = new Color3(1, 1, 0.9)
     lineMaterial.emissiveColor = new Color3(0.3, 0.3, 0.25)
+
+    // ~430 dashes all share lineMaterial — collect and merge into ONE mesh
+    // (one draw call instead of hundreds).
+    const dashes: Mesh[] = []
 
     // Dashed center lines for horizontal roads (central district + ring + suburban)
     const horizontalRoads = [
@@ -716,7 +1511,7 @@ export class SimpleMap {
         }, this.scene)
         dash.position = new Vector3(i, 0.02, road.z)
         dash.material = lineMaterial
-        this.meshes.push(dash)
+        dashes.push(dash)
       }
     })
 
@@ -747,9 +1542,19 @@ export class SimpleMap {
         }, this.scene)
         dash.position = new Vector3(road.x, 0.02, i)
         dash.material = lineMaterial
-        this.meshes.push(dash)
+        dashes.push(dash)
       }
     })
+
+    if (dashes.length > 0) {
+      const merged = Mesh.MergeMeshes(dashes, true, true, undefined, false, false)
+      if (merged) {
+        merged.name = 'roadMarkings_merged'
+        merged.material = lineMaterial
+        merged.freezeWorldMatrix()
+        this.meshes.push(merged)
+      }
+    }
   }
 
   private createRoadBarriers(): void {
@@ -1761,11 +2566,17 @@ export class SimpleMap {
     const shopDepth = 12
     const shopHeight = 8
 
+    // One shared material per palette colour (not one per shop).
+    const shopMaterials = colors.map((color, idx) => {
+      const m = new PBRMaterial(`shopMat_${idx}`, this.scene)
+      m.albedoColor = color
+      m.metallic = 0.05
+      m.roughness = 0.85
+      return m
+    })
+
     allShops.forEach((shop, i) => {
-      const shopMaterial = new PBRMaterial(`shopMat_${i}`, this.scene)
-      shopMaterial.albedoColor = colors[shop.colorIdx]
-      shopMaterial.metallic = 0.05
-      shopMaterial.roughness = 0.85
+      const shopMaterial = shopMaterials[shop.colorIdx]
 
       // Shop body
       const shopBuilding = MeshBuilder.CreateBox(`shop_${i}`, {
@@ -2387,10 +3198,23 @@ export class SimpleMap {
     console.log(`[SimpleMap] Park spawn area created at (${padX}, ${padZ})`)
   }
 
+  /**
+   * Freeze all built map meshes. The city is fully static (only the car moves,
+   * and the car is loaded separately — not in this.meshes), so we can skip the
+   * per-frame world-matrix recompute and pointer-picking checks for every mesh.
+   */
+  private freezeStaticMeshes(): void {
+    for (const mesh of this.meshes) {
+      mesh.freezeWorldMatrix()
+      mesh.isPickable = false
+    }
+  }
+
   dispose(): void {
     this.meshes.forEach(mesh => mesh.dispose())
     this.meshes = []
     this.colliders = []
+    this.roadDetailMat = null
     console.log('[SimpleMap] Disposed')
   }
 }

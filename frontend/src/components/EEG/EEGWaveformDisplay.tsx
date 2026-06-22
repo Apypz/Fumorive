@@ -1,15 +1,15 @@
 import React, { useEffect, useRef } from 'react'
-import { useEEGStore } from '../stores/eegStore'
+import { useEEGStore } from '../../stores/eegStore'
 import './EEGWaveformDisplay.css'
 
 interface EEGWaveformDisplayProps {
-  channel?: keyof (typeof EEGWaveformDisplay.defaultProps.channelColors)
+  channel?: 'TP9' | 'AF7' | 'AF8' | 'TP10'
   height?: number
   width?: number
   updateInterval?: number
 }
 
-const channelColors = {
+const channelColors: Record<string, string> = {
   TP9: '#FF6B6B',
   AF7: '#4ECDC4',
   AF8: '#45B7D1',
@@ -23,7 +23,7 @@ export const EEGWaveformDisplay: React.FC<EEGWaveformDisplayProps> = ({
   updateInterval = 50,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const dataHistory = useEEGStore((state) => state.dataHistory)
+  const dataHistory = useEEGStore((state: any) => state.dataHistory)
   const animationRef = useRef<number | null>(null)
   const lastDrawTimeRef = useRef(0)
 
@@ -35,7 +35,7 @@ export const EEGWaveformDisplay: React.FC<EEGWaveformDisplayProps> = ({
     if (!ctx) return
 
     const draw = (timestamp: number) => {
-      // Throttle drawing based on updateInterval
+      // Throttle drawing
       if (timestamp - lastDrawTimeRef.current < updateInterval) {
         animationRef.current = requestAnimationFrame(draw)
         return
@@ -46,12 +46,10 @@ export const EEGWaveformDisplay: React.FC<EEGWaveformDisplayProps> = ({
       ctx.fillStyle = '#f8f9fa'
       ctx.fillRect(0, 0, width, height)
 
-      // Draw grid
+      // Draw grid lines
       ctx.strokeStyle = '#e9ecef'
       ctx.lineWidth = 0.5
 
-      // Vertical grid lines (every 50ms ~12-13 samples at 256Hz)
-      const samplesPerLine = Math.ceil((256 * 50) / 1000) // 50ms worth of samples
       for (let i = 0; i < width; i += 50) {
         ctx.beginPath()
         ctx.moveTo(i, 0)
@@ -67,8 +65,7 @@ export const EEGWaveformDisplay: React.FC<EEGWaveformDisplayProps> = ({
 
       if (dataHistory.length < 2) return
 
-      // Scale: fit data into canvas
-      const maxDisplaySamples = Math.floor((width / 2) * 1) // pixels per sample
+      const maxDisplaySamples = Math.floor(width)
       const startIdx = Math.max(0, dataHistory.length - maxDisplaySamples)
       const displayData = dataHistory.slice(startIdx)
 
@@ -78,26 +75,24 @@ export const EEGWaveformDisplay: React.FC<EEGWaveformDisplayProps> = ({
       let minVal = Infinity
       let maxVal = -Infinity
 
-      displayData.forEach((item) => {
-        const value = item.rawChannels[channel as keyof typeof item.rawChannels] || 0
+      displayData.forEach((item: any) => {
+        const value = (item.rawChannels?.[channel] as number) || 0
         minVal = Math.min(minVal, value)
         maxVal = Math.max(maxVal, value)
       })
 
-      // Add padding
       const range = maxVal - minVal || 1
       minVal -= range * 0.1
       maxVal += range * 0.1
 
       // Draw waveform
-      ctx.strokeStyle = channelColors[channel as keyof typeof channelColors] || '#4ECDC4'
+      ctx.strokeStyle = channelColors[channel] || '#4ECDC4'
       ctx.lineWidth = 2
       ctx.lineJoin = 'round'
-
       ctx.beginPath()
 
-      displayData.forEach((item, idx) => {
-        const value = item.rawChannels[channel as keyof typeof item.rawChannels] || 0
+      displayData.forEach((item: any, idx: number) => {
+        const value = (item.rawChannels?.[channel] as number) || 0
         const normalizedValue = (value - minVal) / (maxVal - minVal)
         const x = (idx / displayData.length) * width
         const y = height - normalizedValue * height
@@ -111,11 +106,12 @@ export const EEGWaveformDisplay: React.FC<EEGWaveformDisplayProps> = ({
 
       ctx.stroke()
 
-      // Draw labels
+      // Draw labels (avoid µ unicode — use uV instead)
+      const lastVal = (displayData[displayData.length - 1]?.rawChannels?.[channel] as number)
       ctx.fillStyle = '#495057'
       ctx.font = '10px monospace'
-      ctx.fillText(`${channel}: ${displayData[displayData.length - 1]?.rawChannels[channel as keyof typeof displayData[0].rawChannels]?.toFixed(1) || 'N/A'} µV`, 5, 12)
-      ctx.fillText(`${minVal.toFixed(1)} - ${maxVal.toFixed(1)} µV`, 5, height - 5)
+      ctx.fillText(channel + ': ' + (lastVal?.toFixed(1) ?? 'N/A') + ' uV', 5, 12)
+      ctx.fillText(minVal.toFixed(1) + ' - ' + maxVal.toFixed(1) + ' uV', 5, height - 5)
 
       animationRef.current = requestAnimationFrame(draw)
     }
@@ -142,12 +138,4 @@ export const EEGWaveformDisplay: React.FC<EEGWaveformDisplayProps> = ({
       }}
     />
   )
-}
-
-EEGWaveformDisplay.defaultProps = {
-  channel: 'AF7' as const,
-  height: 120,
-  width: 400,
-  updateInterval: 50,
-  channelColors,
 }

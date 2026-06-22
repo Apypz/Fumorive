@@ -1,7 +1,8 @@
 import { useGameStore } from '../stores/gameStore'
 
 export function SteeringWheelHUD() {
-  const { steeringAngle, cameraMode } = useGameStore()
+  const steeringAngle = useGameStore((s) => s.steeringAngle)
+  const cameraMode = useGameStore((s) => s.cameraMode)
 
   // Hide in first-person view (real steering wheel already visible in cockpit)
   if (cameraMode === 'first-person') return null

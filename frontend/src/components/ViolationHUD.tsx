@@ -7,6 +7,7 @@ const TYPE_LABELS: Record<ViolationType, { label: string; icon: string; color: s
   'wrong-way': { label: 'Lawan Arah', icon: '⛔', color: '#dc2626' },
   'red-light': { label: 'Lampu Merah', icon: '🚦', color: '#e11d48' },
   'off-road': { label: 'Keluar Jalur', icon: '🚧', color: '#f97316' },
+  pedestrian: { label: 'Tabrak Pejalan', icon: '🚶', color: '#b91c1c' },
 }
 
 export function ViolationHUD() {

@@ -1,155 +1,93 @@
-# Performance Testing Guide
+"""
+Fumorive - Locust Load Testing Configuration & Scenarios
 
-## Overview
+This file documents all available load test scenarios and how to run them.
 
-This directory contains performance testing scripts for the Fumorive backend API.
+=============================================================================
+QUICK START
+=============================================================================
 
-## Prerequisites
+1. Make sure backend is running:
+   cd backend && python main.py
 
-### Install k6
+2. Create test user (one-time setup):
+   python tests/performance/setup_load_test_user.py
 
-**Windows (PowerShell):**
-```powershell
-# Using Chocolatey
-choco install k6
+3. Run load test with Web UI:
+   locust -f tests/performance/locustfile.py --host=http://localhost:8000
 
-# Or download from https://k6.io/docs/getting-started/installation/
-```
+4. Open browser: http://localhost:8089
+   - Set number of users (e.g., 20)
+   - Set spawn rate (e.g., 5 users/second)
+   - Click "Start Swarming"
 
-**Python WebSocket Test:**
-```bash
-# Install websockets library
-pip install websockets
-```
+=============================================================================
+HEADLESS MODE (No Browser UI)
+=============================================================================
 
-## Test Scripts
+# Quick smoke test - 5 users, 30 seconds
+locust -f tests/performance/locustfile.py --host=http://localhost:8000 \
+    --headless -u 5 -r 2 --run-time 30s
 
-### 1. WebSocket Load Test (`websocket_load_test.js`)
+# Standard load test - 20 users, 60 seconds, save HTML report
+locust -f tests/performance/locustfile.py --host=http://localhost:8000 \
+    --headless -u 20 -r 5 --run-time 60s \
+    --html tests/performance/report.html \
+    --csv tests/performance/results
 
-Tests WebSocket `/ws/ping` endpoint with concurrent connections.
+# Stress test - 50 users, 2 minutes
+locust -f tests/performance/locustfile.py --host=http://localhost:8000 \
+    --headless -u 50 -r 10 --run-time 120s \
+    --html tests/performance/stress_report.html
 
-**Run:**
-```bash
-k6 run websocket_load_test.js
-```
+=============================================================================
+USER SCENARIOS
+=============================================================================
 
-**Test Scenario:**
-- Ramps up to 10 concurrent connections (30s)
-- Maintains 10 connections (1min)
-- Ramps up to 50 connections (30s)
-- Maintains 50 connections (1min)
-- Ramps down to 0 (30s)
+AuthUser (weight=1, ~10% traffic):
+  - Register new users
+  - Login / failed login
+  - Simulates new user onboarding
 
-**Success Criteria:**
-- 95% of pings < 50ms latency
-- All pongs received
+RegularUser (weight=6, ~60% traffic):
+  - GET /users/me (profile)
+  - GET/POST /sessions (session management)
+  - GET /sessions/{id}/eeg (playback)
+  - GET /sessions/{id}/alerts
+  Wait time: 1-4 seconds (realistic browsing)
 
-### 2. API Load Test (`api_load_test.js`)
+DataIngestionUser (weight=3, ~30% traffic):
+  - POST /sessions/{id}/eeg (EEG stream at ~2-10Hz)
+  - POST /sessions/{id}/face (face events)
+  - POST /alerts (fatigue alerts)
+  Wait time: 0.1-0.5 seconds (real-time data)
 
-Tests REST API endpoints (health, EEG status, buffer stats).
+=============================================================================
+PERFORMANCE TARGETS (Week 5 Baseline)
+=============================================================================
 
-**Run:**
-```bash
-k6 run api_load_test.js
-```
+| Endpoint              | Target p95 | Target p99 |
+|-----------------------|------------|------------|
+| POST /auth/login/json | < 500ms    | < 1000ms   |
+| GET /users/me         | < 200ms    | < 500ms    |
+| GET /sessions         | < 300ms    | < 700ms    |
+| POST /sessions        | < 400ms    | < 800ms    |
+| POST /sessions/eeg    | < 200ms    | < 500ms    |
+| POST /alerts          | < 200ms    | < 500ms    |
 
-**Test Scenario:**
-- Ramps up to 20 RPS (30s)
-- Maintains 20 RPS (2min)
-- Ramps up to 50 RPS (30s)
-- Maintains 50 RPS (2min)
-- Ramps down to 0 (30s)
+Error Rate Target: < 1% for all endpoints
 
-**Success Criteria:**
-- 95% of requests < 200ms
-- 95% success rate
+=============================================================================
+INTERPRETING RESULTS
+=============================================================================
 
-### 3. WebSocket Latency Test (`../websocket_latency_test.py`)
+Key metrics to watch in Locust UI:
+- RPS (Requests Per Second): Higher = better throughput
+- p50/p95/p99 response times: Lower = better latency
+- Failure rate: Should be < 1%
 
-Simple Python script to measure WebSocket latency.
-
-**Run:**
-```bash
-cd ..
-python websocket_latency_test.py
-```
-
-**Output:**
-- Min/Max/Average/Median latency
-- Standard deviation
-
-## Running Tests
-
-### Before Testing
-
-1. **Start backend server:**
-   ```bash
-   cd ../..
-   python main.py
-   ```
-
-2. **Verify server is ready:**
-   ```bash
-   curl http://localhost:8000/health
-   ```
-
-### Run All Tests
-
-```bash
-# WebSocket load test
-k6 run websocket_load_test.js
-
-# API load test
-k6 run api_load_test.js
-
-# Python latency test
-cd ..
-python websocket_latency_test.py
-```
-
-## Expected Results
-
-### Localhost Performance
-
-**WebSocket Latency:**
-- Average: < 5ms
-- 95th percentile: < 10ms
-
-**API Response Time:**
-- Average: < 20ms
-- 95th percentile: < 50ms
-
-### Interpreting Results
-
-**Good Performance:**
-- WebSocket latency < 10ms (p95)
-- API requests < 100ms (p95)
-- >99% success rate
-
-**Needs Optimization:**
-- WebSocket latency > 50ms (p95)
-- API requests > 200ms (p95)
-- <95% success rate
-
-## Metrics Tracked
-
-- `http_req_duration`: HTTP request duration
-- `websocket_latency_ms`: WebSocket round-trip time
-- `api_success_rate`: Success rate of API calls
-- `pings_sent` / `pongs_received`: WebSocket ping/pong counts
-
-## Troubleshooting
-
-**Connection Refused:**
-- Ensure backend server is running on port 8000
-- Check CORS settings if testing from different origin
-
-**High Latency:**
-- Check system resources (CPU, memory)
-- Verify database connection performance
-- Check Redis connection latency
-
-**Low Success Rate:**
-- Check backend error logs
-- Verify database can handle load
-- Check timeout settings
+Common issues:
+- High p99 but low p50: Occasional slow requests (DB query, GC pause)
+- High failure rate: Server overloaded or bug in endpoint
+- Increasing response times: Memory leak or connection pool exhaustion
+"""

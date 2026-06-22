@@ -19,37 +19,46 @@ _firebase_app = None
 
 def init_firebase() -> None:
     """
-    Initialize Firebase Admin SDK
-    
-    Should be called once during application startup.
-    Uses service account JSON file for authentication.
+    Initialize Firebase Admin SDK.
+
+    Priority order:
+      1. FIREBASE_SERVICE_ACCOUNT_JSON env var (JSON string) — used on Railway/cloud
+      2. FIREBASE_SERVICE_ACCOUNT_PATH (local JSON file)     — used in local dev
     """
     global _firebase_app
-    
+
     if _firebase_app is not None:
         logger.info("Firebase Admin SDK already initialized")
         return
-    
+
     try:
-        # Check if service account file exists
-        service_account_path = settings.FIREBASE_SERVICE_ACCOUNT_PATH
-        
-        if not os.path.exists(service_account_path):
-            logger.warning(
-                f"Firebase service account file not found at: {service_account_path}\n"
-                "OAuth authentication will not be available.\n"
-                "To enable: Download service account JSON from Firebase Console."
-            )
+        # Option 1: JSON content from environment variable (Railway / cloud deploy)
+        sa_json_str = os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON", "").strip()
+        if sa_json_str:
+            import json
+            sa_dict = json.loads(sa_json_str)
+            cred = credentials.Certificate(sa_dict)
+            _firebase_app = initialize_app(cred)
+            logger.info("[OK] Firebase initialized from FIREBASE_SERVICE_ACCOUNT_JSON env var")
             return
-        
-        # Initialize Firebase with service account
-        cred = credentials.Certificate(service_account_path)
-        _firebase_app = initialize_app(cred)
-        
-        logger.info(f"✅ Firebase Admin SDK initialized successfully")
-        
+
+        # Option 2: Local file path (local development fallback)
+        service_account_path = settings.FIREBASE_SERVICE_ACCOUNT_PATH
+        if os.path.exists(service_account_path):
+            cred = credentials.Certificate(service_account_path)
+            _firebase_app = initialize_app(cred)
+            logger.info(f"[OK] Firebase initialized from file: {service_account_path}")
+            return
+
+        logger.warning(
+            "Firebase service account not configured. "
+            "Set FIREBASE_SERVICE_ACCOUNT_JSON env var (Railway) or "
+            f"place JSON file at '{service_account_path}' (local dev). "
+            "OAuth authentication will not be available."
+        )
+
     except Exception as e:
-        logger.error(f"❌ Failed to initialize Firebase Admin SDK: {e}")
+        logger.error(f"[ERR] Failed to initialize Firebase Admin SDK: {e}")
         logger.warning("OAuth authentication will not be available")
 
 
@@ -94,19 +103,19 @@ def verify_firebase_token(id_token: str) -> Optional[Dict[str, Any]]:
             'email_verified': decoded_token.get('email_verified', False)
         }
         
-        logger.info(f"✅ Firebase token verified for user: {user_info['email']}")
+        logger.info(f"[OK] Firebase token verified for user: {user_info['email']}")
         return user_info
         
     except auth.ExpiredIdTokenError as e:
-        logger.warning(f"⚠️ Firebase token EXPIRED: {e}")
+        logger.warning(f"[WARN] Firebase token EXPIRED: {e}")
         return None
         
     except auth.RevokedIdTokenError as e:
-        logger.warning(f"⚠️ Firebase token REVOKED: {e}")
+        logger.warning(f"[WARN] Firebase token REVOKED: {e}")
         return None
         
     except auth.InvalidIdTokenError as e:
-        logger.warning(f"❌ INVALID Firebase token: {e}")
+        logger.warning(f"[ERR] INVALID Firebase token: {e}")
         return None
         
     except FirebaseError as e:
@@ -114,7 +123,7 @@ def verify_firebase_token(id_token: str) -> Optional[Dict[str, Any]]:
         return None
         
     except Exception as e:
-        logger.error(f"❌ Unexpected error verifying Firebase token: {type(e).__name__}: {e}")
+        logger.error(f"[ERR] Unexpected error verifying Firebase token: {type(e).__name__}: {e}")
         return None
 
 

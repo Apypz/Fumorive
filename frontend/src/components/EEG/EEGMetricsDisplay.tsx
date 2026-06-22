@@ -1,12 +1,12 @@
 import React from 'react'
-import { useEEGStore } from '../stores/eegStore'
+import { useEEGStore } from '../../stores/eegStore'
 import './EEGMetricsDisplay.css'
 
 export const EEGMetricsDisplay: React.FC = () => {
-  const currentMetrics = useEEGStore((state) => state.currentMetrics)
-  const isConnected = useEEGStore((state) => state.isConnected)
-  const connectionError = useEEGStore((state) => state.connectionError)
-  const dataHistory = useEEGStore((state) => state.dataHistory)
+  const currentMetrics = useEEGStore((state: any) => state.currentMetrics)
+  const isConnected = useEEGStore((state: any) => state.isConnected)
+  const connectionError = useEEGStore((state: any) => state.connectionError)
+  const dataHistory = useEEGStore((state: any) => state.dataHistory)
 
   const getStateColor = (state?: string) => {
     switch (state) {

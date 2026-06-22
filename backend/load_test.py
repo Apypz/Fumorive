@@ -1,21 +1,31 @@
 """
 Fumorive Backend - Load Testing Script
-Tests CRUD operations, alerts, and playback endpoints with concurrent users
+Tests CRUD operations, alerts, playback, reporting endpoints,
+security headers, and rate limiter behaviour under concurrent load.
 
 Requirements:
     pip install requests
 
 Usage:
-    python load_test.py
+    python load_test.py [--suite all|crud|reporting|security|ratelimit]
+
+Suites:
+    crud        - Original CRUD + alerts + EEG playback (15 users)
+    reporting   - Reporting API endpoints (5 users, heavy queries)
+    security    - Security headers presence check
+    ratelimit   - Verify 429 responses when limit exceeded
+    all         - Run every suite (default)
 """
 
+import argparse
 import requests
 import time
 import json
 import statistics
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta
-from typing import Dict, List, Tuple
+from datetime import datetime, timedelta, timezone
+from typing import Dict, List, Tuple, Optional
 import random
 import string
 
@@ -58,11 +68,18 @@ class LoadTestStats:
         print(f"   Total Requests: {total}")
         print(f"   [OK] Success: {self.success_count}")
         print(f"   [ERR] Errors: {self.error_count}")
+        if total > 0:
+            success_rate = self.success_count / total * 100
+            print(f"   Success Rate: {success_rate:.1f}%")
         print(f"   Response Times:")
         print(f"      Min: {min(self.response_times):.3f}s")
         print(f"      Max: {max(self.response_times):.3f}s")
         print(f"      Mean: {statistics.mean(self.response_times):.3f}s")
         print(f"      Median: {statistics.median(self.response_times):.3f}s")
+        if len(self.response_times) >= 2:
+            p95_idx = int(len(self.response_times) * 0.95)
+            sorted_times = sorted(self.response_times)
+            print(f"      P95: {sorted_times[p95_idx]:.3f}s")
         
         if self.errors:
             print(f"   [WARN] Error samples: {self.errors[:3]}")
@@ -156,7 +173,7 @@ class LoadTester:
         try:
             data = {
                 "session_id": session_id,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "alert_level": random.choice(["warning", "critical"]),
                 "fatigue_score": random.uniform(60, 95),
                 "eeg_contribution": 0.7,
@@ -324,16 +341,471 @@ def run_load_test():
     print("\n" + "=" * 70)
 
 
+# ======================================================================
+# SUITE 2 — REPORTING API
+# ======================================================================
+
+def run_reporting_test():
+    """Test the /reports/* endpoints under moderate concurrency."""
+    print("\n" + "=" * 70)
+    print("Fumorive Reporting API Load Test")
+    print("=" * 70)
+
+    REPORT_USERS = 5
+    REPORT_REQUESTS = 6  # one per endpoint per iteration
+
+    def reporting_worker(worker_id: int) -> Dict[str, LoadTestStats]:
+        tester = LoadTester()
+        stats = {
+            "sessions_summary":  LoadTestStats(),
+            "fatigue_trend":     LoadTestStats(),
+            "alert_report":      LoadTestStats(),
+        }
+        if not tester.login():
+            return stats
+
+        for _ in range(REPORT_REQUESTS):
+            for endpoint, key in [
+                ("/reports/sessions?days=30",           "sessions_summary"),
+                ("/reports/fatigue-trend?days=7",       "fatigue_trend"),
+                ("/reports/alerts?days=30",             "alert_report"),
+            ]:
+                start = time.time()
+                try:
+                    r = tester.session.get(f"{BASE_URL}{endpoint}", timeout=TIMEOUT)
+                    ok = r.status_code == 200
+                    err = None if ok else f"HTTP {r.status_code}: {r.text[:80]}"
+                except Exception as e:
+                    ok = False
+                    err = str(e)
+                stats[key].add_result(time.time() - start, ok, err)
+                time.sleep(0.2)
+
+        return stats
+
+    agg: Dict[str, LoadTestStats] = {
+        "sessions_summary":  LoadTestStats(),
+        "fatigue_trend":     LoadTestStats(),
+        "alert_report":      LoadTestStats(),
+    }
+
+    t0 = time.time()
+    with ThreadPoolExecutor(max_workers=REPORT_USERS) as ex:
+        for ws in as_completed([ex.submit(reporting_worker, i) for i in range(REPORT_USERS)]):
+            for k, s in ws.result().items():
+                agg[k].response_times.extend(s.response_times)
+                agg[k].success_count += s.success_count
+                agg[k].error_count   += s.error_count
+                agg[k].errors.extend(s.errors)
+
+    print("\n" + "=" * 70)
+    print("REPORTING TEST RESULTS")
+    print("=" * 70)
+    for name, s in agg.items():
+        s.print_summary(name.replace("_", " ").title())
+    total_req = sum(len(s.response_times) for s in agg.values())
+    elapsed = time.time() - t0
+    print(f"\nTotal Duration: {elapsed:.2f}s | Throughput: {total_req / elapsed:.2f} req/s")
+    print("=" * 70)
+
+
+# ======================================================================
+# SUITE 3 — SECURITY HEADERS CHECK
+# ======================================================================
+
+EXPECTED_SECURITY_HEADERS = {
+    "x-content-type-options": "nosniff",
+    "x-frame-options":        "DENY",
+    "referrer-policy":        "strict-origin-when-cross-origin",
+}
+
+EXPECTED_CSP_DIRECTIVES = ["default-src", "frame-ancestors"]
+
+
+def run_security_headers_test():
+    """
+    Verify that OWASP security headers are present on API responses.
+    Tests both an unauthenticated endpoint (health) and an auth endpoint.
+    """
+    print("\n" + "=" * 70)
+    print("Security Headers Verification")
+    print("=" * 70)
+
+    endpoints = [
+        f"{BASE_URL}/health/live",
+        f"{BASE_URL.replace('/api/v1', '')}/",
+        f"{BASE_URL}/auth/login",   # POST — will get 422 but still headers
+    ]
+
+    passed = 0
+    failed = 0
+
+    for url in endpoints:
+        method = "POST" if "login" in url else "GET"
+        try:
+            r = requests.request(method, url, timeout=10,
+                                 json={} if method == "POST" else None)
+        except Exception as e:
+            print(f"  [ERR] Cannot reach {url}: {e}")
+            failed += 1
+            continue
+
+        headers = {k.lower(): v for k, v in r.headers.items()}
+        print(f"\n  {method} {url}  ->  HTTP {r.status_code}")
+
+        for hdr, expected in EXPECTED_SECURITY_HEADERS.items():
+            val = headers.get(hdr)
+            if val and expected.lower() in val.lower():
+                print(f"    [OK]  {hdr}: {val}")
+                passed += 1
+            else:
+                print(f"    [MISS] {hdr}: expected '{expected}', got '{val}'")
+                failed += 1
+
+        csp = headers.get("content-security-policy", "")
+        if all(d in csp for d in EXPECTED_CSP_DIRECTIVES):
+            print(f"    [OK]  content-security-policy: present")
+            passed += 1
+        else:
+            print(f"    [MISS] content-security-policy: incomplete (got: {csp[:80]})")
+            failed += 1
+
+        hsts = headers.get("strict-transport-security", "")
+        if "max-age" in hsts:
+            print(f"    [OK]  strict-transport-security: {hsts}")
+            passed += 1
+        else:
+            print(f"    [MISS] strict-transport-security: missing or invalid")
+            failed += 1
+
+    print(f"\n  Summary: {passed} checks passed, {failed} failed")
+    print("=" * 70)
+
+
+# ======================================================================
+# SUITE 4 — RATE LIMITER VERIFICATION
+# ======================================================================
+
+def run_rate_limit_test():
+    """
+    Fire requests rapidly against auth endpoints and verify 429 responses.
+    LIMIT_AUTH = 10/minute, so 15 rapid requests should trigger rejection.
+    """
+    print("\n" + "=" * 70)
+    print("Rate Limiter Verification (auth endpoints)")
+    print("=" * 70)
+
+    url = f"{BASE_URL}/auth/login"
+    payload = {"username": "notexist@test.com", "password": "wrongpass"}
+
+    results = {"2xx_3xx": 0, "401": 0, "429": 0, "other": 0}
+    response_times = []
+
+    BURST = 20  # Fire 20 rapid POSTs — should get 429 after the 10th
+
+    print(f"\n  Firing {BURST} rapid requests to POST {url} ...")
+    for i in range(BURST):
+        t0 = time.time()
+        try:
+            r = requests.post(url, data=payload, timeout=10)
+            elapsed = time.time() - t0
+            response_times.append(elapsed)
+            if r.status_code == 429:
+                results["429"] += 1
+            elif r.status_code == 401:
+                results["401"] += 1   # expected when under limit
+            elif r.status_code < 400:
+                results["2xx_3xx"] += 1
+            else:
+                results["other"] += 1
+                print(f"    [{i+1}] HTTP {r.status_code}: {r.text[:60]}")
+        except Exception as e:
+            results["other"] += 1
+            print(f"    [{i+1}] Error: {e}")
+
+    print(f"\n  Results from {BURST} rapid requests:")
+    print(f"    401 Unauthorized (expected under limit): {results['401']}")
+    print(f"    429 Rate Limited (expected after limit): {results['429']}")
+    print(f"    2xx/3xx: {results['2xx_3xx']}")
+    print(f"    Other errors: {results['other']}")
+
+    if results["429"] > 0:
+        print(f"\n  [OK] Rate limiter is ACTIVE — {results['429']} requests blocked")
+    else:
+        print(f"\n  [WARN] No 429s received — rate limiter may not be active")
+        print(f"         (Check: is backend running with slowapi wired in main.py?)")
+
+    if response_times:
+        print(f"\n  Response time (mean): {statistics.mean(response_times):.3f}s")
+    print("=" * 70)
+
+
+# ======================================================================
+# SUITE 5 — UAT (User Acceptance Testing) Real Scenarios
+# ======================================================================
+
+# Latency pass/fail thresholds
+_P95_READ_S  = 0.500   # reads must complete in < 500 ms (P95)
+_P95_WRITE_S = 1.000   # writes must complete in < 1 000 ms (P95)
+
+
+def _p95(times: List[float]) -> float:
+    if not times:
+        return 0.0
+    s = sorted(times)
+    return s[min(int(len(s) * 0.95), len(s) - 1)]
+
+
+def _assert_latency(name: str, times: List[float], threshold: float) -> bool:
+    """Print latency assertion result.  Returns True if within threshold."""
+    p = _p95(times)
+    ok = p <= threshold
+    symbol = "[OK]  " if ok else "[SLOW]"
+    print(f"    {symbol} {name}: P95={p*1000:.0f}ms  threshold={threshold*1000:.0f}ms  samples={len(times)}")
+    return ok
+
+
+class _UATSessionLifecycle:
+    """
+    Scenario A — Full session lifecycle:
+      login  ->  create session  ->  EEG batch ingest  ->
+      create alert  ->  close session  ->  session report
+    """
+
+    def __init__(self, worker_id: int) -> None:
+        self.worker_id = worker_id
+        self.tester    = LoadTester()
+        self.timings: Dict[str, List[float]] = {
+            "create_session": [],
+            "eeg_batch":      [],
+            "create_alert":   [],
+            "close_session":  [],
+            "session_report": [],
+        }
+
+    def run(self) -> Dict[str, List[float]]:
+        if not self.tester.login():
+            return self.timings
+
+        # 1. Create session
+        t0 = time.time()
+        resp = self.tester.session.post(
+            f"{BASE_URL}/sessions",
+            json={
+                "session_name": f"UAT-A-user{self.worker_id}-{random.randint(100,999)}",
+                "device_type":  "Muse 2",
+                "session_type": "general",
+            },
+            timeout=TIMEOUT,
+        )
+        self.timings["create_session"].append(time.time() - t0)
+        if resp.status_code != 201:
+            return self.timings
+        session_id = resp.json()["id"]
+
+        # 2. EEG batch ingest (5 data points)
+        now = datetime.now(timezone.utc)
+        data_points = [
+            {
+                "timestamp":        (now - timedelta(seconds=i)).isoformat() + "Z",
+                "raw_channels":     {"TP9": 0.12, "AF7": 0.34, "AF8": 0.45, "TP10": 0.23},
+                "delta_power":      round(random.uniform(0.1, 0.5), 4),
+                "theta_power":      round(random.uniform(0.2, 0.6), 4),
+                "alpha_power":      round(random.uniform(0.3, 0.7), 4),
+                "beta_power":       round(random.uniform(0.1, 0.4), 4),
+                "gamma_power":      round(random.uniform(0.05, 0.2), 4),
+                "theta_alpha_ratio":round(random.uniform(0.5, 1.5), 4),
+                "signal_quality":   round(random.uniform(0.7, 1.0), 3),
+                "eeg_fatigue_score":round(random.uniform(30, 70), 2),
+            }
+            for i in range(5)
+        ]
+        t0 = time.time()
+        self.tester.session.post(
+            f"{BASE_URL}/eeg/batch?session_id={session_id}",
+            json=data_points,
+            timeout=TIMEOUT,
+        )
+        self.timings["eeg_batch"].append(time.time() - t0)
+
+        # 3. Create alert
+        t0 = time.time()
+        self.tester.session.post(
+            f"{BASE_URL}/alerts",
+            json={
+                "session_id":     session_id,
+                "timestamp":      datetime.now(timezone.utc).isoformat(),
+                "alert_level":    "warning",
+                "fatigue_score":  72.5,
+                "eeg_contribution": 0.6,
+                "trigger_reason": "high_theta_alpha",
+            },
+            timeout=TIMEOUT,
+        )
+        self.timings["create_alert"].append(time.time() - t0)
+
+        # 4. Close session (complete)
+        t0 = time.time()
+        self.tester.session.patch(
+            f"{BASE_URL}/sessions/{session_id}",
+            json={"session_status": "completed"},
+            timeout=TIMEOUT,
+        )
+        self.timings["close_session"].append(time.time() - t0)
+
+        # 5. Session statistics report
+        t0 = time.time()
+        self.tester.session.get(
+            f"{BASE_URL}/reports/sessions?days=1",
+            timeout=TIMEOUT,
+        )
+        self.timings["session_report"].append(time.time() - t0)
+
+        return self.timings
+
+
+class _UATDashboardMonitor:
+    """
+    Scenario B — Dashboard monitoring user:
+      login  ->  (list sessions + list alerts + fatigue trend + session stats) × N
+    """
+
+    def __init__(self, worker_id: int, iterations: int = 3) -> None:
+        self.worker_id  = worker_id
+        self.iterations = iterations
+        self.tester     = LoadTester()
+        self.timings: Dict[str, List[float]] = {
+            "list_sessions":  [],
+            "list_alerts":    [],
+            "fatigue_trend":  [],
+            "session_stats":  [],
+        }
+
+    def run(self) -> Dict[str, List[float]]:
+        if not self.tester.login():
+            return self.timings
+
+        for _ in range(self.iterations):
+            for endpoint, key in [
+                (f"{BASE_URL}/sessions?page=1&page_size=10",     "list_sessions"),
+                (f"{BASE_URL}/alerts?limit=20&offset=0",         "list_alerts"),
+                (f"{BASE_URL}/reports/fatigue-trend?days=7",      "fatigue_trend"),
+                (f"{BASE_URL}/reports/sessions?days=30",          "session_stats"),
+            ]:
+                t0 = time.time()
+                try:
+                    self.tester.session.get(endpoint, timeout=TIMEOUT)
+                except Exception:
+                    pass
+                self.timings[key].append(time.time() - t0)
+            time.sleep(0.1)
+
+        return self.timings
+
+
+def run_uat_test():
+    """
+    UAT: Realistic multi-user scenarios with P95 latency assertions.
+
+    Scenario A (5 users): Full session lifecycle
+    Scenario B (5 users): Dashboard monitoring (read-heavy)
+    """
+    print("\n" + "=" * 70)
+    print("UAT - User Acceptance Testing (Real Scenarios)")
+    print("=" * 70)
+
+    USERS_A = 5
+    USERS_B = 5
+
+    merged: Dict[str, List[float]] = {}
+
+    def _merge(timings: Dict[str, List[float]]) -> None:
+        for k, v in timings.items():
+            merged.setdefault(k, []).extend(v)
+
+    # --- Scenario A ---
+    print(f"\n  Scenario A: Full session lifecycle ({USERS_A} concurrent users)")
+    t0 = time.time()
+    with ThreadPoolExecutor(max_workers=USERS_A) as ex:
+        for fut in as_completed(
+            [ex.submit(_UATSessionLifecycle(i).run) for i in range(USERS_A)]
+        ):
+            _merge(fut.result())
+    print(f"  Completed in {time.time() - t0:.2f}s")
+
+    # --- Scenario B ---
+    print(f"\n  Scenario B: Dashboard monitoring ({USERS_B} concurrent users, 3 iterations each)")
+    t0 = time.time()
+    with ThreadPoolExecutor(max_workers=USERS_B) as ex:
+        for fut in as_completed(
+            [ex.submit(_UATDashboardMonitor(i).run) for i in range(USERS_B)]
+        ):
+            _merge(fut.result())
+    print(f"  Completed in {time.time() - t0:.2f}s")
+
+    # --- Latency assertions ---
+    _WRITE_OPS = {"create_session", "eeg_batch", "create_alert", "close_session"}
+    print("\n  Latency Assertions (P95 thresholds):")
+    passed = failed = 0
+    for name, times in sorted(merged.items()):
+        if not times:
+            continue
+        threshold = _P95_WRITE_S if name in _WRITE_OPS else _P95_READ_S
+        if _assert_latency(name, times, threshold):
+            passed += 1
+        else:
+            failed += 1
+
+    print(f"\n  Result: {passed} ops within threshold, {failed} ops exceeded threshold")
+    if failed == 0:
+        print("  [PASS] All latency assertions PASSED")
+    else:
+        print("  [WARN] Some operations exceeded thresholds - review before deploying to production")
+    print("=" * 70)
+
+
+# ======================================================================
+# ENTRY POINT
+# ======================================================================
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Fumorive load test runner")
+    parser.add_argument(
+        "--suite",
+        choices=["all", "crud", "reporting", "security", "ratelimit", "uat"],
+        default="all",
+        help="Which test suite to run (default: all)",
+    )
+    args = parser.parse_args()
+
     # Check if backend is running
     try:
         response = requests.get(f"{BASE_URL.replace('/api/v1', '')}/health", timeout=5)
-        if response.status_code != 200:
-            print("[ERR] Backend is not healthy. Please start the backend first.")
-            exit(1)
-    except:
+        if response.status_code not in (200, 404):
+            # /health was moved to /api/v1/health — try the new path
+            response = requests.get(f"{BASE_URL}/health/live", timeout=5)
+            if response.status_code != 200:
+                print("[ERR] Backend is not healthy. Please start the backend first.")
+                sys.exit(1)
+    except Exception:
         print("[ERR] Cannot connect to backend. Please start the backend first.")
         print("   Run: python main.py")
-        exit(1)
-    
-    run_load_test()
+        sys.exit(1)
+
+    suite = args.suite
+
+    if suite in ("all", "crud"):
+        run_load_test()
+
+    if suite in ("all", "reporting"):
+        run_reporting_test()
+
+    if suite in ("all", "security"):
+        run_security_headers_test()
+
+    if suite in ("all", "ratelimit"):
+        run_rate_limit_test()
+
+    if suite in ("all", "uat"):
+        run_uat_test()
+
+    print("\n[DONE] All requested test suites completed.")

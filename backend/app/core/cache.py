@@ -5,6 +5,7 @@ Week 2, Wednesday - Redis Session Caching
 """
 
 import json
+import redis
 from typing import Optional
 from datetime import timedelta
 from uuid import UUID
@@ -56,9 +57,12 @@ def cache_user_session(user_id: UUID, user_data: dict, ttl_minutes: int = None) 
         )
         
         return True
-        
+
+    except (redis.ConnectionError, redis.TimeoutError) as e:
+        print(f"[WARN]  Cache user session – Redis unavailable: {e}")
+        return False
     except Exception as e:
-        print(f"⚠️  Cache user session error: {e}")
+        print(f"[WARN]  Cache user session error: {e}")
         return False
 
 
@@ -82,11 +86,14 @@ def get_cached_user(user_id: UUID) -> Optional[dict]:
         
         if user_json:
             return json.loads(user_json)
-        
+
         return None
-        
+
+    except (redis.ConnectionError, redis.TimeoutError) as e:
+        print(f"[WARN]  Get cached user – Redis unavailable: {e}")
+        return None
     except Exception as e:
-        print(f"⚠️  Get cached user error: {e}")
+        print(f"[WARN]  Get cached user error: {e}")
         return None
 
 
@@ -108,9 +115,12 @@ def invalidate_user_cache(user_id: UUID) -> bool:
         cache_key = f"{USER_CACHE_PREFIX}{user_id}"
         r.delete(cache_key)
         return True
-        
+
+    except (redis.ConnectionError, redis.TimeoutError) as e:
+        print(f"[WARN]  Invalidate user cache – Redis unavailable: {e}")
+        return False
     except Exception as e:
-        print(f"⚠️  Invalidate user cache error: {e}")
+        print(f"[WARN]  Invalidate user cache error: {e}")
         return False
 
 
@@ -144,11 +154,14 @@ def blacklist_token(token: str, ttl_minutes: int = None) -> bool:
             time=timedelta(minutes=ttl),
             value="1"
         )
-        
+
         return True
-        
+
+    except (redis.ConnectionError, redis.TimeoutError) as e:
+        print(f"[WARN]  Blacklist token – Redis unavailable: {e}")
+        return False
     except Exception as e:
-        print(f"⚠️  Blacklist token error: {e}")
+        print(f"[WARN]  Blacklist token error: {e}")
         return False
 
 
@@ -171,9 +184,12 @@ def is_token_blacklisted(token: str) -> bool:
     try:
         cache_key = f"{TOKEN_BLACKLIST_PREFIX}{token}"
         return r.exists(cache_key) > 0
-        
+
+    except (redis.ConnectionError, redis.TimeoutError) as e:
+        print(f"[WARN]  Check token blacklist – Redis unavailable, allowing token: {e}")
+        return False
     except Exception as e:
-        print(f"⚠️  Check token blacklist error: {e}")
+        print(f"[WARN]  Check token blacklist error: {e}")
         return False
 
 
@@ -205,7 +221,7 @@ def blacklist_refresh_token(token: str) -> bool:
         return True
         
     except Exception as e:
-        print(f"⚠️  Blacklist refresh token error: {e}")
+        print(f"[WARN]  Blacklist refresh token error: {e}")
         return False
 
 
@@ -261,9 +277,9 @@ def clear_all_cache() -> bool:
     
     try:
         r.flushdb()
-        print("⚠️  All Redis cache cleared!")
+        print("[WARN]  All Redis cache cleared!")
         return True
         
     except Exception as e:
-        print(f"⚠️  Clear cache error: {e}")
+        print(f"[WARN]  Clear cache error: {e}")
         return False

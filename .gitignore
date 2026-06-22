@@ -25,8 +25,14 @@ env/
 fumorive-db-firebase-adminsdk-fbsvc-0353bb0508.json
 *-firebase-adminsdk-*.json
 
+# Local runtime files (path varies per machine)
+.fumorive_pids
+.tmp_backend.cmd
+.tmp_frontend.cmd
+
 # my own
 Template Proposal Pra (1).pdf
 PENJELASAN_BACKEND.md
 frontend/DASHBOARD_DOCUMENTATION.md
 proposal/BAB_II_Deskripsi_Inovasi.md
+backend/passed/API_BASICS_EXPLAINED.md

@@ -48,7 +48,7 @@ export class WrongWayDetector {
   private correctWayTimer: number = 0
 
   // Thresholds
-  private readonly WRONG_WAY_CONFIRM_TIME = 1.5   // seconds driving wrong way before flagging
+  private readonly WRONG_WAY_CONFIRM_TIME = 1.0   // seconds driving wrong way before flagging
   private readonly CORRECT_WAY_RESET_TIME = 1.0    // seconds driving correct to clear flag
   private readonly MIN_SPEED_CHECK = 3.0            // m/s (~11 km/h) - don't check when slow/stopped
   private readonly HEADING_TOLERANCE = 0.6          // ~34° tolerance for heading angle (cosine threshold)
@@ -107,6 +107,69 @@ export class WrongWayDetector {
     for (const [x, z] of junctionCoords) {
       this.junctions.push({ x, z, radius: 12 }) // 12m radius around junctions
     }
+  }
+
+  /**
+   * Replace the registered road network with one derived from a procedural grid
+   * (Ngawi City). Each grid edge becomes a one-cell road segment; real
+   * intersections and perpendicular corners become junction zones where
+   * wrong-way checking is paused. Left-hand-traffic rules then apply per segment
+   * exactly like Solo City — so a driver who keeps left is never flagged,
+   * regardless of which random direction the route sends them.
+   */
+  loadGridNetwork(
+    grid: {
+      nodes: { id: number; r: number; c: number; x: number; z: number }[]
+      adj: Map<number, Set<number>>
+      cellSize: number
+    },
+    roadWidth: number
+  ): void {
+    this.roads = []
+    this.junctions = []
+    const { nodes, adj, cellSize } = grid
+    const half = roadWidth / 2
+    const halfCell = cellSize / 2
+    const seen = new Set<number>()
+
+    for (const node of nodes) {
+      const neighbors = adj.get(node.id)
+      if (!neighbors || neighbors.size === 0) continue
+
+      // One road segment per undirected edge (dedup with a symmetric key).
+      for (const nbId of neighbors) {
+        const key = node.id < nbId ? node.id * nodes.length + nbId : nbId * nodes.length + node.id
+        if (seen.has(key)) continue
+        seen.add(key)
+        const other = nodes[nbId]
+        const horizontal = node.r === other.r
+        this.roads.push({
+          name: `ngawi_${node.id}_${nbId}`,
+          centerX: (node.x + other.x) / 2,
+          centerZ: (node.z + other.z) / 2,
+          halfWidth: horizontal ? halfCell : half,
+          halfHeight: horizontal ? half : halfCell,
+          orientation: horizontal ? 'EW' : 'NS',
+        })
+      }
+
+      // Junction at real intersections (3+ ways) and perpendicular corners,
+      // where the car turns and lane-side checking should pause.
+      const deg = neighbors.size
+      let isJunction = deg >= 3
+      if (deg === 2) {
+        const dirs = Array.from(neighbors).map((nbId) => (nodes[nbId].r === node.r ? 'H' : 'V'))
+        if (dirs[0] !== dirs[1]) isJunction = true
+      }
+      if (isJunction) {
+        // Smaller pause zone than Solo City: the grid's intersections are only
+        // ~cellSize apart, so a large radius would pause detection over most of
+        // each street and the wrong-way flag would rarely confirm.
+        this.junctions.push({ x: node.x, z: node.z, radius: Math.max(6, roadWidth * 0.45) })
+      }
+    }
+
+    this.reset()
   }
 
   private addRoad(

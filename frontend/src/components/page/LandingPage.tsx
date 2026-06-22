@@ -10,6 +10,17 @@ import card4 from '../../assets/muse.png';
 import card3 from '../../assets/card3.jpg';
 import card2 from '../../assets/card2.jpg';
 import card1 from '../../assets/card.jpg';
+import img1 from '../../assets/img1.jpg';
+import img2 from '../../assets/img2.jpg';
+import img3 from '../../assets/img3.jpg';
+import img4 from '../../assets/img4.jpg';
+import img5 from '../../assets/img5.jpg';
+import img6 from '../../assets/img6.jpg';
+import lg1 from '../../assets/lg1.png';
+import lg2 from '../../assets/lg2.png';
+import lg3 from '../../assets/lg3.jpeg';
+import lg4 from '../../assets/lg4.jpeg';
+import demoVideo from '../../assets/0219.mp4';
 import { useNavigate } from 'react-router-dom';
 
 const LandingPage = () => {
@@ -73,38 +84,17 @@ const Navbar = () => {
                 </div>
 
                 <div className="navbar-links">
-                    <div className="nav-item">
-                        <a href="#hero">Home</a>
-                    </div>
-
-                    <div className="nav-item">
-                        <span>Solutions</span>
-                        <ChevronDown size={16} className="chevron-icon" />
-                        <div className="submenu">
-                            <a href="#" className="submenu-link">For Researchers</a>
-                            <a href="#" className="submenu-link">For Enterprise</a>
-                            <a href="#" className="submenu-link">Hardware Integration</a>
-                        </div>
-                    </div>
-
-                    <div className="nav-item">
-                        <span>Resources</span>
-                        <ChevronDown size={16} className="chevron-icon" />
-                        <div className="submenu">
-                            <a href="#" className="submenu-link">Documentation</a>
-                            <a href="#" className="submenu-link">API Reference</a>
-                            <a href="#" className="submenu-link">Case Studies</a>
-                        </div>
-                    </div>
-
-                    <a href="#pricing" className="nav-link">Pricing</a>
+                    <a className="nav-link" onClick={() => document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' })} style={{ cursor: 'pointer' }}>Beranda</a>
+                    <a className="nav-link" onClick={() => document.getElementById('fitur')?.scrollIntoView({ behavior: 'smooth' })} style={{ cursor: 'pointer' }}>Fitur</a>
+                    <a className="nav-link" onClick={() => document.getElementById('cara-kerja')?.scrollIntoView({ behavior: 'smooth' })} style={{ cursor: 'pointer' }}>Cara Kerja</a>
+                    <a className="nav-link" onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })} style={{ cursor: 'pointer' }}>Demo</a>
                 </div>
 
                 <button
                     className="btn btn-solid navbar-btn"
                     onClick={() => navigate('/login')}
                 >
-                    Get Started
+                    Mulai Sekarang
                 </button>
             </div>
         </nav>
@@ -112,6 +102,7 @@ const Navbar = () => {
 }
 
 const HeroSection = () => {
+    const navigate = useNavigate();
     return (
         <section id="hero" className="hero-section" style={{
             position: 'relative',
@@ -139,22 +130,22 @@ const HeroSection = () => {
                         Teknologi ergonomis untuk mendeteksi kelelahan dini bagi pengemudi<br />ketika berkendara dalam waktu lama.
                     </p>
                     <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                        <motion.a
-                            href="#"
+                        <motion.button
+                            onClick={() => navigate('/login')}
                             className="btn btn-solid"
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
-                            Demo Simulasi
-                        </motion.a>
-                        <motion.a
-                            href="#"
+                            Mulai Sekarang
+                        </motion.button>
+                        <motion.button
+                            onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })}
                             className="btn btn-primary"
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
-                            Lihat Dokumentasi
-                        </motion.a>
+                            Lihat Demo
+                        </motion.button>
                     </div>
                 </motion.div>
             </div>
@@ -165,35 +156,28 @@ const HeroSection = () => {
 
 
 const PartnersSection = () => {
-    // Duplicate the list to ensure seamless scrolling
-    const partners = [
-        { name: "Tesla Autopilot", icon: <Zap size={20} /> },
-        { name: "Waymo Research", icon: <Wifi size={20} /> },
-        { name: "Uber ATG", icon: <Activity size={20} /> },
-        { name: "NVIDIA Drive", icon: <Brain size={20} /> },
-        { name: "Toyota AI", icon: <Gamepad2 size={20} /> },
-        { name: "Comma.ai", icon: <Eye size={20} /> },
-        { name: "Oxford Robotics", icon: <Database size={20} /> },
-        // Duplicates for infinite loop effect
-        { name: "Tesla Autopilot", icon: <Zap size={20} /> },
-        { name: "Waymo Research", icon: <Wifi size={20} /> },
-        { name: "Uber ATG", icon: <Activity size={20} /> },
-        { name: "NVIDIA Drive", icon: <Brain size={20} /> },
-        { name: "Toyota AI", icon: <Gamepad2 size={20} /> },
-        { name: "Comma.ai", icon: <Eye size={20} /> },
-        { name: "Oxford Robotics", icon: <Database size={20} /> },
+    const logoImages = [
+        { src: lg2,      height: '60px' },  // ← ubah ukuran lg1 di sini
+        { src: lg1,      height: '70px' },  // ← ubah ukuran lg2 di sini
+        { src: lg4,      height: '70px' },  // ← ubah ukuran lg3 di sini
+        { src: lg3,      height: '90px' },  // ← ubah ukuran fumo di sini
     ];
+    // Duplicate for infinite scroll
+    const logos = [...logoImages, ...logoImages, ...logoImages];
 
     return (
         <section className="partners-section">
             <div className="container" style={{ maxWidth: '100%' }}>
-                <p style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '0.85rem', color: 'var(--color-text-tertiary)', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase' }}>Trusted By Industry Leaders</p>
+                <p style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '0.85rem', color: 'var(--color-text-tertiary)', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase' }}>Mitra Kami</p>
                 <div className="partners-slider">
                     <div className="partners-track">
-                        {partners.map((partner, index) => (
+                        {logos.map((logo, index) => (
                             <div key={index} className="partner-logo-item">
-                                {partner.icon}
-                                <span>{partner.name}</span>
+                                <img
+                                    src={logo.src}
+                                    alt={`partner-${index}`}
+                                    style={{ height: logo.height, width: 'auto', objectFit: 'contain', opacity: 0.75 }}
+                                />
                             </div>
                         ))}
                     </div>
@@ -228,7 +212,7 @@ const ProblemSection = () => {
     ];
 
     return (
-        <section className="section problem-section">
+        <section id="kenapa" className="section problem-section">
             <div className="container">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -301,27 +285,27 @@ const ProblemSection = () => {
 const FeaturesShowcaseSection = () => {
     const features = [
         {
-            title: "Real-Time EEG Monitoring",
-            description: "Muse2 headband captures your brain activity in real-time. Monitor Alpha, Beta, Theta, and Delta waves to detect drowsiness before it becomes dangerous.",
+            title: "Pemantauan EEG Real-Time",
+            description: "Headband Muse2 merekam aktivitas otak secara real-time. Pantau gelombang Alpha, Beta, Theta, dan Delta untuk mendeteksi kantuk sebelum menjadi berbahaya.",
             image: card4,
-            highlights: ["4 Brain Wave Types", "Sub-second Latency", "Clinical Accuracy"]
+            highlights: ["4 Jenis Gelombang Otak", "Latensi di Bawah 1 Detik", "Akurasi Klinis"]
         },
         {
-            title: "Computer Vision Detection",
-            description: "Advanced AI tracks eye closure (PERCLOS), blink rate, yawning, and head pose. Multimodal fusion combines visual and EEG data for 98% accuracy.",
+            title: "Deteksi Computer Vision",
+            description: "AI canggih melacak penutupan mata (PERCLOS), frekuensi kedipan, menguap, dan posisi kepala. Penggabungan multimodal antara data visual dan EEG menghasilkan akurasi 98%.",
             image: card5,
-            highlights: ["Eye Aspect Ratio", "Head Pose Analysis", "Yawn Detection"]
+            highlights: ["Rasio Aspek Mata", "Analisis Posisi Kepala", "Deteksi Menguap"]
         },
         {
-            title: "Intelligent Alert System",
-            description: "Multi-level warning system triggers audio and visual alerts based on fatigue severity. Get notified before microsleep occurs, not after.",
+            title: "Sistem Peringatan Cerdas",
+            description: "Sistem peringatan bertingkat memicu alert audio dan visual berdasarkan tingkat kelelahan. Dapatkan notifikasi sebelum microsleep terjadi, bukan sesudahnya.",
             image: card6,
-            highlights: ["3-Tier Alert Levels", "Audio Warnings", "Dashboard Metrics"]
+            highlights: ["3 Tingkat Peringatan", "Peringatan Audio", "Metrik Dashboard"]
         }
     ];
 
     return (
-        <section className="section features-showcase-section">
+        <section id="fitur" className="section features-showcase-section">
             <div className="container">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -330,9 +314,9 @@ const FeaturesShowcaseSection = () => {
                     transition={{ duration: 0.6 }}
                     style={{ textAlign: 'center', marginBottom: '4rem' }}
                 >
-                    <h2 className="section-title">Powerful Features</h2>
+                    <h2 className="section-title">Fitur Unggulan</h2>
                     <p className="section-subtitle">
-                        Combining cutting-edge technology to keep drivers safe on the road
+                        Menggabungkan teknologi mutakhir untuk menjaga keselamatan pengemudi di jalan
                     </p>
                 </motion.div>
 
@@ -374,7 +358,7 @@ const FeaturesShowcaseSection = () => {
 
 const SolutionSection = () => {
     return (
-        <section className="section" style={{ background: 'var(--color-bg-secondary)', overflow: 'hidden' }}>
+        <section id="cara-kerja" className="section" style={{ background: 'var(--color-bg-secondary)', overflow: 'hidden' }}>
             <div className="container">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -383,8 +367,8 @@ const SolutionSection = () => {
                     transition={{ duration: 0.6 }}
                     style={{ textAlign: 'center', marginBottom: '5rem' }}
                 >
-                    <h2 className="section-title">How It Works</h2>
-                    <p className="section-subtitle">From setup to insight in three simple steps.</p>
+                    <h2 className="section-title">Cara Kerjanya</h2>
+                    <p className="section-subtitle">Bagaimana sistem Fumorive bekerja di balik layar</p>
                 </motion.div>
 
                 <div style={{ position: 'relative' }}>
@@ -395,7 +379,7 @@ const SolutionSection = () => {
                         left: '10%',
                         right: '10%',
                         height: '2px',
-                        background: 'linear-gradient(to right, transparent, var(--color-accent-blue), transparent)',
+                        background: 'var(--color-accent-blue)',
                         zIndex: 0,
                         opacity: 0.3
                     }}></div>
@@ -409,22 +393,22 @@ const SolutionSection = () => {
                     }}>
                         <SolutionStep
                             number="01"
-                            title="Connect & Calibrate"
-                            desc="Sync your EEG headset via Bluetooth. Our system auto-calibrates to your baseline brain activity in under 30 seconds."
+                            title="Hubungkan & Kalibrasi"
+                            desc="Sambungkan headset EEG kamu via Bluetooth. Sistem kami akan otomatis mengkalibrasi aktivitas otak dasar kamu dalam kurang dari 30 detik."
                             icon={<Wifi size={28} color="white" />}
                             delay={0.1}
                         />
                         <SolutionStep
                             number="02"
-                            title="Simulate Driving"
-                            desc="Enter a high-fidelity simulation environment. We record millisecond-level telemetry synced with your neurological data."
+                            title="Simulasi Berkendara"
+                            desc="Masuki lingkungan simulasi berkendara berkualitas tinggi. Kami merekam telemetri tingkat milidetik yang disinkronkan dengan data neurologis kamu."
                             icon={<Gamepad2 size={28} color="white" />}
                             delay={0.3}
                         />
                         <SolutionStep
                             number="03"
-                            title="Analyze & Improve"
-                            desc="Get immediate feedback on fatigue levels. Review session replay with overlaid attention heatmaps and reaction times."
+                            title="Analisis & Tingkatkan"
+                            desc="Dapatkan umpan balik langsung mengenai tingkat kelelahan. Tinjau ulang sesi dengan peta panas perhatian dan waktu reaksi yang ditampilkan."
                             icon={<Activity size={28} color="white" />}
                             delay={0.5}
                         />
@@ -436,14 +420,45 @@ const SolutionSection = () => {
 }
 
 const DemoSection = () => {
-    const galleryItems = [
-        { title: "Real-time Metrics", img: card1 },
-        { title: "Driver Perspective", img: card2 },
-        { title: "Post-Session Analysis", img: card3 },
-    ];
+    // Ganti dengan URL embed YouTube: "https://www.youtube.com/embed/VIDEO_ID"
+    // Kosongkan string ("") untuk menampilkan placeholder
+    const videoEmbedUrl = ""; // YouTube embed URL (kosongkan untuk pakai video lokal)
+    const localVideo = demoVideo; // video lokal .mp4
+
+    const galleryItems = [img1, img2, img3, img4, img5, img6];
+
+    const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [lightboxIndex, setLightboxIndex] = useState(0);
+
+    const openLightbox = (index: number) => {
+        setLightboxIndex(index);
+        setLightboxOpen(true);
+    };
+
+    const closeLightbox = () => setLightboxOpen(false);
+
+    const prevImage = () => setLightboxIndex(i => (i - 1 + galleryItems.length) % galleryItems.length);
+    const nextImage = () => setLightboxIndex(i => (i + 1) % galleryItems.length);
+
+    // Close on backdrop click
+    const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget) closeLightbox();
+    };
+
+    // Close on Escape key
+    useEffect(() => {
+        const handleKey = (e: KeyboardEvent) => {
+            if (!lightboxOpen) return;
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowLeft') prevImage();
+            if (e.key === 'ArrowRight') nextImage();
+        };
+        window.addEventListener('keydown', handleKey);
+        return () => window.removeEventListener('keydown', handleKey);
+    }, [lightboxOpen]);
 
     return (
-        <section className="section">
+        <section id="demo" className="section">
             <div className="container" style={{ textAlign: 'center' }}>
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -451,13 +466,13 @@ const DemoSection = () => {
                     viewport={{ once: true }}
                     transition={{ duration: 0.8 }}
                 >
-                    <h2 className="section-title">See It In Action</h2>
+                    <h2 className="section-title">Dokumentasi Demo</h2>
 
                     {/* Main Video Area */}
                     <div style={{
                         marginTop: '3rem',
                         width: '100%',
-                        height: '500px',
+                        aspectRatio: '16 / 9',
                         background: '#0f172a',
                         borderRadius: '20px',
                         display: 'flex',
@@ -467,61 +482,197 @@ const DemoSection = () => {
                         overflow: 'hidden',
                         boxShadow: '0 20px 50px rgba(37, 99, 235, 0.15)'
                     }}>
-                        <div style={{ position: 'absolute', inset: 0, opacity: 0.3, background: 'linear-gradient(45deg, #0f172a, #1e293b)' }}></div>
-                        <Play size={80} fill="white" style={{ position: 'relative', cursor: 'pointer', zIndex: 10, filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.5))', transition: 'transform 0.3s ease' }} />
-                        <p style={{ position: 'absolute', bottom: '20px', color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem' }}>Live EEG Overlay Preview</p>
+                        {videoEmbedUrl ? (
+                            <iframe
+                                src={videoEmbedUrl}
+                                title="Demo Video"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                                style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    width: '100%',
+                                    height: '100%',
+                                    border: 'none',
+                                    borderRadius: '20px'
+                                }}
+                            />
+                        ) : localVideo ? (
+                            <video
+                                src={localVideo}
+                                autoPlay
+                                loop
+                                muted
+                                playsInline
+                                style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    width: '100%',
+                                    height: '100%',
+                                    borderRadius: '20px',
+                                    objectFit: 'contain',
+                                    background: '#0f172a'
+                                }}
+                            />
+                        ) : (
+                            <>
+                                <div style={{ position: 'absolute', inset: 0, opacity: 0.3, background: 'linear-gradient(45deg, #0f172a, #1e293b)' }}></div>
+                                <Play size={80} fill="white" style={{ position: 'relative', cursor: 'pointer', zIndex: 10, filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.5))', transition: 'transform 0.3s ease' }} />
+                                <p style={{ position: 'absolute', bottom: '20px', color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem' }}>Pratinjau Overlay EEG Langsung</p>
+                            </>
+                        )}
                     </div>
 
-                    {/* Gallery Thumbnails */}
+                    {/* Gallery Thumbnails — 2 rows x 3 cols */}
                     <div style={{
                         marginTop: '2rem',
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                        gridTemplateColumns: 'repeat(3, 1fr)',
                         gap: '1.5rem'
                     }}>
-                        {galleryItems.map((item, index) => (
+                        {galleryItems.map((imgSrc, index) => (
                             <motion.div
                                 key={index}
                                 initial={{ opacity: 0, y: 20 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
-                                transition={{ delay: 0.2 + (index * 0.1), duration: 0.5 }}
-                                whileHover={{ y: -5 }}
+                                transition={{ delay: 0.1 + (index * 0.08), duration: 0.5 }}
+                                whileHover={{ scale: 1.03 }}
+                                onClick={() => openLightbox(index)}
                                 style={{
                                     height: '160px',
                                     borderRadius: '16px',
-                                    backgroundImage: `url(${item.img})`,
+                                    backgroundImage: `url(${imgSrc})`,
                                     backgroundSize: 'cover',
                                     backgroundPosition: 'center',
-                                    position: 'relative',
-                                    overflow: 'hidden',
                                     cursor: 'pointer',
-                                    boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+                                    boxShadow: '0 4px 15px rgba(0,0,0,0.12)'
                                 }}
-                            >
-                                <div style={{
-                                    position: 'absolute',
-                                    inset: 0,
-                                    background: 'rgba(0,0,0,0.4)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    transition: 'background 0.3s'
-                                }}
-                                    className="gallery-overlay"
-                                >
-                                    <span style={{ color: 'white', fontWeight: 600, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>{item.title}</span>
-                                </div>
-                            </motion.div>
+                            />
                         ))}
                     </div>
                 </motion.div>
             </div>
+
+            {/* Lightbox */}
+            {lightboxOpen && (
+                <div
+                    onClick={handleBackdropClick}
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.88)',
+                        zIndex: 1000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}
+                >
+                    {/* Close button */}
+                    <button
+                        onClick={closeLightbox}
+                        style={{
+                            position: 'absolute',
+                            top: '20px',
+                            right: '24px',
+                            background: 'rgba(255,255,255,0.15)',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '44px',
+                            height: '44px',
+                            color: 'white',
+                            fontSize: '1.4rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backdropFilter: 'blur(8px)'
+                        }}
+                    >✕</button>
+
+                    {/* Prev button */}
+                    <button
+                        onClick={prevImage}
+                        style={{
+                            position: 'absolute',
+                            left: '20px',
+                            background: 'rgba(255,255,255,0.15)',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '50px',
+                            height: '50px',
+                            color: 'white',
+                            fontSize: '1.4rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backdropFilter: 'blur(8px)'
+                        }}
+                    >‹</button>
+
+                    {/* Image */}
+                    <motion.img
+                        key={lightboxIndex}
+                        src={galleryItems[lightboxIndex]}
+                        initial={{ opacity: 0, scale: 0.92 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.25 }}
+                        style={{
+                            maxWidth: '90vw',
+                            maxHeight: '85vh',
+                            borderRadius: '16px',
+                            objectFit: 'contain',
+                            boxShadow: '0 30px 80px rgba(0,0,0,0.5)'
+                        }}
+                    />
+
+                    {/* Next button */}
+                    <button
+                        onClick={nextImage}
+                        style={{
+                            position: 'absolute',
+                            right: '20px',
+                            background: 'rgba(255,255,255,0.15)',
+                            border: 'none',
+                            borderRadius: '50%',
+                            width: '50px',
+                            height: '50px',
+                            color: 'white',
+                            fontSize: '1.4rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backdropFilter: 'blur(8px)'
+                        }}
+                    >›</button>
+
+                    {/* Dot indicators */}
+                    <div style={{ position: 'absolute', bottom: '20px', display: 'flex', gap: '8px' }}>
+                        {galleryItems.map((_, i) => (
+                            <div
+                                key={i}
+                                onClick={() => setLightboxIndex(i)}
+                                style={{
+                                    width: i === lightboxIndex ? '24px' : '8px',
+                                    height: '8px',
+                                    borderRadius: '4px',
+                                    background: i === lightboxIndex ? 'white' : 'rgba(255,255,255,0.4)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s'
+                                }}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
         </section>
     )
 }
 
 const CTASection = () => {
+    const navigate = useNavigate();
     return (
         <motion.section
             initial={{ opacity: 0 }}
@@ -545,12 +696,13 @@ const CTASection = () => {
                     transition={{ delay: 0.2, duration: 0.6 }}
                 >
                     <h2 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '1rem', letterSpacing: '-0.5px', lineHeight: 1.1 }}>
-                        Ready to Revolutionize<br />Driver Safety?
+                        Siap Merevolusi<br />Keselamatan Pengemudi?
                     </h2>
                     <p style={{ fontSize: '1rem', maxWidth: '600px', margin: '0 auto 2rem', opacity: 0.95, lineHeight: 1.6, fontWeight: 400 }}>
-                        Join forward-thinking research institutes and fleet operators who are already using Fumorive to save lives.
+                        Bergabunglah dengan lembaga penelitian dan operator armada terkemuka yang sudah menggunakan Fumorive untuk menyelamatkan nyawa.
                     </p>
                     <button
+                        onClick={() => navigate('/login')}
                         className="btn"
                         style={{
                             background: 'white',
@@ -560,10 +712,11 @@ const CTASection = () => {
                             fontWeight: 700,
                             border: 'none',
                             borderRadius: '50px',
-                            boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+                            boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                            cursor: 'pointer'
                         }}
                     >
-                        Start Your Free Trial
+                        Mulai Uji Coba
                     </button>
                 </motion.div>
             </div>
@@ -729,7 +882,7 @@ const FooterSection = () => {
 
                 {/* Copyright */}
                 <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem', textAlign: 'center' }}>
-                    &copy; 2026 Fumorive Inc. All rights reserved.
+                    &copy; 2026 Fumorive Inc. Hak cipta dilindungi.
                 </div>
 
                 {/* Socials */}
@@ -771,7 +924,7 @@ const SolutionStep = ({ number, title, desc, icon, delay }: any) => (
         <div style={{
             width: '100px',
             height: '100px',
-            background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-neon))',
+            background: 'var(--color-accent-blue)',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',

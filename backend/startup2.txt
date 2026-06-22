@@ -1,0 +1,118 @@
+============================================================
+[START] Fumorive Backend API Starting...
+[ENV] Environment: development
+[CORS] Origins: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173']
+
+[REDIS] Initializing Redis...
+============================================================
+[START] Fumorive Backend API Starting...
+[ENV] Environment: development
+[CORS] Origins: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173']
+
+[REDIS] Initializing Redis...
+============================================================
+[START] Fumorive Backend API Starting...
+[ENV] Environment: development
+[CORS] Origins: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173']
+
+[REDIS] Initializing Redis...
+============================================================
+[START] Fumorive Backend API Starting...
+[ENV] Environment: development
+[CORS] Origins: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173']
+
+[REDIS] Initializing Redis...
+[OK] Redis connected: redis://localhost:6379/0
+
+[FIREBASE] Initializing Firebase...
+
+[EEG] Starting EEG data buffer...
+[EEG] Buffer started successfully
+
+[DOCS] Documentation: /api/docs
+[WS]   WebSocket: /api/v1/ws/session/{session_id}
+============================================================
+============================================================
+[STOP] Fumorive Backend API Shutting Down...
+
+[EEG] Stopping EEG data buffer...
+[EEG] Buffer stopped and flushed
+
+[REDIS] Closing Redis connection...
+[OK] Redis connection closed
+============================================================
+============================================================
+[START] Fumorive Backend API Starting...
+[ENV] Environment: development
+[CORS] Origins: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173']
+
+[REDIS] Initializing Redis...
+[OK] Redis connected: redis://localhost:6379/0
+
+[FIREBASE] Initializing Firebase...
+
+[EEG] Starting EEG data buffer...
+[EEG] Buffer started successfully
+
+[DOCS] Documentation: /api/docs
+[WS]   WebSocket: /api/v1/ws/session/{session_id}
+============================================================
+============================================================
+[STOP] Fumorive Backend API Shutting Down...
+
+[EEG] Stopping EEG data buffer...
+[EEG] Buffer stopped and flushed
+
+[REDIS] Closing Redis connection...
+[OK] Redis connection closed
+============================================================
+============================================================
+[START] Fumorive Backend API Starting...
+[ENV] Environment: development
+[CORS] Origins: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173']
+
+[REDIS] Initializing Redis...
+[OK] Redis connected: redis://localhost:6379/0
+
+[FIREBASE] Initializing Firebase...
+
+[EEG] Starting EEG data buffer...
+[EEG] Buffer started successfully
+
+[DOCS] Documentation: /api/docs
+[WS]   WebSocket: /api/v1/ws/session/{session_id}
+============================================================
+============================================================
+[STOP] Fumorive Backend API Shutting Down...
+
+[EEG] Stopping EEG data buffer...
+[EEG] Buffer stopped and flushed
+
+[REDIS] Closing Redis connection...
+[OK] Redis connection closed
+============================================================
+============================================================
+[START] Fumorive Backend API Starting...
+[ENV] Environment: development
+[CORS] Origins: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173']
+
+[REDIS] Initializing Redis...
+[OK] Redis connected: redis://localhost:6379/0
+
+[FIREBASE] Initializing Firebase...
+
+[EEG] Starting EEG data buffer...
+[EEG] Buffer started successfully
+
+[DOCS] Documentation: /api/docs
+[WS]   WebSocket: /api/v1/ws/session/{session_id}
+============================================================
+============================================================
+[STOP] Fumorive Backend API Shutting Down...
+
+[EEG] Stopping EEG data buffer...
+[EEG] Buffer stopped and flushed
+
+[REDIS] Closing Redis connection...
+[OK] Redis connection closed
+============================================================

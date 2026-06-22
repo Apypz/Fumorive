@@ -40,6 +40,11 @@ export class CarCameraManager {
   private wheelObserver: Observer<PointerInfo> | null = null
   private wheelPreventHandler: ((e: WheelEvent) => void) | null = null
 
+  // Camera shake state
+  private shakeTimer    = 0
+  private shakeDuration = 0
+  private shakeIntensity = 0
+
   constructor(scene: Scene, carMesh: AbstractMesh, config?: Partial<CameraConfig>) {
     this.scene = scene
     this.carMesh = carMesh
@@ -212,6 +217,17 @@ export class CarCameraManager {
   }
 
   /**
+   * Trigger a camera shake effect (e.g. when crossing a speed bump).
+   * @param intensity Maximum vertical offset in Babylon units.
+   * @param duration  How long the shake lasts in seconds.
+   */
+  triggerShake(intensity: number, duration: number): void {
+    this.shakeIntensity = intensity
+    this.shakeDuration  = duration
+    this.shakeTimer     = duration
+  }
+
+  /**
    * Set callback for mode changes
    */
   onModeChanged(callback: (mode: CameraMode) => void): void {
@@ -306,35 +322,55 @@ export class CarCameraManager {
    * Update cameras each frame
    * @param heading Car heading in radians
    */
-  update(heading: number): void {
+  update(heading: number, dt: number): void {
+    // Advance shake timer
+    if (this.shakeTimer > 0) {
+      this.shakeTimer = Math.max(0, this.shakeTimer - dt)
+    }
+
     switch (this.currentMode) {
       case 'third-person':
-        this.updateThirdPersonCamera(heading)
+        this.updateThirdPersonCamera(heading, dt)
         break
       case 'first-person':
         this.updateFirstPersonCamera(heading)
         break
       case 'free':
-        this.updateFreeCamera()
+        this.updateFreeCamera(dt)
         break
     }
+  }
+
+  /** Current shake Y offset (sinusoidal, fades out). */
+  private getShakeOffset(): number {
+    if (this.shakeTimer <= 0) return 0
+    const progress  = this.shakeTimer / this.shakeDuration
+    const frequency = 18  // oscillations per second
+    return Math.sin(this.shakeTimer * frequency * Math.PI * 2) * this.shakeIntensity * progress
   }
 
   /**
    * Update Third Person camera - follows behind car
    */
-  private updateThirdPersonCamera(heading: number): void {
+  private updateThirdPersonCamera(heading: number, dt: number): void {
     if (!this.thirdPersonCamera) return
-    
+
     const tpConfig = this.config.thirdPerson
-    const targetPosition = this.carMesh.position.add(new Vector3(0, tpConfig.targetHeightOffset, 0))
-    
-    // Smooth follow target
+    const shakeY = this.getShakeOffset()
+    const targetPosition = this.carMesh.position.add(new Vector3(0, tpConfig.targetHeightOffset + shakeY, 0))
+
+    // Framerate-independent smooth follow. A constant per-frame Lerp factor makes
+    // the car judder when frame times vary (the car advances per-second but the
+    // camera closes a fixed % per-frame); converting followSpeed to a true
+    // per-second rate keeps it smooth at any FPS.
+    const t = 1 - Math.pow(1 - tpConfig.followSpeed, dt * 60)
     this.thirdPersonCamera.target = Vector3.Lerp(
-      this.thirdPersonCamera.target, 
-      targetPosition, 
-      tpConfig.followSpeed
+      this.thirdPersonCamera.target,
+      targetPosition,
+      t
     )
+    // Disable Babylon's own inertial smoothing so it can't re-add lag/judder.
+    this.thirdPersonCamera.inertia = 0
     
     // Lock alpha to follow car heading
     const targetAlpha = -heading - Math.PI / 2
@@ -355,10 +391,11 @@ export class CarCameraManager {
     const forward = new Vector3(Math.sin(heading), 0, Math.cos(heading))
     const right = new Vector3(Math.cos(heading), 0, -Math.sin(heading))
     
+    const shakeY = this.getShakeOffset()
     const cameraPosition = this.carMesh.position
       .add(forward.scale(fpConfig.forwardOffset))
       .add(right.scale(fpConfig.sideOffset))
-      .add(new Vector3(0, fpConfig.heightOffset, 0))
+      .add(new Vector3(0, fpConfig.heightOffset + shakeY, 0))
     
     const lookTarget = cameraPosition.add(forward.scale(fpConfig.lookAheadDistance))
     
@@ -370,17 +407,18 @@ export class CarCameraManager {
   /**
    * Update Free camera - follows car but user controls rotation
    */
-  private updateFreeCamera(): void {
+  private updateFreeCamera(dt: number): void {
     if (!this.freeCamera) return
-    
+
     const freeConfig = this.config.free
     const targetPosition = this.carMesh.position.add(new Vector3(0, freeConfig.targetHeightOffset, 0))
-    
-    // Smooth follow target only
+
+    // Framerate-independent smooth follow (see updateThirdPersonCamera).
+    const t = 1 - Math.pow(1 - freeConfig.followSpeed, dt * 60)
     this.freeCamera.target = Vector3.Lerp(
-      this.freeCamera.target, 
-      targetPosition, 
-      freeConfig.followSpeed
+      this.freeCamera.target,
+      targetPosition,
+      t
     )
   }
 

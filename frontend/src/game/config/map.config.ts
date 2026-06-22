@@ -98,11 +98,47 @@ export const SRIWEDARI_PARK_CONFIG: MapConfig = {
 }
 
 /**
+ * Ngawi City Map Configuration
+ * Procedurally-generated grid city (3 levels). The bounds/spawn below are
+ * placeholders — they are overridden at generation time by NgawiCityGenerator
+ * (see SimpleMap.buildNgawiCity), which sizes the map from the random layout.
+ */
+export const NGAWI_CITY_CONFIG: MapConfig = {
+  id: 'ngawi-city',
+  name: 'Ngawi City',
+  description: 'Kota grid dinamis dengan 3 level. Peta dan rute di-generate acak setiap permainan.',
+
+  bounds: DEFAULT_MAP_BOUNDS,
+
+  spawn: {
+    position: { x: 0, y: 0, z: 0 },
+    rotation: Math.PI / 2,
+  },
+
+  environment: {
+    groundColor: { r: 0.32, g: 0.42, b: 0.28 },  // Grass green
+    skyColorTop: { r: 0.4, g: 0.6, b: 0.9 },
+    skyColorBottom: { r: 0.7, g: 0.8, b: 0.95 },
+    sunDirection: { x: -1, y: -2, z: -1 },
+    sunIntensity: 3,
+    ambientIntensity: 1.5,
+  },
+
+  settings: {
+    hasLake: false,
+    hasBuildings: true,
+    treeCount: 'none',
+    roadWidth: 16,
+  },
+}
+
+/**
  * All available maps
  */
 export const MAP_CONFIGS = {
   'solo-city': SOLO_CITY_CONFIG,
   'sriwedari-park': SRIWEDARI_PARK_CONFIG,
+  'ngawi-city': NGAWI_CITY_CONFIG,
 } as const
 
 /**

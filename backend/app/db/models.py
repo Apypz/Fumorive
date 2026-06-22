@@ -5,7 +5,7 @@ Week 2, Day 1 - Database Schema Design
 """
 
 from sqlalchemy import (
-    Column, String, Integer, Float, Boolean, DateTime, ForeignKey, JSON, Text
+    Column, String, Integer, Float, Boolean, DateTime, ForeignKey, JSON, Text, Index
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB, TIMESTAMP
 from sqlalchemy.orm import relationship
@@ -91,9 +91,14 @@ class EEGData(Base):
     __tablename__ = "eeg_data"
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    session_id = Column(UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=False, index=True)
-    timestamp = Column(TIMESTAMP(timezone=True), nullable=False, index=True)
-    
+    session_id = Column(UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=False)
+    timestamp = Column(TIMESTAMP(timezone=True), nullable=False)
+
+    __table_args__ = (
+        # Composite index mirrors migration 003: covers session playback range queries
+        Index("idx_eeg_data_session_time", "session_id", timestamp.desc()),
+    )
+
     # Raw EEG channels (JSON array)
     raw_channels = Column(JSONB)  # {"AF7": 0.5, "AF8": 0.3, "TP9": 0.2, "TP10": 0.4}
     
@@ -129,10 +134,14 @@ class EEGData(Base):
 class FaceDetectionEvent(Base):
     """Face detection events from MediaPipe Face Mesh"""
     __tablename__ = "face_detection_events"
-    
+
+    __table_args__ = (
+        Index("idx_face_events_session_time", "session_id", "timestamp"),
+    )
+
     id = Column(Integer, primary_key=True, autoincrement=True)
-    session_id = Column(UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=False, index=True)
-    timestamp = Column(TIMESTAMP(timezone=True), nullable=False, index=True)
+    session_id = Column(UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=False)
+    timestamp = Column(TIMESTAMP(timezone=True), nullable=False)
     
     # Eye metrics
     eye_aspect_ratio = Column(Float)  # EAR value
@@ -166,10 +175,14 @@ class FaceDetectionEvent(Base):
 class GameEvent(Base):
     """Game events from Babylon.js driving simulator"""
     __tablename__ = "game_events"
-    
+
+    __table_args__ = (
+        Index("idx_game_events_session_time", "session_id", "timestamp"),
+    )
+
     id = Column(Integer, primary_key=True, autoincrement=True)
-    session_id = Column(UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=False, index=True)
-    timestamp = Column(TIMESTAMP(timezone=True), nullable=False, index=True)
+    session_id = Column(UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=False)
+    timestamp = Column(TIMESTAMP(timezone=True), nullable=False)
     
     # Event details
     event_type = Column(String(100))  # lane_deviation, collision, brake, obstacle, etc.
@@ -197,10 +210,14 @@ class GameEvent(Base):
 class Alert(Base):
     """Fatigue alerts triggered during session"""
     __tablename__ = "alerts"
-    
+
+    __table_args__ = (
+        Index("idx_alerts_session_time", "session_id", "timestamp"),
+    )
+
     id = Column(Integer, primary_key=True, autoincrement=True)
-    session_id = Column(UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=False, index=True)
-    timestamp = Column(TIMESTAMP(timezone=True), nullable=False, index=True)
+    session_id = Column(UUID(as_uuid=True), ForeignKey("sessions.id"), nullable=False)
+    timestamp = Column(TIMESTAMP(timezone=True), nullable=False)
     
     # Alert details
     alert_level = Column(String(50))  # warning, critical

@@ -35,7 +35,9 @@ export interface GameConfig {
  * Graphics quality configuration
  */
 export interface GraphicsConfig {
-  shadowQuality: 'low' | 'medium' | 'high' | 'ultra'
+  shadowQuality: 'low' | 'medium' | 'high'
+  /** Hardware-scaling multiplier (≥1). >1 renders at a lower internal resolution for performance. */
+  renderScale: number
   postProcessing: boolean
   antialiasing: boolean
   hdr: boolean
@@ -164,11 +166,18 @@ export interface InputState {
 // ============================================
 
 /**
- * Graphics quality presets
+ * Graphics quality presets. Only three tiers are exposed to the player; the
+ * individual effect flags are managed automatically by each preset and are not
+ * user-editable anymore.
  */
-export const GRAPHICS_PRESETS: Record<string, GraphicsConfig> = {
+export type GraphicsQuality = 'low' | 'medium' | 'high'
+
+export const GRAPHICS_PRESETS: Record<GraphicsQuality, GraphicsConfig> = {
+  // Lightest possible: no real-time shadows, no post-processing, and the scene
+  // renders at a lower internal resolution. Aimed at weak hardware.
   low: {
     shadowQuality: 'low',
+    renderScale: 1.4,
     postProcessing: false,
     antialiasing: false,
     hdr: false,
@@ -180,8 +189,10 @@ export const GRAPHICS_PRESETS: Record<string, GraphicsConfig> = {
     fxaa: false,
     sharpen: false,
   },
+  // Balanced: standard blurred shadows plus light post-processing.
   medium: {
     shadowQuality: 'medium',
+    renderScale: 1.0,
     postProcessing: true,
     antialiasing: true,
     hdr: false,
@@ -193,8 +204,10 @@ export const GRAPHICS_PRESETS: Record<string, GraphicsConfig> = {
     fxaa: true,
     sharpen: false,
   },
+  // Best looking: high-res cascaded shadows and the full post-processing stack.
   high: {
     shadowQuality: 'high',
+    renderScale: 1.0,
     postProcessing: true,
     antialiasing: true,
     hdr: true,
@@ -206,22 +219,9 @@ export const GRAPHICS_PRESETS: Record<string, GraphicsConfig> = {
     fxaa: true,
     sharpen: true,
   },
-  ultra: {
-    shadowQuality: 'ultra',
-    postProcessing: false,
-    antialiasing: true,
-    hdr: false,
-    ssao: false,
-    bloom: false,
-    motionBlur: false,
-    chromaticAberration: false,
-    vignette: false,
-    fxaa: true,
-    sharpen: false,
-  },
 }
 
 /**
- * Default graphics configuration
+ * Default graphics configuration — best-looking tier by default.
  */
-export const DEFAULT_GRAPHICS_CONFIG: GraphicsConfig = GRAPHICS_PRESETS.ultra
+export const DEFAULT_GRAPHICS_CONFIG: GraphicsConfig = GRAPHICS_PRESETS.high

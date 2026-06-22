@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useEEGStore, type EEGMetrics } from '../stores/eegStore'
+import { WS_BASE_URL } from '../config/api'
 
 interface UseEEGWebSocketProps {
   sessionId: string
@@ -12,7 +13,7 @@ interface UseEEGWebSocketProps {
 
 export function useEEGWebSocket({
   sessionId,
-  backendUrl = 'ws://localhost:8000',
+  backendUrl = WS_BASE_URL,
   onMetricsReceived,
   onAlertReceived,
   onError,

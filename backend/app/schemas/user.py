@@ -31,6 +31,24 @@ class UserUpdate(BaseModel):
     profile_picture: Optional[str] = None
 
 
+class ChangePasswordRequest(BaseModel):
+    """Schema for changing password (email users only)"""
+    current_password: str = Field(..., min_length=1)
+    new_password: str = Field(..., min_length=8)
+
+
+class ForgotPasswordRequest(BaseModel):
+    """Schema for requesting a password reset code"""
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    """Schema for resetting a password using a 6-digit code"""
+    email: EmailStr
+    token: str = Field(..., min_length=6, max_length=6)
+    new_password: str = Field(..., min_length=8)
+
+
 class UserInDB(UserBase):
     """Schema for user in database (includes hashed password)"""
     id: UUID

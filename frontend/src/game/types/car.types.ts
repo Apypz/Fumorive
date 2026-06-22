@@ -97,9 +97,11 @@ export interface CameraPositionConfig {
 // ============================================
 
 /**
- * Available control modes
+ * Available control modes. The two 'wheel-*' modes are the external racing wheel
+ * (Kaiju XR1) read via the browser Gamepad API, split by its USB mode because
+ * D-Input and X-Input expose different axis/button layouts.
  */
-export type ControlMode = 'keyboard' | 'mouse'
+export type ControlMode = 'keyboard' | 'mouse' | 'wheel-dinput' | 'wheel-xinput'
 
 /**
  * Key bindings mapping

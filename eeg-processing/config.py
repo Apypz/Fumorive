@@ -8,14 +8,29 @@ Modify these values to adjust system behavior.
 """
 
 # ===========================
-# EEG ACQUISITION
+# EEG ACQUISITION (BrainFlow)
 # ===========================
 STREAM_TYPE = "EEG"
-STREAM_TIMEOUT = 20          # seconds to wait for LSL stream
+STREAM_TIMEOUT = 20          # seconds to wait for BLE discovery
 MAX_CHUNK_LENGTH = 12        # samples per chunk
 
 # Muse 2 channel labels
 CHANNEL_LABELS = ["TP9", "AF7", "AF8", "TP10", "AUX"]
+
+# ---------------------------
+# BrainFlow Board IDs
+# ---------------------------
+# Reference: https://brainflow.readthedocs.io/en/stable/SupportedBoards.html
+# Native BLE (Windows) ditangani langsung oleh BrainFlow, tanpa LSL/muselsl.
+MUSE_2_BOARD_ID = 22         # BoardIds.MUSE_2_BOARD
+MUSE_S_BOARD_ID = 21         # BoardIds.MUSE_S_BOARD (termasuk Muse S Athena)
+
+# Urutan board yang dicoba saat auto-deteksi headband.
+# Muse S didahulukan karena itu perangkat target utama (Athena).
+BOARD_ID_CANDIDATES = [MUSE_S_BOARD_ID, MUSE_2_BOARD_ID]
+
+# MAC address Muse (kosong = auto-discover via native BLE).
+MUSE_MAC_ADDRESS = ""
 
 # ===========================
 # PREPROCESSING
@@ -66,9 +81,10 @@ RECORDING_FORMAT = "csv"     # Options: csv, edf
 # ===========================
 # BACKEND SETTINGS (Fumorive Backend)
 # ===========================
-BACKEND_URL = "http://localhost:8000"       # Backend URL
+BACKEND_URL = "https://fumorive-production.up.railway.app"  # Production backend
 EEG_ENDPOINT = "/api/v1/eeg/stream"         # EEG streaming endpoint (HTTP POST)
-SAVE_TO_DB = False                          # Save to database by default
+EEG_INTERNAL_KEY = "fumorive-eeg-internal-dev-key"  # Must match backend setting
+SAVE_TO_DB = True                           # Save to database by default
 
 # WebSocket endpoint (untuk referensi - tidak digunakan oleh server.py)
 # Frontend connects to: ws://localhost:8000/api/v1/ws/session/{session_id}
@@ -76,7 +92,7 @@ SAVE_TO_DB = False                          # Save to database by default
 # Legacy (for standalone server)
 SERVER_HOST = "127.0.0.1"
 SERVER_PORT = 5000
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 # ===========================
 # LOGGING

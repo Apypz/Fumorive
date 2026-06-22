@@ -1,0 +1,166 @@
+.fusion-widget {
+  position: fixed;
+  z-index: 900;
+  width: 210px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  padding: 10px 12px;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  user-select: none;
+  transition: box-shadow 0.3s ease;
+}
+
+.fusion-widget:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.8);
+}
+
+/* Header */
+.fusion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.fusion-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.fusion-badge-fused {
+  font-size: 9px;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  padding: 1px 6px;
+  border-radius: 8px;
+  letter-spacing: 0.5px;
+}
+
+/* Main score display */
+.fusion-main {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  margin-bottom: 6px;
+}
+
+.fusion-icon {
+  font-size: 16px;
+  line-height: 1;
+  margin-right: 2px;
+}
+
+.fusion-score {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.fusion-unit {
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.fusion-level-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-left: auto;
+  text-transform: uppercase;
+}
+
+/* Main score bar */
+.fusion-bar-bg {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.fusion-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease, background 0.5s ease;
+}
+
+/* Breakdown section */
+.fusion-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.fusion-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fusion-src-label {
+  font-size: 9px;
+  font-weight: 600;
+  color: #94a3b8;
+  width: 44px;
+  flex-shrink: 0;
+}
+
+.fusion-mini-bar-bg {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.fusion-mini-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.fusion-src-val {
+  font-size: 9px;
+  font-weight: 600;
+  color: #cbd5e1;
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Confidence */
+.fusion-confidence {
+  font-size: 9px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  justify-content: flex-end;
+}
+
+.fusion-fused-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Level-specific pulse animation when fatigued */
+.fusion-fatigued {
+  animation: fusion-pulse 2s infinite;
+}
+
+@keyframes fusion-pulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4); }
+  50%       { box-shadow: 0 4px 28px rgba(239, 68, 68, 0.7); }
+}

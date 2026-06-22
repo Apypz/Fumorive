@@ -1,0 +1,98 @@
+{"time": "2026-02-18 15:44:52,337", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+C:\Users\User\Fumorive\backend\main.py:289: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+C:\Users\User\Fumorive\backend\main.py:320: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("shutdown")
+INFO:     Will watch for changes in these directories: ['C:\\Users\\User\\Fumorive\\backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [71936] using WatchFiles
+{"time": "2026-02-18 15:44:53,884", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+{"time": "2026-02-18 15:44:53,991", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+INFO:     Started server process [74196]
+INFO:     Waiting for application startup.
+{"time": "2026-02-18 15:44:54,052", "level": "INFO", "logger": "app.core.firebase", "message": "[OK] Firebase Admin SDK initialized successfully"}
+{"time": "2026-02-18 15:44:54,054", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Initialized with max_size=100, max_time=1.0s"}
+{"time": "2026-02-18 15:44:54,054", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Created global EEG data buffer"}
+{"time": "2026-02-18 15:44:54,054", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker started"}
+{"time": "2026-02-18 15:44:54,054", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Started EEG data buffer background worker"}
+{"time": "2026-02-18 15:44:54,054", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker running"}
+INFO:     Application startup complete.
+{"time": "2026-02-18 15:44:59,004", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 15:45:23,310", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 15:45:29,884", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+{"time": "2026-02-18 15:48:21,665", "level": "INFO", "logger": "watchfiles.main", "message": "285 changes detected"}
+WARNING:  WatchFiles detected changes in 'venv\Lib\site-packages\limits\strategies.py', 'venv\Lib\site-packages\limits\storage\redis_sentinel.py', 'venv\Lib\site-packages\limits\storage\mongodb.py', 'venv\Lib\site-packages\limits\limits.py', 'venv\Lib\site-packages\limits\aio\storage\memcached\__init__.py', 'venv\Lib\site-packages\wrapt\weakrefs.py', 'venv\Lib\site-packages\limits\aio\strategies.py', 'venv\Lib\site-packages\limits\storage\redis_cluster.py', 'venv\Lib\site-packages\slowapi\util.py', 'venv\Lib\site-packages\limits\storage\memory.py', 'venv\Lib\site-packages\limits\storage\memcached.py', 'venv\Lib\site-packages\wrapt\importer.py', 'venv\Lib\site-packages\slowapi\extension.py', 'venv\Lib\site-packages\limits\_storage_scheme.py', 'venv\Lib\site-packages\limits\aio\storage\memcached\memcachio.py', 'venv\Lib\site-packages\limits\util.py', 'venv\Lib\site-packages\slowapi\middleware.py', 'venv\Lib\site-packages\deprecated\classic.py', 'venv\Lib\site-packages\wrapt\proxies.py', 'venv\Lib\site-packages\wrapt\__init__.py', 'venv\Lib\site-packages\slowapi\__init__.py', 'venv\Lib\site-packages\limits\aio\storage\memcached\bridge.py', 'venv\Lib\site-packages\limits\errors.py', 'venv\Lib\site-packages\deprecated\__init__.py', 'venv\Lib\site-packages\deprecated\params.py', 'venv\Lib\site-packages\wrapt\__wrapt__.py', 'venv\Lib\site-packages\limits\aio\storage\redis\coredis.py', 'venv\Lib\site-packages\limits\typing.py', 'venv\Lib\site-packages\slowapi\wrappers.py', 'venv\Lib\site-packages\limits\aio\__init__.py', 'venv\Lib\site-packages\deprecated\sphinx.py', 'venv\Lib\site-packages\limits\_version.py', 'venv\Lib\site-packages\limits\aio\storage\redis\bridge.py', 'venv\Lib\site-packages\limits\aio\storage\__init__.py', 'venv\Lib\site-packages\limits\aio\storage\redis\redispy.py', 'venv\Lib\site-packages\wrapt\decorators.py', 'venv\Lib\site-packages\limits\aio\storage\base.py', 'venv\Lib\site-packages\limits\aio\storage\memory.py', 'venv\Lib\site-packages\limits\__init__.py', 'venv\Lib\site-packages\wrapt\arguments.py', 'venv\Lib\site-packages\slowapi\errors.py', 'venv\Lib\site-packages\limits\storage\__init__.py', 'venv\Lib\site-packages\limits\aio\storage\redis\__init__.py', 'venv\Lib\site-packages\limits\aio\storage\redis\valkey.py', 'venv\Lib\site-packages\limits\aio\storage\memcached\emcache.py', 'venv\Lib\site-packages\wrapt\patches.py', 'venv\Lib\site-packages\wrapt\wrappers.py', 'venv\Lib\site-packages\limits\aio\storage\mongodb.py', 'venv\Lib\site-packages\limits\storage\base.py', 'venv\Lib\site-packages\limits\storage\redis.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"time": "2026-02-18 15:49:50,576", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Stopped and flushed remaining data"}
+{"time": "2026-02-18 15:49:50,577", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Stopped EEG data buffer"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [74196]
+{"time": "2026-02-18 15:49:52,212", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+{"time": "2026-02-18 15:49:52,325", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+INFO:     Started server process [67300]
+INFO:     Waiting for application startup.
+{"time": "2026-02-18 15:49:52,384", "level": "INFO", "logger": "app.core.firebase", "message": "[OK] Firebase Admin SDK initialized successfully"}
+{"time": "2026-02-18 15:49:52,385", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Initialized with max_size=100, max_time=1.0s"}
+{"time": "2026-02-18 15:49:52,385", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Created global EEG data buffer"}
+{"time": "2026-02-18 15:49:52,385", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker started"}
+{"time": "2026-02-18 15:49:52,385", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Started EEG data buffer background worker"}
+{"time": "2026-02-18 15:49:52,385", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker running"}
+INFO:     Application startup complete.
+{"time": "2026-02-18 15:55:02,941", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+WARNING:  WatchFiles detected changes in 'load_test.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"time": "2026-02-18 15:56:13,047", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Stopped and flushed remaining data"}
+{"time": "2026-02-18 15:56:13,048", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Stopped EEG data buffer"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [67300]
+{"time": "2026-02-18 15:56:14,658", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+{"time": "2026-02-18 15:56:14,787", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+INFO:     Started server process [73368]
+INFO:     Waiting for application startup.
+{"time": "2026-02-18 15:56:14,841", "level": "INFO", "logger": "app.core.firebase", "message": "[OK] Firebase Admin SDK initialized successfully"}
+{"time": "2026-02-18 15:56:14,841", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Initialized with max_size=100, max_time=1.0s"}
+{"time": "2026-02-18 15:56:14,841", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Created global EEG data buffer"}
+{"time": "2026-02-18 15:56:14,842", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker started"}
+{"time": "2026-02-18 15:56:14,842", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Started EEG data buffer background worker"}
+{"time": "2026-02-18 15:56:14,842", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker running"}
+INFO:     Application startup complete.
+{"time": "2026-02-18 15:58:01,517", "level": "INFO", "logger": "watchfiles.main", "message": "1 change detected"}
+WARNING:  WatchFiles detected changes in 'app\api\routes\auth.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"time": "2026-02-18 15:58:04,059", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Stopped and flushed remaining data"}
+{"time": "2026-02-18 15:58:04,059", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Stopped EEG data buffer"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [73368]
+{"time": "2026-02-18 15:58:06,081", "level": "INFO", "logger": "watchfiles.main", "message": "5 changes detected"}
+{"time": "2026-02-18 15:58:06,521", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+{"time": "2026-02-18 15:58:06,654", "level": "INFO", "logger": "fumorive", "message": "Prometheus metrics enabled", "endpoint": "/metrics"}
+INFO:     Started server process [70976]
+INFO:     Waiting for application startup.
+{"time": "2026-02-18 15:58:06,725", "level": "INFO", "logger": "app.core.firebase", "message": "[OK] Firebase Admin SDK initialized successfully"}
+{"time": "2026-02-18 15:58:06,725", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Initialized with max_size=100, max_time=1.0s"}
+{"time": "2026-02-18 15:58:06,725", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Created global EEG data buffer"}
+{"time": "2026-02-18 15:58:06,725", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker started"}
+{"time": "2026-02-18 15:58:06,726", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Started EEG data buffer background worker"}
+{"time": "2026-02-18 15:58:06,726", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Background worker running"}
+INFO:     Application startup complete.
+{"time": "2026-02-18 15:58:40,420", "level": "INFO", "logger": "watchfiles.main", "message": "2 changes detected"}
+WARNING:  WatchFiles detected changes in 'app\api\routes\eeg.py', 'app\api\routes\alerts.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+{"time": "2026-02-18 16:00:59,731", "level": "INFO", "logger": "app.core.data_buffer", "message": "[EEG_Buffer] Stopped and flushed remaining data"}
+{"time": "2026-02-18 16:00:59,731", "level": "INFO", "logger": "app.core.eeg_relay", "message": "Stopped EEG data buffer"}
+INFO:     Application shutdown complete.
+INFO:     Finished server process [70976]

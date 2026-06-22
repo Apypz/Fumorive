@@ -1,7 +1,8 @@
 import { useGameStore } from '../stores/gameStore'
 
 export function DriftMeter() {
-  const { slipAngle, currentSpeed } = useGameStore()
+  const slipAngle = useGameStore((s) => s.slipAngle)
+  const currentSpeed = useGameStore((s) => s.currentSpeed)
 
   // Calculate slip intensity (0-100%)
   const absSlipAngle = Math.abs(slipAngle)

@@ -11,10 +11,17 @@ import { DriftMeter } from '../DriftMeter'
 import { MapSelection } from '../MapSelection'
 import { CameraFatigueMonitor } from '../CameraFatigueMonitor'
 import { EEGMonitoringWidget } from '../EEGMonitoringWidget'
+import { AlertNotification } from '../AlertNotification'
+import { FusionScoreDisplay } from '../FusionScoreDisplay'
 import { ViolationHUD } from '../ViolationHUD'
 import { WrongWayWarning } from '../WrongWayWarning'
+import { OffRoadWarning } from '../OffRoadWarning'
+import { ViolationToast } from '../ViolationToast'
+import { TrafficLightHUD } from '../TrafficLightHUD'
+import { WheelDebugOverlay } from '../WheelDebugOverlay'
 import { GearHUD } from '../GearHUD'
 import { WaypointHUD } from '../WaypointHUD'
+import { TutorialPopup } from '../TutorialPopup'
 import { useGameStore } from '../../stores/gameStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useWaypointStore } from '../../stores/waypointStore'
@@ -23,15 +30,17 @@ import { Copy, Check } from 'lucide-react'
 import '../../App.css'
 
 export default function Session() {
-  const { gameState, setGameState } = useGameStore()
+  const { gameState, setGameState, selectedMap, currentLevel, mapSeed, startNgawiRun, resetLevels } = useGameStore()
   const { sessionId, initializeSession } = useSessionStore()
   const [showSettings, setShowSettings] = useState(false)
   const [showMapSelection, setShowMapSelection] = useState(true)
   const [gameStarted, setGameStarted] = useState(false)
   const [cameraEnabled, setCameraEnabled] = useState(false)
+  const [cameraFatigueScore, setCameraFatigueScore] = useState(0)
   const [eegEnabled, setEegEnabled] = useState(true)
   const [eegCognitiveState, setEegCognitiveState] = useState<'alert' | 'drowsy' | 'fatigued' | undefined>()
   const [sessionCopied, setSessionCopied] = useState(false)
+  const [showTutorial, setShowTutorial] = useState(false)
 
   // Initialize session on mount
   useEffect(() => {
@@ -39,8 +48,13 @@ export default function Session() {
   }, [initializeSession])
 
   const handleStartGame = () => {
+    // Ngawi City: start a fresh 3-level run (level 1 + new random seed)
+    if (selectedMap === 'ngawi-city') {
+      startNgawiRun()
+    }
     setShowMapSelection(false)
     setGameStarted(true)
+    setShowTutorial(true)
     // Reset pelanggaran setiap mulai sesi baru
     useViolationStore.getState().resetViolations()
   }
@@ -51,6 +65,7 @@ export default function Session() {
     setGameState('loading')
     useWaypointStore.getState().resetWaypoints()
     useViolationStore.getState().resetViolations()
+    resetLevels()
   }
 
   return (
@@ -112,13 +127,23 @@ export default function Session() {
         </div>
       )}
 
+      {/* Tutorial Popup - shown when game first starts */}
+      {showTutorial && gameStarted && (
+        <TutorialPopup onClose={() => setShowTutorial(false)} />
+      )}
+
+      {/* Global Alert Notifications - always active when game started */}
+      {gameStarted && <AlertNotification />}
+
       {/* Map Selection Screen - shown before game starts */}
       {showMapSelection && (
         <MapSelection onStartGame={handleStartGame} />
       )}
 
-      {/* Game Canvas - only render when game started */}
-      {gameStarted && <GameCanvas />}
+      {/* Game Canvas - only render when game started.
+          The key forces a clean remount (dispose + re-init) when the Ngawi
+          level/seed changes, loading the next level's random map in place. */}
+      {gameStarted && <GameCanvas key={`${selectedMap}-${currentLevel}-${mapSeed}`} />}
       
       {/* Loading Screen - only show after map selection, during game load */}
       {gameStarted && <LoadingScreen />}
@@ -179,6 +204,19 @@ export default function Session() {
           {/* Wrong-way warning overlay */}
           <WrongWayWarning />
 
+          {/* Off-road (grass) warning overlay */}
+          <OffRoadWarning />
+
+          {/* Transient toast for instant violations (collision, etc.) */}
+          <ViolationToast />
+
+          {/* Traffic-light status indicator for the player's approach */}
+          <TrafficLightHUD />
+
+          {/* Racing-wheel (Kaiju XR1) live diagnostics + steering-axis calibration.
+              Auto-hides unless a gamepad/wheel is connected. */}
+          <WheelDebugOverlay />
+
           {/* Waypoint/Checkpoint navigation HUD */}
           <WaypointHUD />
 
@@ -186,6 +224,7 @@ export default function Session() {
           <CameraFatigueMonitor 
             isEnabled={cameraEnabled}
             onToggle={() => setCameraEnabled(!cameraEnabled)}
+            onFatigueScoreChange={setCameraFatigueScore}
           />
 
           {/* EEG Monitoring Widget - top right corner */}
@@ -196,6 +235,9 @@ export default function Session() {
               onStateChange={setEegCognitiveState}
             />
           )}
+
+          {/* Multimodal Fusion Score — bottom left */}
+          <FusionScoreDisplay cameraFatigueScore={cameraFatigueScore} />
         </>
       )}
 
@@ -204,6 +246,7 @@ export default function Session() {
         <CameraFatigueMonitor 
           isEnabled={cameraEnabled}
           onToggle={() => setCameraEnabled(!cameraEnabled)}
+          onFatigueScoreChange={setCameraFatigueScore}
         />
       )}
     </div>

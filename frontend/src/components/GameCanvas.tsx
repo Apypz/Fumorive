@@ -12,6 +12,8 @@ export function GameCanvas() {
   const {
     graphicsConfig,
     selectedMap,
+    mapSeed,
+    currentLevel,
     setLoading,
     setFps,
     setGameState,
@@ -26,6 +28,8 @@ export function GameCanvas() {
   } = useGameStore()
 
   const setIsWrongWay = useGameStore((s) => s.setIsWrongWay)
+  const setIsOffRoad = useGameStore((s) => s.setIsOffRoad)
+  const setTrafficLightState = useGameStore((s) => s.setTrafficLightState)
   const setCurrentGear = useGameStore((s) => s.setCurrentGear)
   const setTransmissionMode = useGameStore((s) => s.setTransmissionMode)
 
@@ -34,6 +38,10 @@ export function GameCanvas() {
     if (!canvasRef.current) return
 
     setLoading(true)
+    // Clear any stale warnings carried over from a previous scene/level.
+    useGameStore.getState().setIsWrongWay(false)
+    useGameStore.getState().setIsOffRoad(false)
+    useGameStore.getState().setTrafficLightState(null)
 
     try {
       // Create engine
@@ -48,8 +56,8 @@ export function GameCanvas() {
       // Create scene
       engine.createScene()
 
-      // Create and initialize demo scene with selected map
-      const demoScene = new DemoScene(graphicsConfig, selectedMap)
+      // Create and initialize demo scene with selected map (+ seed/level for Ngawi)
+      const demoScene = new DemoScene(graphicsConfig, selectedMap, mapSeed, currentLevel)
       sceneRef.current = demoScene
 
       // Set camera mode change callback to update UI
@@ -79,32 +87,87 @@ export function GameCanvas() {
 
       // Start render loop
       let wrongWayViolationCooldown = 0
+      let offRoadViolationCooldown = 0
+      let redLightCooldown = 0
+      let prevWrongWay = false
+      let prevOffRoad = false
+      let prevLightState: 'red' | 'yellow' | 'green' | null = null
+      let fpsAccumulator = 0
+      let lastFpsValue = 0
+      let hudAccumulator = 0
+      const HUD_INTERVAL = 1 / 20 // throttle HUD store writes to ~20Hz
       engine.start((deltaTime) => {
         demoScene.update(deltaTime)
 
-        // Update steering angle for HUD (every frame for smooth animation)
-        setSteeringAngle(demoScene.getSteeringAngle())
-        
-        // Update speed and drift status for speedometer
-        setCurrentSpeed(demoScene.getSpeedKmh())
-        setIsDrifting(demoScene.getIsDrifting())
-        setSlipAngle(demoScene.getSlipAngle())
+        // Throttle HUD store writes (~20Hz). Each write drives React re-renders,
+        // and 60Hz is far more than the gauges/needles need — the CSS transitions
+        // on them keep motion smooth even at 20Hz. Gameplay logic above/below
+        // (physics, collision, checkpoint detection) still runs every frame.
+        hudAccumulator += deltaTime
+        const flushHud = hudAccumulator >= HUD_INTERVAL
+        if (flushHud) hudAccumulator = 0
 
-        // Update gear/transmission info
-        setCurrentGear(demoScene.getCurrentGear())
-        setTransmissionMode(demoScene.getTransmissionMode())
+        if (flushHud) {
+          setSteeringAngle(demoScene.getSteeringAngle())
+          setCurrentSpeed(demoScene.getSpeedKmh())
+          setIsDrifting(demoScene.getIsDrifting())
+          setSlipAngle(demoScene.getSlipAngle())
+          setCurrentGear(demoScene.getCurrentGear())
+          setTransmissionMode(demoScene.getTransmissionMode())
+        }
 
         // Check wrong-way driving (throttled violation trigger every 5 seconds)
         wrongWayViolationCooldown = Math.max(0, wrongWayViolationCooldown - deltaTime)
         const wrongWayNow = demoScene.isWrongWay()
-        setIsWrongWay(wrongWayNow)
+        // Only write to the store on transition, not 60x/sec.
+        if (wrongWayNow !== prevWrongWay) {
+          prevWrongWay = wrongWayNow
+          setIsWrongWay(wrongWayNow)
+        }
         if (wrongWayNow && wrongWayViolationCooldown <= 0) {
           useViolationStore.getState().addViolation('wrong-way')
           wrongWayViolationCooldown = 5 // 5 second cooldown between wrong-way violations
         }
 
-        // Update waypoint store for HUD
-        const wpData = demoScene.getWaypointSessionData()
+        // Off-road (grass) — Ngawi City only.
+        const offRoadNow = demoScene.isPlayerOffRoad()
+        if (offRoadNow !== prevOffRoad) {
+          prevOffRoad = offRoadNow
+          setIsOffRoad(offRoadNow)
+        }
+        offRoadViolationCooldown = Math.max(0, offRoadViolationCooldown - deltaTime)
+        if (offRoadNow && demoScene.getSpeedKmh() > 5 && offRoadViolationCooldown <= 0) {
+          useViolationStore.getState().addViolation('off-road')
+          offRoadViolationCooldown = 3
+        }
+
+        // Running a red light — Ngawi City only. checkPlayerRedLight is stateful
+        // (tracks stop-line crossings), so it must run every frame, not be
+        // short-circuited away during the cooldown.
+        const ranRed = demoScene.checkPlayerRedLight()
+        redLightCooldown = Math.max(0, redLightCooldown - deltaTime)
+        if (ranRed && redLightCooldown <= 0 && demoScene.getSpeedKmh() > 5) {
+          useViolationStore.getState().addViolation('red-light')
+          redLightCooldown = 4
+        }
+
+        // Hitting a pedestrian — Ngawi City only. Severe penalty, one per person
+        // run over (the system applies a per-pedestrian cooldown internally).
+        const pedHits = demoScene.getPedestrianHits()
+        for (let h = 0; h < pedHits; h++) {
+          useViolationStore.getState().addViolation('pedestrian')
+        }
+
+        // Traffic-light HUD: state of the light governing the player's approach.
+        const lightState = demoScene.getApproachingLightState()
+        if (lightState !== prevLightState) {
+          prevLightState = lightState
+          setTrafficLightState(lightState)
+        }
+
+        // Update waypoint store for HUD (throttled — these are display-only;
+        // the reach/complete event detection below still runs every frame).
+        const wpData = flushHud ? demoScene.getWaypointSessionData() : null
         if (wpData) {
           useWaypointStore.getState().setSessionData(wpData)
           const dist = demoScene.getDistanceToActiveWaypoint()
@@ -137,9 +200,15 @@ export function GameCanvas() {
           }
         }
 
-        // Update FPS counter every 0.5 seconds
-        if (Math.random() < 0.05) {
-          setFps(Math.round(engine.getFPS()))
+        // Update FPS counter ~once per second, and only when it actually changes.
+        fpsAccumulator += deltaTime
+        if (fpsAccumulator >= 1) {
+          fpsAccumulator = 0
+          const fpsNow = Math.round(engine.getFPS())
+          if (fpsNow !== lastFpsValue) {
+            lastFpsValue = fpsNow
+            setFps(fpsNow)
+          }
         }
       })
 
@@ -154,7 +223,7 @@ export function GameCanvas() {
       console.error('[GameCanvas] Failed to initialize game:', error)
       setLoading(false)
     }
-  }, [graphicsConfig, selectedMap, setLoading, setFps, setGameState, setCameraMode, setControlMode, setSteeringAngle, setCurrentSpeed, setIsDrifting, setSlipAngle, setEngineRunning])
+  }, [graphicsConfig, selectedMap, mapSeed, currentLevel, setLoading, setFps, setGameState, setCameraMode, setControlMode, setSteeringAngle, setCurrentSpeed, setIsDrifting, setSlipAngle, setEngineRunning])
 
   // Handle inspector toggle
   useEffect(() => {

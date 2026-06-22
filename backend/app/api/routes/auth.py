@@ -4,27 +4,37 @@ Login, Register, Token Refresh endpoints
 Week 2, Wednesday - Updated with Redis Caching
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
+import random
+import string
+import logging
+
+logger = logging.getLogger("fumorive")
 
 from app.db.database import get_db
 from app.db.models import User
 from app.schemas.auth import Token, LoginRequest, RegisterRequest, RefreshTokenRequest, GoogleAuthRequest
-from app.schemas.user import UserResponse
+from app.schemas.user import UserResponse, ForgotPasswordRequest, ResetPasswordRequest
+from app.core.redis import get_redis
 from app.core.password import hash_password, verify_password
 from app.core.security import create_access_token, create_refresh_token, verify_token
 from app.core.config import settings
 from app.core.cache import cache_user_session, blacklist_token, blacklist_refresh_token, invalidate_user_cache
 from app.core.firebase import verify_firebase_token, is_firebase_available
 from app.api.dependencies import get_current_user, oauth2_scheme
+from app.core.rate_limiter import limiter, LIMIT_AUTH, LIMIT_READ
+from app.core.email_service import send_password_reset_email
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit(LIMIT_AUTH)
 async def register(
+    request: Request,
     user_data: RegisterRequest,
     db: Session = Depends(get_db)
 ):
@@ -69,7 +79,9 @@ async def register(
 
 
 @router.post("/login", response_model=Token)
+@limiter.limit(LIMIT_AUTH)
 async def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
@@ -128,7 +140,9 @@ async def login(
 
 
 @router.post("/login/json", response_model=Token)
+@limiter.limit(LIMIT_AUTH)
 async def login_json(
+    request: Request,
     login_data: LoginRequest,
     db: Session = Depends(get_db)
 ):
@@ -184,7 +198,9 @@ async def login_json(
 
 
 @router.post("/refresh", response_model=Token)
+@limiter.limit(LIMIT_AUTH)
 async def refresh_token_endpoint(
+    request: Request,
     refresh_data: RefreshTokenRequest,
     db: Session = Depends(get_db)
 ):
@@ -247,7 +263,9 @@ async def refresh_token_endpoint(
 
 
 @router.post("/google", response_model=Token)
+@limiter.limit(LIMIT_AUTH)
 async def google_login(
+    request: Request,
     auth_data: GoogleAuthRequest,
     db: Session = Depends(get_db)
 ):
@@ -386,7 +404,9 @@ async def google_login(
 
 
 @router.post("/logout")
+@limiter.limit(LIMIT_READ)
 async def logout(
+    request: Request,
     current_user: User = Depends(get_current_user),
     token: str = Depends(oauth2_scheme)
 ):
@@ -408,3 +428,79 @@ async def logout(
         "message": "Successfully logged out",
         "detail": "Token has been revoked and cache cleared"
     }
+
+
+@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+@limiter.limit(LIMIT_AUTH)
+async def forgot_password(
+    request: Request,
+    data: ForgotPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Request a 6-digit password reset code.
+    For demo: the code is returned in the response (production: sent via email).
+    Only works for email/password accounts (not OAuth).
+    """
+    user = db.query(User).filter(User.email == data.email).first()
+
+    if user and not user.oauth_provider:
+        # Generate 6-digit numeric code
+        token = ''.join(random.choices(string.digits, k=6))
+
+        # Store in Redis with 15-minute TTL
+        r = get_redis()
+        if r:
+            r.setex(f"pwd_reset:{data.email}", timedelta(minutes=15), token)
+
+        # Send email with OTP code
+        email_sent = send_password_reset_email(data.email, token)
+        if not email_sent:
+            logger.warning(f"Could not send reset email to {data.email} — SMTP may not be configured.")
+
+    # Always return 200 (don't reveal if email is registered)
+    return {"message": "Jika email terdaftar, kode reset akan dikirimkan ke inbox kamu."}
+
+
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
+@limiter.limit(LIMIT_AUTH)
+async def reset_password(
+    request: Request,
+    data: ResetPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Reset password using the 6-digit code from /forgot-password.
+    Only works for email/password accounts (not OAuth).
+    """
+    r = get_redis()
+    if not r:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Layanan reset password tidak tersedia saat ini."
+        )
+
+    stored = r.get(f"pwd_reset:{data.email}")
+    if not stored or stored.decode() != data.token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Kode reset tidak valid atau sudah kadaluarsa (15 menit)."
+        )
+
+    user = db.query(User).filter(User.email == data.email).first()
+    if not user or user.oauth_provider:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Akun tidak ditemukan atau menggunakan OAuth."
+        )
+
+    user.hashed_password = hash_password(data.new_password)
+    db.commit()
+
+    # Delete the reset token
+    r.delete(f"pwd_reset:{data.email}")
+
+    # Invalidate any cached user session
+    invalidate_user_cache(user.id)
+
+    return {"message": "Password berhasil direset. Silakan login dengan password baru."}
