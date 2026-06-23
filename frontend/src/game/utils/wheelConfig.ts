@@ -1,16 +1,13 @@
 /**
  * wheelConfig
  * ===========
- * Per-mode calibration for the racing wheel (Kaiju XR1). The wheel can run in
- * two USB modes that expose very different Gamepad-API layouts:
- *   - 'xinput' → pedals on the analog triggers (buttons), steering on a stick axis
- *   - 'dinput' → pedals on separate axes, steering on an axis
- * Each mode keeps its own steering axis + pedal sources so both can be calibrated
- * independently (via the wheel overlay) and switched with the C key. Persisted to
- * localStorage.
+ * Calibration for the racing wheel (Kaiju XR1) in X-Input mode. The steering
+ * axis and the gas/brake pedal sources are calibrated via the wheel overlay and
+ * persisted to localStorage. Defaults follow the standard X-Input layout: pedals
+ * on the analog triggers (gas = button 7 / RT, brake = button 6 / LT), steering
+ * on axis 0.
  */
 
-export type WheelMode = 'dinput' | 'xinput'
 export type SourceType = 'axis' | 'button'
 
 export interface PedalSource {
@@ -27,50 +24,32 @@ export interface WheelMapping {
   brake: PedalSource
 }
 
-const STORAGE_KEY = 'fumorive_wheel_mappings_v2'
+const STORAGE_KEY = 'fumorive_wheel_mapping_v3'
 
-const DEFAULTS: Record<WheelMode, WheelMapping> = {
-  xinput: {
-    gamepadIndex: null,
-    steerAxis: 0,
-    steerInvert: false,
-    gas: { type: 'button', index: 7, invert: false }, // RT
-    brake: { type: 'button', index: 6, invert: false }, // LT
-  },
-  dinput: {
-    gamepadIndex: null,
-    steerAxis: 0,
-    steerInvert: false,
-    // Kaiju XR1 in D-Input: pedals are on separate axes (clutch=ax6 is unused).
-    gas: { type: 'axis', index: 2, invert: false },
-    brake: { type: 'axis', index: 5, invert: false },
-  },
+const DEFAULT: WheelMapping = {
+  gamepadIndex: null,
+  steerAxis: 0,
+  steerInvert: false,
+  gas: { type: 'button', index: 7, invert: false }, // RT
+  brake: { type: 'button', index: 6, invert: false }, // LT
 }
 
 function clone(m: WheelMapping): WheelMapping {
   return { ...m, gas: { ...m.gas }, brake: { ...m.brake } }
 }
 
-const mappings: Record<WheelMode, WheelMapping> = {
-  xinput: clone(DEFAULTS.xinput),
-  dinput: clone(DEFAULTS.dinput),
-}
+let mapping: WheelMapping = clone(DEFAULT)
 
-// Load persisted mappings, merging over the defaults so new fields keep a value.
+// Load persisted mapping, merging over the defaults so new fields keep a value.
 try {
   const raw = localStorage.getItem(STORAGE_KEY)
   if (raw) {
-    const parsed = JSON.parse(raw) as Partial<Record<WheelMode, Partial<WheelMapping>>>
-    for (const mode of ['xinput', 'dinput'] as WheelMode[]) {
-      const p = parsed[mode]
-      if (p) {
-        mappings[mode] = {
-          ...mappings[mode],
-          ...p,
-          gas: { ...mappings[mode].gas, ...(p.gas ?? {}) },
-          brake: { ...mappings[mode].brake, ...(p.brake ?? {}) },
-        }
-      }
+    const p = JSON.parse(raw) as Partial<WheelMapping>
+    mapping = {
+      ...mapping,
+      ...p,
+      gas: { ...mapping.gas, ...(p.gas ?? {}) },
+      brake: { ...mapping.brake, ...(p.brake ?? {}) },
     }
   }
 } catch {
@@ -79,28 +58,27 @@ try {
 
 function persist(): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mappings))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mapping))
   } catch {
     /* ignore */
   }
 }
 
-export function getWheelMapping(mode: WheelMode): WheelMapping {
-  return mappings[mode]
+export function getWheelMapping(): WheelMapping {
+  return mapping
 }
 
-export function setWheelMapping(mode: WheelMode, patch: Partial<WheelMapping>): void {
-  mappings[mode] = {
-    ...mappings[mode],
+export function setWheelMapping(patch: Partial<WheelMapping>): void {
+  mapping = {
+    ...mapping,
     ...patch,
-    gas: { ...mappings[mode].gas, ...(patch.gas ?? {}) },
-    brake: { ...mappings[mode].brake, ...(patch.brake ?? {}) },
+    gas: { ...mapping.gas, ...(patch.gas ?? {}) },
+    brake: { ...mapping.brake, ...(patch.brake ?? {}) },
   }
   persist()
 }
 
-/** Restore a mode's mapping to the built-in defaults. */
-export function resetWheelMapping(mode: WheelMode): void {
-  mappings[mode] = clone(DEFAULTS[mode])
+export function resetWheelMapping(): void {
+  mapping = clone(DEFAULT)
   persist()
 }

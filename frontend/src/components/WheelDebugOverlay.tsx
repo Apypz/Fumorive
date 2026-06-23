@@ -1,21 +1,18 @@
 /**
  * WheelDebugOverlay
  * =================
- * Live diagnostics + per-mode calibration for the racing wheel (Kaiju XR1).
+ * Live diagnostics + calibration for the racing wheel (Kaiju XR1, X-Input).
  * Renders while any gamepad is connected. It scans every connected gamepad and,
  * when you move a control, reports exactly which device + axis/button changed —
- * then lets you assign that input to steering / gas / brake for the selected
- * wheel mode (D-Input or X-Input). Saved per mode to localStorage and picked up
- * by the car controller live.
+ * then lets you assign that input to steering / gas / brake. Saved to
+ * localStorage and picked up by the car controller live.
  */
 
 import { useEffect, useRef, useState } from 'react'
-import { useGameStore } from '../stores/gameStore'
 import {
   getWheelMapping,
   setWheelMapping,
   resetWheelMapping,
-  type WheelMode,
   type PedalSource,
 } from '../game/utils/wheelConfig'
 
@@ -40,23 +37,13 @@ function srcLabel(s: PedalSource): string {
 }
 
 export function WheelDebugOverlay() {
-  const controlMode = useGameStore((s) => s.controlMode)
   const [pads, setPads] = useState<PadSnapshot[]>([])
   const [selected, setSelected] = useState(0)
   const [moved, setMoved] = useState<Moved | null>(null)
   const [collapsed, setCollapsed] = useState(false)
-  const [calibMode, setCalibMode] = useState<WheelMode>(
-    controlMode === 'wheel-xinput' ? 'xinput' : 'dinput'
-  )
 
   const rafRef = useRef(0)
   const prevRef = useRef<Map<number, { axes: number[]; buttons: number[] }>>(new Map())
-
-  // Follow the active game mode when the player switches wheel modes with C.
-  useEffect(() => {
-    if (controlMode === 'wheel-dinput') setCalibMode('dinput')
-    else if (controlMode === 'wheel-xinput') setCalibMode('xinput')
-  }, [controlMode])
 
   useEffect(() => {
     const poll = () => {
@@ -107,34 +94,34 @@ export function WheelDebugOverlay() {
     )
   }
 
-  const map = getWheelMapping(calibMode)
+  const map = getWheelMapping()
   const pad = pads.find((p) => p.index === selected) ?? pads[0]
 
   const assignFromMoved = (role: 'steer' | 'gas' | 'brake') => {
     if (!moved) return
     if (role === 'steer') {
       if (moved.kind !== 'AX') return
-      setWheelMapping(calibMode, { gamepadIndex: moved.gp, steerAxis: moved.idx })
+      setWheelMapping({ gamepadIndex: moved.gp, steerAxis: moved.idx })
       return
     }
-    const cur = getWheelMapping(calibMode)
+    const cur = getWheelMapping()
     const src: PedalSource = {
       type: moved.kind === 'AX' ? 'axis' : 'button',
       index: moved.idx,
       invert: (role === 'gas' ? cur.gas : cur.brake).invert,
     }
-    if (role === 'gas') setWheelMapping(calibMode, { gamepadIndex: moved.gp, gas: src })
-    else setWheelMapping(calibMode, { gamepadIndex: moved.gp, brake: src })
+    if (role === 'gas') setWheelMapping({ gamepadIndex: moved.gp, gas: src })
+    else setWheelMapping({ gamepadIndex: moved.gp, brake: src })
   }
 
   const toggleSteerInvert = () =>
-    setWheelMapping(calibMode, { steerInvert: !getWheelMapping(calibMode).steerInvert })
+    setWheelMapping({ steerInvert: !getWheelMapping().steerInvert })
   const togglePedalInvert = (role: 'gas' | 'brake') => {
-    const cur = getWheelMapping(calibMode)
+    const cur = getWheelMapping()
     const src = role === 'gas' ? cur.gas : cur.brake
     const next: PedalSource = { ...src, invert: !src.invert }
-    if (role === 'gas') setWheelMapping(calibMode, { gas: next })
-    else setWheelMapping(calibMode, { brake: next })
+    if (role === 'gas') setWheelMapping({ gas: next })
+    else setWheelMapping({ brake: next })
   }
 
   return (
@@ -144,19 +131,6 @@ export function WheelDebugOverlay() {
         <button style={styles.collapseBtn} onClick={() => setCollapsed(true)} title="Sembunyikan">
           ✕
         </button>
-      </div>
-
-      {/* Which mode are we calibrating */}
-      <div style={styles.modeRow}>
-        {(['dinput', 'xinput'] as WheelMode[]).map((m) => (
-          <button
-            key={m}
-            style={{ ...styles.modeBtn, ...(m === calibMode ? styles.modeBtnActive : {}) }}
-            onClick={() => setCalibMode(m)}
-          >
-            {m === 'dinput' ? 'D-INPUT' : 'X-INPUT'}
-          </button>
-        ))}
       </div>
 
       {/* Live "what moved" + assign */}
@@ -190,12 +164,12 @@ export function WheelDebugOverlay() {
       </div>
 
       {/* Current mapping summary for the selected mode */}
-      <div style={styles.sectionLabel}>MAPPING {calibMode === 'dinput' ? 'D-INPUT' : 'X-INPUT'}</div>
+      <div style={styles.sectionLabel}>MAPPING (X-INPUT)</div>
       <MapRow label="Setir" value={`GP${map.gamepadIndex ?? 'auto'} · AX${map.steerAxis}`} inverted={map.steerInvert} onInvert={toggleSteerInvert} />
       <MapRow label="Gas" value={srcLabel(map.gas)} inverted={map.gas.invert} onInvert={() => togglePedalInvert('gas')} />
       <MapRow label="Rem" value={srcLabel(map.brake)} inverted={map.brake.invert} onInvert={() => togglePedalInvert('brake')} />
-      <button style={styles.resetBtn} onClick={() => resetWheelMapping(calibMode)}>
-        ↺ Reset mode {calibMode === 'dinput' ? 'D-INPUT' : 'X-INPUT'} ke default
+      <button style={styles.resetBtn} onClick={() => resetWheelMapping()}>
+        ↺ Reset ke default X-Input
       </button>
 
       {/* Device list */}
@@ -218,7 +192,7 @@ export function WheelDebugOverlay() {
       </div>
       <button
         style={{ ...styles.useDeviceBtn, ...(map.gamepadIndex === pad.index ? styles.useDeviceBtnActive : {}) }}
-        onClick={() => setWheelMapping(calibMode, { gamepadIndex: pad.index })}
+        onClick={() => setWheelMapping({ gamepadIndex: pad.index })}
       >
         {map.gamepadIndex === pad.index ? '● Device kontrol mode ini' : 'Pakai device ini'}
       </button>
@@ -249,7 +223,7 @@ export function WheelDebugOverlay() {
             <span style={styles.axisVal}>{v.toFixed(2)}</span>
             <button
               style={styles.setBtn}
-              onClick={() => setWheelMapping(calibMode, { gamepadIndex: pad.index, steerAxis: i })}
+              onClick={() => setWheelMapping({ gamepadIndex: pad.index, steerAxis: i })}
             >
               Setir
             </button>

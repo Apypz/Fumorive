@@ -8,8 +8,8 @@ export function SteeringWheelHUD() {
   if (cameraMode === 'first-person') return null
 
   // Convert steering input (-1 to 1) to rotation degrees
-  // Max rotation is about 120 degrees each way for realistic steering
-  const rotationDegrees = steeringAngle * 120
+  // Max rotation is 540 degrees each way (realistic ~1.5-turn lock-to-lock feel)
+  const rotationDegrees = steeringAngle * 540
 
   return (
     <div style={styles.container}>

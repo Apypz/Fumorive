@@ -54,10 +54,8 @@ export function ControlsHUD() {
         <div style={styles.modeValue}>
           {controlMode === 'keyboard' ? (
             <span style={styles.keyboardMode}>KEYBOARD</span>
-          ) : controlMode === 'wheel-dinput' ? (
-            <span style={styles.wheelMode}>KAIJU · D-INPUT</span>
-          ) : controlMode === 'wheel-xinput' ? (
-            <span style={styles.wheelMode}>KAIJU · X-INPUT</span>
+          ) : controlMode === 'wheel' ? (
+            <span style={styles.wheelMode}>KAIJU XR1</span>
           ) : (
             <span style={styles.mouseMode}>MOUSE</span>
           )}
@@ -119,7 +117,7 @@ export function ControlsHUD() {
                 <span style={styles.controlDesc}>Belok Kanan</span>
               </div>
             </>
-          ) : controlMode === 'wheel-dinput' || controlMode === 'wheel-xinput' ? (
+          ) : controlMode === 'wheel' ? (
             <>
               <div style={styles.controlRow}>
                 <span style={styles.wheelBadge}>Setir</span>
@@ -202,12 +200,12 @@ export function ControlsHUD() {
       )}
 
       {/* Hints */}
-      {(controlMode === 'wheel-dinput' || controlMode === 'wheel-xinput') && (
+      {controlMode === 'wheel' && (
         <>
           <div style={styles.divider} />
           <div style={styles.hint}>
-            Kaiju XR1 ({controlMode === 'wheel-dinput' ? 'D-Input' : 'X-Input'}) aktif. Pedal gas/rem,
-            paddle untuk ganti gigi. Kalibrasi di panel kiri bila perlu.
+            Setir Kaiju XR1 (X-Input) aktif. Pedal kanan = gas, kiri = rem; paddle untuk ganti gigi.
+            Kalibrasi gas/rem/setir di panel kiri bila perlu.
           </div>
         </>
       )}

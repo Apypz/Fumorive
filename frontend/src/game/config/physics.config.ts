@@ -45,7 +45,7 @@ export const DEFAULT_PHYSICS_CONFIG: CarPhysicsConfig = {
   // STEERING
   // ============================================
   /** Maximum steering angle in radians. π/5 ≈ 36° */
-  maxSteerAngle: Math.PI / 5,
+  maxSteerAngle: Math.PI / 2.4,
   
   /** How fast steering wheel turns. Higher = more responsive */
   steeringSpeed: 5,

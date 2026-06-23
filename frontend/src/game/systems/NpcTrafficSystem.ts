@@ -86,8 +86,8 @@ const VEHICLE_SPECS: Record<VehicleType, VehicleSpec> = {
   hatchback: { halfLength: 2.13, halfWidth: 0.92, radius: 1.5, weight: 0.2 },
   suv: { halfLength: 2.6, halfWidth: 1.0, radius: 1.7, weight: 0.18 },
   van: { halfLength: 2.82, halfWidth: 1.0, radius: 1.8, weight: 0.12 },
-  bus: { halfLength: 4.85, halfWidth: 1.25, radius: 2.3, weight: 0.1 },
-  truck: { halfLength: 3.9, halfWidth: 1.2, radius: 2.3, weight: 0.14 },
+  bus: { halfLength: 5.65, halfWidth: 1.3, radius: 2.5, weight: 0.1 },
+  truck: { halfLength: 4.7, halfWidth: 1.35, radius: 2.4, weight: 0.14 },
 }
 
 const VEHICLE_TYPES = Object.keys(VEHICLE_SPECS) as VehicleType[]
@@ -333,34 +333,34 @@ export class NpcTrafficSystem {
         break
       }
       case 'bus': {
-        box(body, 2.5, 2.0, 9.4, 0, 1.25, 0)
-        box(glass, 0.08, 0.7, 8.2, 1.23, 1.7, 0) // side window strips
-        box(glass, 0.08, 0.7, 8.2, -1.23, 1.7, 0)
-        box(glass, 2.3, 0.85, 0.1, 0, 1.7, 4.66) // windshield
-        box(trim, 2.52, 0.4, 0.4, 0, 0.5, 4.65)
-        box(trim, 2.52, 0.4, 0.4, 0, 0.5, -4.65)
-        headlights(0.85, 4.68)
-        taillights(0.95, -4.68)
-        wheel(1.18, 3.3, 0.96); wheel(-1.18, 3.3, 0.96)
-        wheel(1.18, -2.6, 0.96); wheel(-1.18, -2.6, 0.96)
-        wheel(1.18, -3.75, 0.96); wheel(-1.18, -3.75, 0.96)
+        box(body, 2.6, 2.6, 11.0, 0, 1.65, 0) // big bus body (bottom 0.35, top 2.95)
+        box(glass, 0.08, 0.85, 9.6, 1.28, 2.15, 0) // side window strips
+        box(glass, 0.08, 0.85, 9.6, -1.28, 2.15, 0)
+        box(glass, 2.4, 0.95, 0.1, 0, 2.15, 5.46) // windshield
+        box(trim, 2.62, 0.45, 0.4, 0, 0.6, 5.45)
+        box(trim, 2.62, 0.45, 0.4, 0, 0.6, -5.45)
+        headlights(0.95, 5.5)
+        taillights(1.05, -5.5)
+        wheel(1.22, 3.9, 1.05); wheel(-1.22, 3.9, 1.05)
+        wheel(1.22, -3.0, 1.05); wheel(-1.22, -3.0, 1.05)
+        wheel(1.22, -4.25, 1.05); wheel(-1.22, -4.25, 1.05)
         break
       }
       case 'truck':
       default: {
-        // Coloured cab up front, grey cargo box behind — recentred on the root
-        // (body spans z ±3.8) so the symmetric collider has no phantom volume.
-        box(body, 2.3, 1.7, 2.4, 0, 1.0, 2.6)
-        box(glass, 2.1, 0.7, 0.1, 0, 1.45, 3.76) // windshield
-        box(glass, 0.08, 0.6, 1.6, 1.13, 1.45, 2.6) // cab sides
-        box(glass, 0.08, 0.6, 1.6, -1.13, 1.45, 2.6)
-        box(trim, 2.4, 2.1, 5.2, 0, 1.4, -1.2) // cargo box
-        box(trim, 2.42, 0.32, 0.35, 0, 0.42, 3.92) // bumper
-        headlights(0.8, 3.85)
-        taillights(0.9, -3.8)
-        wheel(1.12, 2.6, 0.96); wheel(-1.12, 2.6, 0.96)
-        wheel(1.12, -2.0, 0.96); wheel(-1.12, -2.0, 0.96)
-        wheel(1.12, -3.2, 0.96); wheel(-1.12, -3.2, 0.96)
+        // Coloured cab up front, larger grey cargo box behind — recentred on the
+        // root (body spans z ±4.5) so the symmetric collider fits without phantom.
+        box(body, 2.5, 2.4, 2.6, 0, 1.45, 3.2) // cab (bottom 0.25, top 2.65)
+        box(glass, 2.3, 0.8, 0.1, 0, 2.0, 4.46) // windshield
+        box(glass, 0.08, 0.7, 1.8, 1.26, 2.0, 3.2) // cab sides
+        box(glass, 0.08, 0.7, 1.8, -1.26, 2.0, 3.2)
+        box(trim, 2.7, 2.8, 6.4, 0, 1.6, -1.3) // cargo box (bottom 0.2, top 3.0)
+        box(trim, 2.62, 0.4, 0.4, 0, 0.6, 4.62) // bumper
+        headlights(0.85, 4.55)
+        taillights(0.95, -4.5)
+        wheel(1.2, 3.2, 1.05); wheel(-1.2, 3.2, 1.05)
+        wheel(1.2, -2.0, 1.05); wheel(-1.2, -2.0, 1.05)
+        wheel(1.2, -3.4, 1.05); wheel(-1.2, -3.4, 1.05)
         break
       }
     }
@@ -623,7 +623,7 @@ export class NpcTrafficSystem {
       const halfZ = car.halfLength * c + car.halfWidth * s
       return {
         min: new Vector3(car.x - halfX, 0, car.z - halfZ),
-        max: new Vector3(car.x + halfX, 2.5, car.z + halfZ),
+        max: new Vector3(car.x + halfX, 3, car.z + halfZ),
       }
     })
   }

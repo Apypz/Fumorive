@@ -31,7 +31,8 @@ import {
 import { CarPhysics } from './CarPhysics'
 import { CarCameraManager } from './CarCameraManager'
 import { getWheelMapping } from '../../utils/wheelConfig'
-import type { WheelMode, PedalSource } from '../../utils/wheelConfig'
+import type { PedalSource } from '../../utils/wheelConfig'
+import { getActiveGamepad, hasGamepad } from '../../utils/gamepadRegistry'
 import { DriftParticleSystem } from './DriftParticleSystem'
 import { EngineAudio } from '../../engine/EngineAudio'
 import type { SimpleMap } from '../SimpleMap'
@@ -113,14 +114,12 @@ export class CarController {
     brake: false,
   }
 
-  // Racing wheel (Kaiju XR1) state — read via the Gamepad API
-  private gamepadIndex: number | null = null
+  // Racing wheel (Kaiju XR1) per-frame state. Device detection lives in the
+  // persistent app-level gamepadRegistry, so it survives scene remounts.
   private wheelButtonPrev: boolean[] = []
   private wheelHornPrev = false
-  // Captured rest value per pedal axis, for auto-ranged D-Input pedals.
+  // Captured rest value per pedal axis, for auto-ranged axis pedals.
   private pedalRest = new Map<number, number>()
-  private _gamepadConnectHandler: ((e: GamepadEvent) => void) | null = null
-  private _gamepadDisconnectHandler: ((e: GamepadEvent) => void) | null = null
 
   constructor(
     scene: Scene, 
@@ -174,7 +173,6 @@ export class CarController {
     
     // Setup input handling
     this.setupInput()
-    this.setupGamepad()
 
     console.log('[CarController] Initialized with modular physics and camera')
   }
@@ -239,8 +237,8 @@ export class CarController {
    * connected, so without one the toggle still just flips keyboard/mouse.
    */
   toggleControlMode(): void {
-    const modes: ControlMode[] = this.hasGamepad()
-      ? ['keyboard', 'mouse', 'wheel-dinput', 'wheel-xinput']
+    const modes: ControlMode[] = hasGamepad()
+      ? ['keyboard', 'mouse', 'wheel']
       : ['keyboard', 'mouse']
     const idx = modes.indexOf(this.currentControlMode)
     const next = modes[(idx + 1) % modes.length]
@@ -248,7 +246,7 @@ export class CarController {
   }
 
   private isWheelMode(): boolean {
-    return this.currentControlMode === 'wheel-dinput' || this.currentControlMode === 'wheel-xinput'
+    return this.currentControlMode === 'wheel'
   }
 
   /**
@@ -556,57 +554,6 @@ export class CarController {
 
   // === RACING WHEEL (KAIJU XR1) ===
 
-  /**
-   * Listen for the racing wheel / controller connecting. The Gamepad API only
-   * surfaces a device after the page receives input from it, so the first pedal
-   * press or button tap is what makes the wheel modes available on the "C" cycle.
-   */
-  private setupGamepad(): void {
-    // Pick up a device that is already live (e.g. after a scene remount).
-    const pads = navigator.getGamepads ? navigator.getGamepads() : []
-    for (const p of pads) {
-      if (p) {
-        this.gamepadIndex = p.index
-        console.log(`[CarController] Racing wheel detected: ${p.id}`)
-        break
-      }
-    }
-
-    const onConnect = (e: GamepadEvent) => {
-      this.gamepadIndex = e.gamepad.index
-      console.log(`[CarController] Racing wheel connected: ${e.gamepad.id} — press C to use it`)
-    }
-    const onDisconnect = (e: GamepadEvent) => {
-      if (this.gamepadIndex === e.gamepad.index) {
-        this.gamepadIndex = null
-        if (this.isWheelMode()) this.setControlMode('keyboard')
-        console.log('[CarController] Racing wheel disconnected')
-      }
-    }
-
-    window.addEventListener('gamepadconnected', onConnect)
-    window.addEventListener('gamepaddisconnected', onDisconnect)
-    this._gamepadConnectHandler = onConnect
-    this._gamepadDisconnectHandler = onDisconnect
-  }
-
-  /** Is a wheel/controller currently connected and readable? */
-  private hasGamepad(): boolean {
-    return this.activeGamepad() !== null
-  }
-
-  /**
-   * The gamepad the game reads. Honours an explicit device chosen in the wheel
-   * overlay (per mode), then the auto-detected one, then any connected pad.
-   */
-  private activeGamepad(chosen?: number | null): Gamepad | null {
-    const pads = navigator.getGamepads ? navigator.getGamepads() : []
-    if (chosen !== undefined && chosen !== null && pads[chosen]) return pads[chosen]
-    if (this.gamepadIndex !== null && pads[this.gamepadIndex]) return pads[this.gamepadIndex]
-    for (const p of pads) if (p) return p
-    return null
-  }
-
   /** Fire `action` once on the rising edge of a wheel button press. */
   private wheelButtonEdge(gp: Gamepad, i: number, action: () => void): void {
     const pressed = gp.buttons[i]?.pressed ?? false
@@ -615,16 +562,15 @@ export class CarController {
   }
 
   /**
-   * Read the Kaiju XR1 each frame while in a wheel mode and translate it into the
-   * same input the keyboard/mouse produce. Steering axis and pedals come from the
-   * per-mode mapping (D-Input vs X-Input) calibrated in the wheel overlay.
+   * Read the Kaiju XR1 each frame while in wheel mode and translate it into the
+   * same input the keyboard/mouse produce. Steering axis and pedal sources come
+   * from the mapping calibrated in the wheel overlay (X-Input defaults).
    */
   private updateWheelInput(_dt: number): void {
     if (!this.isWheelMode()) return
 
-    const mode: WheelMode = this.currentControlMode === 'wheel-dinput' ? 'dinput' : 'xinput'
-    const map = getWheelMapping(mode)
-    const gp = this.activeGamepad(map.gamepadIndex)
+    const map = getWheelMapping()
+    const gp = getActiveGamepad(map.gamepadIndex)
     if (!gp) {
       // Wheel vanished mid-drive — neutralise inputs.
       this.input.steering = 0
@@ -662,7 +608,8 @@ export class CarController {
   }
 
   /**
-   * Axis pedals (D-Input) rest at one end of [-1, 1] and travel to the other.
+   * Axis pedals rest at one end of [-1, 1] and travel to the other. (Used when a
+   * pedal is calibrated to an axis instead of a trigger button.)
    * The resting value is captured on first read after a mode switch; the pedal
    * reads as the deflection from rest toward the far end, so it is 0 when
    * released and 1 when fully pressed regardless of which end is the rest
@@ -707,6 +654,11 @@ export class CarController {
 
   getSteerAngle(): number {
     return this.physics.getSteerAngle()
+  }
+
+  /** Actual road-wheel angle normalised to -1..1 (for the steering-wheel HUD). */
+  getSteerRatio(): number {
+    return this.physics.getSteerRatio()
   }
 
   getSteeringInput(): number {
@@ -796,16 +748,6 @@ export class CarController {
       ;(this as any)._mouseHandler = null
     }
 
-    // Remove gamepad listeners
-    if (this._gamepadConnectHandler) {
-      window.removeEventListener('gamepadconnected', this._gamepadConnectHandler)
-      this._gamepadConnectHandler = null
-    }
-    if (this._gamepadDisconnectHandler) {
-      window.removeEventListener('gamepaddisconnected', this._gamepadDisconnectHandler)
-      this._gamepadDisconnectHandler = null
-    }
-    
     // Dispose engine audio
     this.engineAudio.dispose()
     

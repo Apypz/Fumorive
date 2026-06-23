@@ -585,6 +585,16 @@ export class CarPhysics {
     return this.steerAngle * (180 / Math.PI)
   }
 
+  /**
+   * Actual road-wheel angle normalised to -1..1 (current / max). Used by the
+   * on-screen steering wheel so it tracks the real front wheels like a
+   * mechanical link instead of the raw input target.
+   */
+  getSteerRatio(): number {
+    const max = this.config.maxSteerAngle
+    return max > 0 ? Math.max(-1, Math.min(1, this.steerAngle / max)) : 0
+  }
+
   getIsGrounded(): boolean {
     return this.isGrounded
   }

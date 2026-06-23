@@ -149,10 +149,13 @@ export class DemoScene implements GameScene {
   }
 
   /**
-   * Get current steering angle (-1 to 1)
+   * Normalised steering value (-1 to 1) for the on-screen steering wheel. Uses
+   * the car's ACTUAL road-wheel angle (current/max) so the HUD wheel is
+   * mechanically linked to the front wheels like a real car: full lock = ±540°
+   * on the HUD = ±36° road-wheel angle (≈15:1 steering ratio).
    */
   getSteeringAngle(): number {
-    return this.carController?.getSteeringInput() ?? 0
+    return this.carController?.getSteerRatio() ?? 0
   }
 
   /**
