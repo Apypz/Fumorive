@@ -59,7 +59,7 @@ export function WaypointHUD() {
     const sessionStartTime = new Date(currentTime.getTime() - completionTime * 1000)
     
     const completionData = {
-      sessionId: sessionId || `session_${Date.now()}`,
+      sessionId: sessionId || crypto.randomUUID(),
       routeName: sessionData?.routeName || 'Unknown Route',
       startTime: sessionStartTime,
       endTime: currentTime,
@@ -85,7 +85,7 @@ export function WaypointHUD() {
 
     // Try to complete session in backend
     try {
-      if (sessionId && !sessionId.startsWith('session_')) {
+      if (sessionId && useSessionStore.getState().isBackendSession) {
         await sessionApi.complete(sessionId, {
           duration_seconds: Math.round(completionTime),
           alert_count: violations.length,
