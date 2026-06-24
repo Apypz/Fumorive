@@ -164,6 +164,20 @@ export interface NgawiParams {
   parkChance: number
   /** Fraction of intersections that get a small street prop. */
   propDensity: number
+  /** Number of NPC cars to spawn. Higher = more traffic & potential jams. */
+  npcCount: number
+  /** Number of pedestrians per zebra crossing. Higher = busier crossings. */
+  pedestriansPerCross: number
+  /** Minimum NPC cruise speed (m/s). */
+  npcCruiseMin: number
+  /** Maximum NPC cruise speed (m/s). */
+  npcCruiseMax: number
+  /**
+   * NPC aggressiveness: 0 = calm (obeys all rules), 1 = very aggressive
+   * (runs red lights, overtakes quickly). Each car gets a randomised
+   * personality scaled by this value.
+   */
+  npcAggressiveness: number
 }
 
 // ============================================
@@ -180,25 +194,84 @@ export const DEFAULT_NGAWI_PARAMS: NgawiParams = {
   rows: 9,
   cellSize: 48,
   roadWidth: 16,
-  buildingDensity: 0.7,
+  buildingDensity: 0.70,
   treeDensity: 0.45,
   trafficLightCount: 6,
-  targetCheckpoints: 22,
-  extraEdgeRatio: 0.6,
-  lampDensity: 0.5,
+  targetCheckpoints: 16,
+  extraEdgeRatio: 0.60,
+  lampDensity: 0.50,
   barrierDensity: 0.18,
   parkChance: 0.35,
   propDensity: 0.22,
+  // Level 2 defaults (medium difficulty)
+  npcCount: 16,
+  pedestriansPerCross: 2,
+  npcCruiseMin: 6,
+  npcCruiseMax: 14,
+  npcAggressiveness: 0.20,
 }
 
 /**
- * Per-level difficulty params. For now ALL levels return identical params
- * (same difficulty) — only the seed differs, so each level is a different map
- * but plays the same. To add a difficulty curve later, scale cols/rows,
- * buildingDensity, or targetCheckpoints by `level` here.
+ * Per-level difficulty params.
+ *
+ * Level 1 — Easy  : Kota kecil (7×7), blok lebar → tikungan lebar, sedikit NPC,
+ *                    pejalan kaki 1 per crossing, tanpa agresivitas NPC.
+ * Level 2 — Medium: Kota sedang (9×9), konfigurasi default, NPC moderat.
+ * Level 3 — Hard  : Kota besar (11×11), blok rapat → tikungan tajam, banyak NPC,
+ *                    pejalan kaki 4 per crossing, NPC agresif (terobos lampu merah).
  */
-export function getNgawiLevelParams(_level: number): NgawiParams {
-  return { ...DEFAULT_NGAWI_PARAMS }
+export function getNgawiLevelParams(level: number): NgawiParams {
+  switch (level) {
+    case 1:
+      return {
+        ...DEFAULT_NGAWI_PARAMS,
+        // Kota lebih kecil, blok lebih lebar → tikungan tidak tajam
+        cols: 7,
+        rows: 7,
+        cellSize: 54,
+        buildingDensity: 0.58,
+        treeDensity: 0.50,
+        trafficLightCount: 4,
+        targetCheckpoints: 10,
+        extraEdgeRatio: 0.42,
+        lampDensity: 0.35,
+        barrierDensity: 0.08,
+        parkChance: 0.45,
+        propDensity: 0.12,
+        // Traffic ringan, NPC tenang
+        npcCount: 8,
+        pedestriansPerCross: 1,
+        npcCruiseMin: 5,
+        npcCruiseMax: 10,
+        npcAggressiveness: 0,
+      }
+    case 3:
+      return {
+        ...DEFAULT_NGAWI_PARAMS,
+        // Kota lebih besar, blok lebih rapat → tikungan tajam & rute kompleks
+        cols: 11,
+        rows: 11,
+        cellSize: 44,
+        buildingDensity: 0.82,
+        treeDensity: 0.38,
+        trafficLightCount: 10,
+        targetCheckpoints: 22,
+        extraEdgeRatio: 0.72,
+        lampDensity: 0.62,
+        barrierDensity: 0.28,
+        parkChance: 0.20,
+        propDensity: 0.32,
+        // Traffic padat, NPC agresif: bisa terobos lampu merah & overtake cepat
+        npcCount: 28,
+        pedestriansPerCross: 4,
+        npcCruiseMin: 8,
+        npcCruiseMax: 18,
+        npcAggressiveness: 0.65,
+      }
+    case 2:
+    default:
+      return { ...DEFAULT_NGAWI_PARAMS }
+  }
 }
 
 /** Grid node id from (row, col). Mirrors MapGenerator's convention. */

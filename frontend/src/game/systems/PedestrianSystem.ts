@@ -72,6 +72,7 @@ export class PedestrianSystem {
   private crossings: ZebraCross[] = []
   private materials: PBRMaterial[] = []
   private crossMeshes: Mesh[] = []
+  private pedestriansPerCross: number
 
   // Deteksi tabrakan pejalan kaki (per-pejalan cooldown + counter event baru)
   private hitCooldowns: number[] = []
@@ -97,10 +98,11 @@ export class PedestrianSystem {
     return false
   }
 
-  constructor(scene: Scene, grid: NgawiGrid, seed: number) {
+  constructor(scene: Scene, grid: NgawiGrid, seed: number, pedestriansPerCross: number = PEDESTRIANS_PER_CROSS) {
     this.scene = scene
     this.grid = grid
     this.rng   = makeRng((seed ^ 0xdeadbeef) >>> 0)
+    this.pedestriansPerCross = pedestriansPerCross
     this.placeCrossings()
     this.spawnPedestrians()
     this.hitCooldowns = this.pedestrians.map(() => 0)
@@ -196,7 +198,7 @@ export class PedestrianSystem {
 
     for (let ci = 0; ci < this.crossings.length; ci++) {
       const cross = this.crossings[ci]
-      for (let pi = 0; pi < PEDESTRIANS_PER_CROSS; pi++) {
+      for (let pi = 0; pi < this.pedestriansPerCross; pi++) {
         const sideIndex = pi % 2
         const skinMat = new PBRMaterial(`pedSkin_${ci}_${pi}`, this.scene)
         skinMat.albedoColor = skinColors[Math.floor(this.rng() * skinColors.length)]

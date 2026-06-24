@@ -27,6 +27,7 @@ import { generateNgawiCity, getNgawiLevelParams, isPointOnNgawiRoad } from '../c
 import type { NgawiCityPlan } from '../components/NgawiCityGenerator'
 import { generateNgawiRoute } from '../systems/routeGenerator'
 import { NpcTrafficSystem } from '../systems/NpcTrafficSystem'
+import type { NpcTrafficConfig } from '../systems/NpcTrafficSystem'
 import { TrafficLightSystem } from '../systems/TrafficLightSystem'
 import { NpcSoundSystem } from '../systems/NpcSoundSystem'
 import { PedestrianSystem } from '../systems/PedestrianSystem'
@@ -329,13 +330,19 @@ export class DemoScene implements GameScene {
       this.simpleMap.buildNgawiCity(this.ngawiPlan)
       // Feed the procedural street grid to the wrong-way detector.
       this.wrongWayDetector.loadGridNetwork(this.ngawiPlan.grid, params.roadWidth)
-      // Spawn 10 NPC cars that drive the grid, avoiding the player's spawn node.
+      // Spawn NPC cars berdasarkan level (count & aggressiveness dari params).
+      const npcConfig: NpcTrafficConfig = {
+        cruiseMin: params.npcCruiseMin,
+        cruiseMax: params.npcCruiseMax,
+        aggressiveness: params.npcAggressiveness,
+      }
       this.npcTraffic = new NpcTrafficSystem(
         this.scene,
         this.ngawiPlan.grid,
-        10,
+        params.npcCount,
         this.seed,
-        this.ngawiPlan.spawn.nodeId
+        this.ngawiPlan.spawn.nodeId,
+        npcConfig
       )
       // Traffic lights at selected intersections.
       this.trafficLights = new TrafficLightSystem(
@@ -349,11 +356,12 @@ export class DemoScene implements GameScene {
       this.npcSound.setGrid(this.ngawiPlan.grid)
       this.npcSound.preload().catch((e) => console.warn('[DemoScene] NpcSoundSystem preload error:', e))
 
-      // Pejalan kaki di zebra cross.
+      // Pejalan kaki di zebra cross (jumlah per crossing dari level params).
       this.pedestrians = new PedestrianSystem(
         this.scene,
         this.ngawiPlan.grid,
-        this.seed
+        this.seed,
+        params.pedestriansPerCross
       )
 
       // Polisi tidur.

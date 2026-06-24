@@ -67,6 +67,10 @@ interface NpcCar {
   overtakeTime: number
   overtakeCar: NpcCar | null
   overtakePlayer: boolean
+  /** True = this car ignores red lights (level-3 aggressiveness). */
+  ignoresRedLights: boolean
+  /** Seconds blocked before attempting an overtake (personalised per car). */
+  personalOvertakeDelay: number
 }
 
 // --- Vehicle types (varied silhouettes & sizes, built at real-world metres) ---
@@ -117,20 +121,42 @@ const OVERTAKE_DELAY = 1.8
 const OVERTAKE_OFFSET = 3.0
 const OVERTAKE_DURATION = 3.0
 
+/**
+ * Per-level configuration for the NPC traffic system.
+ * All fields are optional — unset fields fall back to their defaults.
+ */
+export interface NpcTrafficConfig {
+  /** Minimum NPC cruise speed (m/s). Default 6. */
+  cruiseMin?: number
+  /** Maximum NPC cruise speed (m/s). Default 15. */
+  cruiseMax?: number
+  /**
+   * 0 = all traffic laws obeyed; 1 = very aggressive (runs reds, overtakes fast).
+   * Each car gets a randomised personality scaled from this value.
+   */
+  aggressiveness?: number
+}
+
 export class NpcTrafficSystem {
   private scene: Scene
   private grid: NgawiGrid
   private rng: () => number
   private cars: NpcCar[] = []
   private materials: PBRMaterial[] = []
+  private config: Required<NpcTrafficConfig>
 
   /** NPC ids that overlapped the player car in the most recent update(). */
   lastCollisionIds: Set<number> = new Set()
 
-  constructor(scene: Scene, grid: NgawiGrid, count: number, seed: number, avoidNodeId?: number) {
+  constructor(scene: Scene, grid: NgawiGrid, count: number, seed: number, avoidNodeId?: number, config?: NpcTrafficConfig) {
     this.scene = scene
     this.grid = grid
     this.rng = makeRng((seed ^ 0x5bd1e995) >>> 0)
+    this.config = {
+      cruiseMin: config?.cruiseMin ?? 6,
+      cruiseMax: config?.cruiseMax ?? 15,
+      aggressiveness: config?.aggressiveness ?? 0,
+    }
     this.spawn(count, avoidNodeId)
   }
 
@@ -208,7 +234,13 @@ export class NpcTrafficSystem {
       // Wide spread so some cars are clearly slow and others fast. Big vehicles
       // (bus/truck) cruise a little slower.
       const speedScale = type === 'bus' || type === 'truck' ? 0.8 : 1
-      const cruise = randFloat(this.rng, 6, 15) * speedScale
+      const cruise = randFloat(this.rng, this.config.cruiseMin, this.config.cruiseMax) * speedScale
+
+      // Per-car personality derived from level aggressiveness.
+      const agg = this.config.aggressiveness
+      const ignoresRedLights = agg > 0 && this.rng() < agg * 0.45
+      const personalOvertakeDelay = OVERTAKE_DELAY * Math.max(0.25, 1 - agg * 0.70 + randFloat(this.rng, -0.15, 0.15))
+
       this.cars.push({
         root,
         type,
@@ -230,6 +262,8 @@ export class NpcTrafficSystem {
         overtakeTime: 0,
         overtakeCar: null,
         overtakePlayer: false,
+        ignoresRedLights,
+        personalOvertakeDelay,
       })
     }
   }
@@ -549,7 +583,7 @@ export class NpcTrafficSystem {
         } else {
           car.blockedTime = Math.max(0, car.blockedTime - dt * 2)
         }
-        if (car.blockedTime > OVERTAKE_DELAY && sense.ob) {
+        if (car.blockedTime > car.personalOvertakeDelay && sense.ob) {
           const rightX = car.x + edz * (OVERTAKE_OFFSET + LANE_OFFSET)
           const rightZ = car.z - edx * (OVERTAKE_OFFSET + LANE_OFFSET)
           const laneCheck = this.nearestAhead(rightX, rightZ, fx, fz, obstacles, -6, 14, car, false, car.halfLength)
@@ -558,7 +592,7 @@ export class NpcTrafficSystem {
             car.overtakeCar = sense.ob.self
             car.overtakePlayer = sense.ob.self === null
           } else {
-            car.blockedTime = OVERTAKE_DELAY * 0.5
+            car.blockedTime = car.personalOvertakeDelay * 0.5
           }
         }
       }
@@ -571,8 +605,8 @@ export class NpcTrafficSystem {
         const gapSpeed = sense.gap <= STOP_GAP ? 0 : (sense.gap - STOP_GAP) * GAP_SPEED_K
         desired = Math.min(desired, gapSpeed)
       }
-      // Obey red lights: brake to a stop at the stop line ahead.
-      if (trafficStop) {
+      // Obey red lights (aggressive cars may run them).
+      if (trafficStop && !car.ignoresRedLights) {
         const stop = trafficStop(car.x, car.z, fx, fz)
         if (stop !== Infinity && stop >= 0) {
           const stopSpeed = stop <= 1.5 ? 0 : (stop - 1.5) * GAP_SPEED_K
