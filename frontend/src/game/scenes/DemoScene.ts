@@ -330,39 +330,43 @@ export class DemoScene implements GameScene {
       this.simpleMap.buildNgawiCity(this.ngawiPlan)
       // Feed the procedural street grid to the wrong-way detector.
       this.wrongWayDetector.loadGridNetwork(this.ngawiPlan.grid, params.roadWidth)
-      // Spawn NPC cars berdasarkan level (count & aggressiveness dari params).
-      const npcConfig: NpcTrafficConfig = {
-        cruiseMin: params.npcCruiseMin,
-        cruiseMax: params.npcCruiseMax,
-        aggressiveness: params.npcAggressiveness,
-      }
-      this.npcTraffic = new NpcTrafficSystem(
-        this.scene,
-        this.ngawiPlan.grid,
-        params.npcCount,
-        this.seed,
-        this.ngawiPlan.spawn.nodeId,
-        npcConfig
-      )
-      // Traffic lights at selected intersections.
+      // Traffic lights at selected intersections — always active at all levels.
       this.trafficLights = new TrafficLightSystem(
         this.scene,
         this.ngawiPlan.grid,
         this.ngawiPlan.trafficLights,
         this.seed
       )
-      // NPC ambient sound system (engine noise + horn).
-      this.npcSound = new NpcSoundSystem()
-      this.npcSound.setGrid(this.ngawiPlan.grid)
-      this.npcSound.preload().catch((e) => console.warn('[DemoScene] NpcSoundSystem preload error:', e))
+      // Spawn NPC cars hanya di level 2+.
+      if (this.level >= 2) {
+        const npcConfig: NpcTrafficConfig = {
+          cruiseMin: params.npcCruiseMin,
+          cruiseMax: params.npcCruiseMax,
+          aggressiveness: params.npcAggressiveness,
+        }
+        this.npcTraffic = new NpcTrafficSystem(
+          this.scene,
+          this.ngawiPlan.grid,
+          params.npcCount,
+          this.seed,
+          this.ngawiPlan.spawn.nodeId,
+          npcConfig
+        )
+        // NPC ambient sound system (engine noise + horn).
+        this.npcSound = new NpcSoundSystem()
+        this.npcSound.setGrid(this.ngawiPlan.grid)
+        this.npcSound.preload().catch((e) => console.warn('[DemoScene] NpcSoundSystem preload error:', e))
+      }
 
-      // Pejalan kaki di zebra cross (jumlah per crossing dari level params).
-      this.pedestrians = new PedestrianSystem(
-        this.scene,
-        this.ngawiPlan.grid,
-        this.seed,
-        params.pedestriansPerCross
-      )
+      // Pejalan kaki di zebra cross hanya di level 3.
+      if (this.level >= 3) {
+        this.pedestrians = new PedestrianSystem(
+          this.scene,
+          this.ngawiPlan.grid,
+          this.seed,
+          params.pedestriansPerCross
+        )
+      }
 
       // Polisi tidur.
       this.speedBumps = new SpeedBumpSystem(
