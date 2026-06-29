@@ -201,10 +201,10 @@ export class CarPhysics {
     // === NEUTRAL (gear 0) - no drive force ===
     if (gear === 0) {
       // No throttle drive in neutral, only braking / engine braking
-      if (input.brake && Math.abs(this.forwardVelocity) > 0.1) {
-        force = -Math.sign(this.forwardVelocity) * this.config.brakeForce
+      if (input.brake > 0 && Math.abs(this.forwardVelocity) > 0.1) {
+        force = -Math.sign(this.forwardVelocity) * this.config.brakeForce * input.brake
       }
-      if (!input.brake && Math.abs(this.forwardVelocity) > 0.5) {
+      if (input.brake <= 0 && Math.abs(this.forwardVelocity) > 0.5) {
         force = -Math.sign(this.forwardVelocity) * this.config.engineBraking
       }
       // Resistance forces
@@ -246,12 +246,12 @@ export class CarPhysics {
       }
 
       // Brake pedal
-      if (input.brake && Math.abs(this.forwardVelocity) > 0.1) {
-        force = -Math.sign(this.forwardVelocity) * this.config.brakeForce
+      if (input.brake > 0 && Math.abs(this.forwardVelocity) > 0.1) {
+        force = -Math.sign(this.forwardVelocity) * this.config.brakeForce * input.brake
       }
 
       // Engine braking in reverse
-      if (input.throttle === 0 && !input.brake && Math.abs(this.forwardVelocity) > 0.5) {
+      if (input.throttle === 0 && input.brake <= 0 && Math.abs(this.forwardVelocity) > 0.5) {
         force = -Math.sign(this.forwardVelocity) * this.config.engineBraking
       }
 
@@ -296,13 +296,13 @@ export class CarPhysics {
       }
     }
     
-    // Brake pedal
-    if (input.brake && Math.abs(this.forwardVelocity) > 0.1) {
-      force = -Math.sign(this.forwardVelocity) * this.config.brakeForce
+    // Brake pedal — force proporsional dengan kedalaman pedal (0 = tidak rem, 1 = rem penuh)
+    if (input.brake > 0 && Math.abs(this.forwardVelocity) > 0.1) {
+      force = -Math.sign(this.forwardVelocity) * this.config.brakeForce * input.brake
     }
     
     // Engine braking
-    if (input.throttle === 0 && !input.brake && Math.abs(this.forwardVelocity) > 0.5) {
+    if (input.throttle === 0 && input.brake <= 0 && Math.abs(this.forwardVelocity) > 0.5) {
       force = -Math.sign(this.forwardVelocity) * this.config.engineBraking
     }
     
@@ -380,8 +380,8 @@ export class CarPhysics {
     }
     
     // 3. Braking while turning = weight transfer, rear gets light
-    if (input.brake && steerRatio > 0.1 && speed > 5) {
-      grip *= Math.max(0.15, 1 - this.config.brakeTurnGripLoss * steerRatio)
+    if (input.brake > 0 && steerRatio > 0.1 && speed > 5) {
+      grip *= Math.max(0.15, 1 - this.config.brakeTurnGripLoss * steerRatio * input.brake)
     }
     
     // 4. Throttle while turning = power oversteer
@@ -526,8 +526,8 @@ export class CarPhysics {
    */
   private updateBodyDynamics(dt: number, turnRate: number, input: CarInputState): void {
     const lateralG = turnRate * Math.abs(this.forwardVelocity) / 9.81
-    const longitudinalG = (input.throttle !== 0 || input.brake) ? 
-      (input.throttle * this.config.acceleration - (input.brake ? this.config.brakeForce : 0)) / 9.81 : 0
+    const longitudinalG = (input.throttle !== 0 || input.brake > 0) ? 
+      (input.throttle * this.config.acceleration - (input.brake > 0 ? this.config.brakeForce * input.brake : 0)) / 9.81 : 0
     
     const targetRoll = lateralG * this.config.bodyRollFactor
     const targetPitch = -longitudinalG * this.config.bodyPitchFactor * 0.3
@@ -724,7 +724,7 @@ export class CarPhysics {
     }
 
     // No throttle, fully stopped → neutral (only when truly stopped)
-    if (input.throttle === 0 && !input.brake && absForwardSpeed < 0.3 && this.currentGear !== 0) {
+    if (input.throttle === 0 && input.brake <= 0 && absForwardSpeed < 0.3 && this.currentGear !== 0) {
       this.currentGear = 0
     }
   }

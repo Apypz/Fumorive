@@ -259,7 +259,7 @@ export class CarController {
     this.input.steering = 0
     // Clear pedals/throttle so a held input from the previous mode doesn't stick.
     this.input.throttle = 0
-    this.input.brake = false
+    this.input.brake = 0
     // Re-baseline pedal rest positions (pedals are assumed released on switch).
     this.pedalRest.clear()
 
@@ -420,8 +420,8 @@ export class CarController {
           }
           break
         case ' ':
-          // Brake - space only
-          this.input.brake = pressed
+          // Brake - space only (keyboard = full brake, 0 or 1)
+          this.input.brake = pressed ? 1 : 0
           break
         case 'shift':
           // Horn - shift key
@@ -583,11 +583,11 @@ export class CarController {
     if (Math.abs(steer) < WHEEL_DEADZONE) steer = 0
     this.input.steering = Math.max(-1, Math.min(1, steer))
 
-    // Gas pedal drives forward; brake pedal decelerates / reverses (mirrors S).
+    // Gas pedal drives forward; brake pedal decelerates proportionally (0 = no brake, 1 = full brake).
     const gas = this.readPedal(gp, map.gas)
     const brake = this.readPedal(gp, map.brake)
     this.input.throttle = Math.max(-1, Math.min(1, gas - brake))
-    this.input.brake = false
+    this.input.brake = brake  // 0..1 analog pedal depth
 
     // Paddle shifters → manual gear up/down (no-op in automatic).
     this.wheelButtonEdge(gp, WHEEL_SHIFT_UP_BUTTON, () => this.physics.shiftUp())

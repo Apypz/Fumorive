@@ -275,7 +275,7 @@ export interface DriftParticleConfig {
 export interface CarInputState {
   throttle: number    // -1 to 1
   steering: number    // -1 to 1
-  brake: boolean
+  brake: number       // 0 to 1 — pedal depth (0 = not pressed, 1 = full brake)
 }
 
 /**
