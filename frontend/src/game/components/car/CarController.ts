@@ -111,7 +111,7 @@ export class CarController {
   private input: CarInputState = {
     throttle: 0,
     steering: 0,
-    brake: false,
+    brake: 0,
   }
 
   // Racing wheel (Kaiju XR1) per-frame state. Device detection lives in the
