@@ -7,7 +7,7 @@ import heroBg from '../../assets/hero.jpg';
 import card6 from '../../assets/card3.jpg';
 import card5 from '../../assets/face.jpg';
 import card4 from '../../assets/muse.png';
-import card3 from '../../asi, cusets/card3.jpg';
+import card3 from '../../assets/card3.jpg';
 import card2 from '../../assets/card2.jpg';
 import card1 from '../../assets/card.jpg';
 import img1 from '../../assets/img1.jpg';
