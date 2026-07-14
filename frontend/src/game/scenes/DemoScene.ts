@@ -78,7 +78,7 @@ export class DemoScene implements GameScene {
   private speedBumps: SpeedBumpSystem | null = null
   private ambientSound: AmbientSoundSystem | null = null
 
-  constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'solo-city', seed: number = 1, level: number = 1) {
+  constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'ngawi-city', seed: number = 1, level: number = 1) {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
     this.mapType = mapType
     this.seed = seed
@@ -423,9 +423,9 @@ export class DemoScene implements GameScene {
     // Create demo objects (optional, can be removed if you only want the car)
     // this.createDemoObjects()
 
-    // Initialize waypoint system for Solo City and Ngawi City
-    if (this.mapType === 'solo-city' || this.mapType === 'ngawi-city') {
-      const route = this.mapType === 'ngawi-city' && this.ngawiPlan
+    // Initialize waypoint system for Ngawi City
+    if (this.mapType === 'ngawi-city') {
+      const route = this.ngawiPlan
         ? generateNgawiRoute(this.ngawiPlan, this.seed, { targetCheckpoints: getNgawiLevelParams(this.level).targetCheckpoints })
         : getRandomRoute(this.mapType)
       this.waypointSystem = new WaypointSystem(route)
@@ -779,9 +779,8 @@ export class DemoScene implements GameScene {
       const position = this.carController.getPosition()
       const heading = this.carController.getHeading()
       const speed = this.carController.getSpeed()
-      // Wrong-way lane directions exist for Solo City (static) and Ngawi City
-      // (loaded from its procedural grid); Sriwedari Park has none.
-      if (this.mapType === 'solo-city' || this.mapType === 'ngawi-city') {
+      // Wrong-way lane directions loaded from Ngawi City procedural grid.
+      if (this.mapType === 'ngawi-city') {
         this.wrongWayDetector.update(position, heading, speed, deltaTime)
       }
 

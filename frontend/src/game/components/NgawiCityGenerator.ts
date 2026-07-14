@@ -214,41 +214,42 @@ export const DEFAULT_NGAWI_PARAMS: NgawiParams = {
 /**
  * Per-level difficulty params.
  *
- * Level 1 — Easy  : Kota kecil (7×7), blok lebar → tikungan lebar, sedikit NPC,
- *                    pejalan kaki 1 per crossing, tanpa agresivitas NPC.
- * Level 2 — Medium: Kota sedang (9×9), konfigurasi default, NPC moderat.
- * Level 3 — Hard  : Kota besar (11×11), blok rapat → tikungan tajam, banyak NPC,
- *                    pejalan kaki 4 per crossing, NPC agresif (terobos lampu merah).
+ * Level 1 — Traffic Light  : Kota kecil (7×7), TIDAK ada NPC & pejalan kaki.
+ *                             Fokus: patuhi lampu merah & rambu jalan.
+ * Level 2 — NPC Traffic    : Kota sedang (9×9), NPC kendaraan aktif.
+ *                             Fokus: berbagi jalan dengan kendaraan lain.
+ * Level 3 — Full City      : Kota besar (11×11), NPC agresif + pejalan kaki.
+ *                             Fokus: situasi penuh seperti kota nyata.
  */
 export function getNgawiLevelParams(level: number): NgawiParams {
   switch (level) {
     case 1:
       return {
         ...DEFAULT_NGAWI_PARAMS,
-        // Kota lebih kecil, blok lebih lebar → tikungan tidak tajam
+        // Kota kecil, jalan lebar — tikungan nyaman, mudah dikendalikan
         cols: 7,
         rows: 7,
         cellSize: 54,
-        buildingDensity: 0.58,
-        treeDensity: 0.50,
-        trafficLightCount: 4,
+        buildingDensity: 0.55,
+        treeDensity: 0.55,
+        trafficLightCount: 6,   // banyak lampu merah agar jadi fokus utama
         targetCheckpoints: 10,
         extraEdgeRatio: 0.42,
         lampDensity: 0.35,
-        barrierDensity: 0.08,
-        parkChance: 0.45,
-        propDensity: 0.12,
-        // Traffic ringan, NPC tenang
-        npcCount: 8,
-        pedestriansPerCross: 1,
-        npcCruiseMin: 5,
-        npcCruiseMax: 10,
+        barrierDensity: 0.06,
+        parkChance: 0.50,
+        propDensity: 0.10,
+        // Level 1: NO NPC, NO pedestrians — only traffic lights matter
+        npcCount: 0,
+        pedestriansPerCross: 0,
+        npcCruiseMin: 0,
+        npcCruiseMax: 0,
         npcAggressiveness: 0,
       }
     case 3:
       return {
         ...DEFAULT_NGAWI_PARAMS,
-        // Kota lebih besar, blok lebih rapat → tikungan tajam & rute kompleks
+        // Kota besar, blok rapat — tikungan tajam & rute kompleks
         cols: 11,
         rows: 11,
         cellSize: 44,
@@ -261,7 +262,7 @@ export function getNgawiLevelParams(level: number): NgawiParams {
         barrierDensity: 0.28,
         parkChance: 0.20,
         propDensity: 0.32,
-        // Traffic padat, NPC agresif: bisa terobos lampu merah & overtake cepat
+        // Level 3: NPC padat + agresif, pejalan kaki banyak
         npcCount: 28,
         pedestriansPerCross: 4,
         npcCruiseMin: 8,
@@ -273,6 +274,7 @@ export function getNgawiLevelParams(level: number): NgawiParams {
       return { ...DEFAULT_NGAWI_PARAMS }
   }
 }
+
 
 /** Grid node id from (row, col). Mirrors MapGenerator's convention. */
 export function nodeId(r: number, c: number, cols: number): number {

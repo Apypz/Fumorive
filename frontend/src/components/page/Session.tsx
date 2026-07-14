@@ -1,4 +1,3 @@
-// src/pages/Session.tsx
 import { useState, useEffect } from 'react'
 import { GameCanvas } from '../GameCanvas'
 import { LoadingScreen } from '../LoadingScreen'
@@ -26,14 +25,17 @@ import { useGameStore } from '../../stores/gameStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useWaypointStore } from '../../stores/waypointStore'
 import { useViolationStore } from '../../stores/violationStore'
-import { Copy, Check } from 'lucide-react'
+import { Copy, Check, User } from 'lucide-react'
 import '../../App.css'
 
 export default function Session() {
-  const { gameState, setGameState, selectedMap, currentLevel, mapSeed, startNgawiRun, resetLevels } = useGameStore()
+  const { gameState, setGameState, selectedMap, currentLevel, mapSeed, playerName, setPlayerName } = useGameStore()
   const { sessionId, initializeSession } = useSessionStore()
   const [showSettings, setShowSettings] = useState(false)
-  const [showMapSelection, setShowMapSelection] = useState(true)
+  // Step: 'name-input' → 'map-select' → 'playing'
+  const [step, setStep] = useState<'name-input' | 'map-select' | 'game'>('name-input')
+  const [nameInput, setNameInput] = useState(playerName)
+  const [nameError, setNameError] = useState('')
   const [gameStarted, setGameStarted] = useState(false)
   const [cameraEnabled, setCameraEnabled] = useState(false)
   const [cameraFatigueScore, setCameraFatigueScore] = useState(0)
@@ -47,77 +49,151 @@ export default function Session() {
     initializeSession()
   }, [initializeSession])
 
-  const handleStartGame = () => {
-    // Ngawi City: start a fresh 3-level run (level 1 + new random seed)
-    if (selectedMap === 'ngawi-city') {
-      startNgawiRun()
+  const handleNameSubmit = () => {
+    const trimmed = nameInput.trim()
+    if (!trimmed) {
+      setNameError('Nama tidak boleh kosong')
+      return
     }
-    setShowMapSelection(false)
+    if (trimmed.length < 2) {
+      setNameError('Nama minimal 2 karakter')
+      return
+    }
+    setNameError('')
+    setPlayerName(trimmed)
+    setStep('map-select')
+  }
+
+  const handleStartGame = () => {
+    setStep('game')
     setGameStarted(true)
     setShowTutorial(true)
-    // Reset pelanggaran setiap mulai sesi baru
     useViolationStore.getState().resetViolations()
   }
 
   const handleBackToMapSelect = () => {
-    setShowMapSelection(true)
+    setStep('map-select')
     setGameStarted(false)
     setGameState('loading')
     useWaypointStore.getState().resetWaypoints()
     useViolationStore.getState().resetViolations()
-    resetLevels()
+  }
+
+  const handleBackToNameInput = () => {
+    setStep('name-input')
   }
 
   return (
     <div className="app">
-      {/* Session ID Banner - always visible when session exists */}
+      {/* ── STEP 1: Name Input ─────────────────────────────────────────── */}
+      {step === 'name-input' && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.96)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+        }}>
+          <div style={{
+            background: '#0f172a', border: '1px solid rgba(99,102,241,0.4)',
+            borderRadius: '24px', padding: '48px 56px', width: '420px', maxWidth: '92vw',
+            textAlign: 'center', boxShadow: '0 0 60px rgba(99,102,241,0.15)',
+          }}>
+            {/* Icon */}
+            <div style={{
+              width: 64, height: 64, borderRadius: '50%',
+              background: 'rgba(99,102,241,0.15)', border: '2px solid rgba(99,102,241,0.4)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 20px',
+            }}>
+              <User size={28} color="#a5b4fc" />
+            </div>
+
+            <h2 style={{ color: '#fff', fontSize: '1.6rem', fontWeight: 800, margin: '0 0 8px', letterSpacing: '0.05em' }}>
+              Siapa Namamu?
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.88rem', margin: '0 0 28px', lineHeight: 1.6 }}>
+              Namamu akan dicantumkan di laporan hasil analisis sesi ini.
+            </p>
+
+            <div style={{ position: 'relative', marginBottom: nameError ? '8px' : '24px' }}>
+              <input
+                type="text"
+                value={nameInput}
+                onChange={(e) => { setNameInput(e.target.value); setNameError('') }}
+                onKeyDown={(e) => e.key === 'Enter' && handleNameSubmit()}
+                placeholder="Masukkan nama lengkap..."
+                autoFocus
+                maxLength={50}
+                style={{
+                  width: '100%', padding: '14px 18px', fontSize: '1rem',
+                  background: 'rgba(255,255,255,0.06)', border: `1.5px solid ${nameError ? '#ef4444' : 'rgba(99,102,241,0.4)'}`,
+                  borderRadius: '12px', color: '#fff', outline: 'none',
+                  boxSizing: 'border-box', transition: 'border-color 0.2s',
+                }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = '#6366f1' }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = nameError ? '#ef4444' : 'rgba(99,102,241,0.4)' }}
+              />
+            </div>
+
+            {nameError && (
+              <p style={{ color: '#f87171', fontSize: '0.82rem', margin: '0 0 16px', textAlign: 'left' }}>
+                ⚠ {nameError}
+              </p>
+            )}
+
+            <button
+              onClick={handleNameSubmit}
+              style={{
+                width: '100%', padding: '14px', fontSize: '1rem', fontWeight: 700,
+                background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: '#fff',
+                border: 'none', borderRadius: '12px', cursor: 'pointer',
+                letterSpacing: '0.06em', boxShadow: '0 4px 20px rgba(99,102,241,0.4)',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(99,102,241,0.55)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(99,102,241,0.4)' }}
+            >
+              Lanjut ke Pilih Level →
+            </button>
+
+            <div style={{ marginTop: '16px', fontSize: '0.78rem', color: 'rgba(255,255,255,0.3)' }}>
+              Nama tidak akan dibagikan dan hanya digunakan untuk identifikasi laporan.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 2: Map / Level Selection ─────────────────────────────── */}
+      {step === 'map-select' && (
+        <MapSelection onStartGame={handleStartGame} onBack={handleBackToNameInput} />
+      )}
+
+      {/* Session ID Banner */}
       {sessionId && gameStarted && (
         <div style={{
-          position: 'fixed',
-          top: 0,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1000,
-          background: 'rgba(15, 23, 42, 0.9)',
-          backdropFilter: 'blur(8px)',
-          borderRadius: '0 0 12px 12px',
-          padding: '6px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          border: '1px solid rgba(56, 189, 248, 0.3)',
-          borderTop: 'none',
+          position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 1000, background: 'rgba(15,23,42,0.9)', backdropFilter: 'blur(8px)',
+          borderRadius: '0 0 12px 12px', padding: '6px 16px',
+          display: 'flex', alignItems: 'center', gap: '8px',
+          border: '1px solid rgba(56,189,248,0.3)', borderTop: 'none',
           boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
         }}>
+          {playerName && (
+            <>
+              <span style={{ fontSize: '11px', color: '#a78bfa', fontWeight: 700 }}>{playerName}</span>
+              <span style={{ color: '#334155', fontSize: '11px' }}>·</span>
+            </>
+          )}
           <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>SESSION ID:</span>
-          <code style={{
-            fontSize: '12px',
-            color: '#38bdf8',
-            fontFamily: 'monospace',
-            userSelect: 'all',
-            cursor: 'text',
-            letterSpacing: '0.3px',
-          }}>
+          <code style={{ fontSize: '12px', color: '#38bdf8', fontFamily: 'monospace', userSelect: 'all', cursor: 'text', letterSpacing: '0.3px' }}>
             {sessionId}
           </code>
           <button
-            onClick={() => {
-              navigator.clipboard.writeText(sessionId)
-              setSessionCopied(true)
-              setTimeout(() => setSessionCopied(false), 2000)
-            }}
+            onClick={() => { navigator.clipboard.writeText(sessionId); setSessionCopied(true); setTimeout(() => setSessionCopied(false), 2000) }}
             style={{
               background: sessionCopied ? '#059669' : '#334155',
               border: '1px solid ' + (sessionCopied ? '#10b981' : '#475569'),
-              borderRadius: '6px',
-              padding: '3px 10px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              color: 'white',
-              fontSize: '11px',
-              transition: 'all 0.2s',
+              borderRadius: '6px', padding: '3px 10px', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: '4px',
+              color: 'white', fontSize: '11px', transition: 'all 0.2s',
             }}
             title="Copy Session ID untuk paste di terminal EEG"
           >
@@ -127,127 +203,58 @@ export default function Session() {
         </div>
       )}
 
-      {/* Tutorial Popup - shown when game first starts */}
+      {/* Tutorial Popup */}
       {showTutorial && gameStarted && (
         <TutorialPopup onClose={() => setShowTutorial(false)} />
       )}
 
-      {/* Global Alert Notifications - always active when game started */}
       {gameStarted && <AlertNotification />}
 
-      {/* Map Selection Screen - shown before game starts */}
-      {showMapSelection && (
-        <MapSelection onStartGame={handleStartGame} />
-      )}
-
-      {/* Game Canvas - only render when game started.
-          The key forces a clean remount (dispose + re-init) when the Ngawi
-          level/seed changes, loading the next level's random map in place. */}
+      {/* Game Canvas */}
       {gameStarted && <GameCanvas key={`${selectedMap}-${currentLevel}-${mapSeed}`} />}
-      
-      {/* Loading Screen - only show after map selection, during game load */}
       {gameStarted && <LoadingScreen />}
-      
+
       <DebugOverlay />
 
       {gameState === 'paused' && gameStarted && (
         <div className="pause-menu">
           <div className="pause-content">
             <h2>PAUSED</h2>
-            <button
-              className="menu-button"
-              onClick={() => setGameState('playing')}
-            >
-              Resume
-            </button>
-            <button
-              className="menu-button"
-              onClick={() => setShowSettings(true)}
-            >
-              Settings
-            </button>
-            <button
-              className="menu-button"
-              onClick={handleBackToMapSelect}
-              style={{ marginTop: '1rem', backgroundColor: '#6b7280' }}
-            >
-              Ganti Map
+            <button className="menu-button" onClick={() => setGameState('playing')}>Resume</button>
+            <button className="menu-button" onClick={() => setShowSettings(true)}>Settings</button>
+            <button className="menu-button" onClick={handleBackToMapSelect} style={{ marginTop: '1rem', backgroundColor: '#6b7280' }}>
+              Ganti Level
             </button>
           </div>
         </div>
       )}
 
-      {showSettings && (
-        <GraphicsSettings onClose={() => setShowSettings(false)} />
-      )}
+      {showSettings && <GraphicsSettings onClose={() => setShowSettings(false)} />}
 
       {gameState === 'playing' && gameStarted && (
         <>
-          {/* Controls HUD - shows current control mode and key bindings */}
           <ControlsHUD />
-          
-          {/* Speedometer visualization */}
           <SpeedometerHUD />
-          
-          {/* Gear indicator - next to speedometer */}
           <GearHUD />
-          
-          {/* Drift Meter visualization */}
           <DriftMeter />
-          
-          {/* Steering Wheel visualization */}
           <SteeringWheelHUD />
-
-          {/* Violation tracker - next to speedometer */}
           <ViolationHUD />
-
-          {/* Wrong-way warning overlay */}
           <WrongWayWarning />
-
-          {/* Off-road (grass) warning overlay */}
           <OffRoadWarning />
-
-          {/* Transient toast for instant violations (collision, etc.) */}
           <ViolationToast />
-
-          {/* Traffic-light status indicator for the player's approach */}
           <TrafficLightHUD />
-
-          {/* Racing-wheel (Kaiju XR1) live diagnostics + steering-axis calibration.
-              Auto-hides unless a gamepad/wheel is connected. */}
           <WheelDebugOverlay />
-
-          {/* Waypoint/Checkpoint navigation HUD */}
           <WaypointHUD />
-
-          {/* Camera Fatigue Monitor - bottom right corner */}
-          <CameraFatigueMonitor 
-            isEnabled={cameraEnabled}
-            onToggle={() => setCameraEnabled(!cameraEnabled)}
-            onFatigueScoreChange={setCameraFatigueScore}
-          />
-
-          {/* EEG Monitoring Widget - top right corner */}
+          <CameraFatigueMonitor isEnabled={cameraEnabled} onToggle={() => setCameraEnabled(!cameraEnabled)} onFatigueScoreChange={setCameraFatigueScore} />
           {eegEnabled && (
-            <EEGMonitoringWidget
-              sessionId={sessionId}
-              defaultPosition="top-right"
-              onStateChange={setEegCognitiveState}
-            />
+            <EEGMonitoringWidget sessionId={sessionId} defaultPosition="top-right" onStateChange={setEegCognitiveState} />
           )}
-
-          {/* Multimodal Fusion Score — bottom left */}
           <FusionScoreDisplay cameraFatigueScore={cameraFatigueScore} />
         </>
       )}
 
-      {/* Show camera toggle button when game started but not playing */}
       {gameStarted && gameState !== 'playing' && (
-        <CameraFatigueMonitor 
-          isEnabled={cameraEnabled}
-          onToggle={() => setCameraEnabled(!cameraEnabled)}
-          onFatigueScoreChange={setCameraFatigueScore}
-        />
+        <CameraFatigueMonitor isEnabled={cameraEnabled} onToggle={() => setCameraEnabled(!cameraEnabled)} onFatigueScoreChange={setCameraFatigueScore} />
       )}
     </div>
   )

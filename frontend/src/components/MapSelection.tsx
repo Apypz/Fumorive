@@ -1,96 +1,201 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '../stores/gameStore'
-import type { MapType } from '../game/types/map.types'
 import { EEG_DOWNLOAD_URL } from '../config/api'
 
-interface MapInfo {
-  id: MapType
+interface LevelInfo {
+  id: number
   name: string
+  label: string
   description: string
-  thumbnail: string
+  details: string[]
+  color: string
+  glowColor: string
+  icon: string
+  badge: string
 }
 
-const maps: MapInfo[] = [
+const levels: LevelInfo[] = [
   {
-    id: 'solo-city' as MapType,
-    name: 'Solo City',
-    description: 'Kota urban dengan gedung-gedung, jalan raya, dan banyak obstacle. Cocok untuk pengalaman berkendara yang menantang.',
-    thumbnail: '🏙️',
+    id: 1,
+    name: 'Level 1',
+    label: 'Traffic Light',
+    description: 'Kota kecil (7×7) tanpa kendaraan lain. Fokus pada mematuhi lampu merah & rambu jalan.',
+    details: ['Tanpa NPC kendaraan', 'Tanpa pejalan kaki', '6 traffic light aktif', 'Jalan lebar & nyaman'],
+    color: '#22c55e',
+    glowColor: 'rgba(34, 197, 94, 0.25)',
+    icon: '🚦',
+    badge: 'PEMULA',
   },
   {
-    id: 'sriwedari-park' as MapType,
-    name: 'Sriwedari Park',
-    description: 'Taman terbuka yang luas dengan sedikit obstacle. Sempurna untuk berlatih dan menguji kendaraan dengan bebas.',
-    thumbnail: '🌳',
+    id: 2,
+    name: 'Level 2',
+    label: 'NPC Traffic',
+    description: 'Kota sedang (9×9) dengan kendaraan NPC aktif. Berbagi jalan & waspadai kendaraan lain.',
+    details: ['16 NPC kendaraan', 'Tanpa pejalan kaki', '6 traffic light', 'NPC kecepatan moderat'],
+    color: '#f59e0b',
+    glowColor: 'rgba(245, 158, 11, 0.25)',
+    icon: '🚗',
+    badge: 'MENENGAH',
   },
   {
-    id: 'ngawi-city' as MapType,
-    name: 'Ngawi City',
-    description: 'Kota grid dinamis dengan 3 level. Peta & rute di-generate acak setiap permainan — selalu berbeda. Selesaikan satu level untuk lanjut ke level berikutnya.',
-    thumbnail: '🌆',
+    id: 3,
+    name: 'Level 3',
+    label: 'Full City',
+    description: 'Kota besar (11×11) penuh tantangan. NPC agresif bisa terobos lampu merah + pejalan kaki.',
+    details: ['28 NPC kendaraan', '4 pejalan kaki/penyeberangan', '10 traffic light', 'NPC agresif & cepat'],
+    color: '#ef4444',
+    glowColor: 'rgba(239, 68, 68, 0.25)',
+    icon: '🌆',
+    badge: 'MAHIR',
   },
 ]
 
 interface MapSelectionProps {
   onStartGame: () => void
+  onBack?: () => void
 }
 
-export function MapSelection({ onStartGame }: MapSelectionProps) {
+export function MapSelection({ onStartGame, onBack }: MapSelectionProps) {
   const navigate = useNavigate()
-  const { selectedMap, setSelectedMap } = useGameStore()
+  const { selectedLevel, setSelectedLevel, setSelectedMap, startAtLevel, playerName } = useGameStore()
   const [showEEGGuide, setShowEEGGuide] = useState(false)
 
-  const handleMapSelect = (mapId: MapType) => {
-    setSelectedMap(mapId)
+  const handleLevelSelect = (levelId: number) => {
+    setSelectedLevel(levelId)
   }
 
   const handleStartGame = () => {
+    // Always Ngawi City, jump directly to the selected level with a fresh seed.
+    setSelectedMap('ngawi-city')
+    startAtLevel(selectedLevel)
     onStartGame()
   }
 
   const handleBackToDashboard = () => {
-    navigate('/dashboard')
+    if (onBack) {
+      onBack()
+    } else {
+      navigate('/dashboard')
+    }
   }
 
   return (
     <div style={styles.overlay}>
       <div style={styles.container}>
-        <h1 style={styles.title}>PILIH MAP</h1>
-        <p style={styles.subtitle}>Pilih map untuk memulai permainan</p>
-
-        <div style={styles.mapGrid}>
-          {maps.map((map) => (
-            <div
-              key={map.id}
-              style={{
-                ...styles.mapCard,
-                ...(selectedMap === map.id ? styles.mapCardSelected : {}),
-              }}
-              onClick={() => handleMapSelect(map.id)}
-            >
-              <div style={styles.mapThumbnail}>{map.thumbnail}</div>
-              <div style={styles.mapInfo}>
-                <h2 style={styles.mapName}>{map.name}</h2>
-                <p style={styles.mapDescription}>{map.description}</p>
-              </div>
-              {selectedMap === map.id && (
-                <div style={styles.selectedBadge}>TERPILIH</div>
-              )}
+        {/* Header */}
+        <div style={styles.header}>
+          <div style={styles.mapBadge}>🌆 NGAWI CITY</div>
+          <h1 style={styles.title}>PILIH LEVEL</h1>
+          <p style={styles.subtitle}>
+            Peta kota di-generate acak setiap sesi — setiap permainan selalu berbeda!
+          </p>
+          {playerName && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '8px',
+              background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.35)',
+              borderRadius: '999px', padding: '6px 18px', marginTop: '12px',
+            }}>
+              <span style={{ fontSize: '16px' }}>👤</span>
+              <span style={{ color: '#a5b4fc', fontSize: '0.9rem', fontWeight: 700 }}>{playerName}</span>
             </div>
-          ))}
+          )}
         </div>
 
+        {/* Level Cards */}
+        <div style={styles.levelGrid}>
+          {levels.map((level) => {
+            const isSelected = selectedLevel === level.id
+            return (
+              <div
+                key={level.id}
+                style={{
+                  ...styles.levelCard,
+                  ...(isSelected
+                    ? {
+                        borderColor: level.color,
+                        backgroundColor: level.glowColor,
+                        boxShadow: `0 0 40px ${level.glowColor}, 0 8px 32px rgba(0,0,0,0.4)`,
+                        transform: 'translateY(-4px) scale(1.02)',
+                      }
+                    : {}),
+                }}
+                onClick={() => handleLevelSelect(level.id)}
+              >
+                {/* Level number + badge */}
+                <div style={styles.cardTop}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={styles.levelIcon}>{level.icon}</span>
+                    <div>
+                      <div style={styles.levelNumber}>{level.name}</div>
+                      <div
+                        style={{
+                          ...styles.difficultyBadge,
+                          backgroundColor: level.color + '22',
+                          color: level.color,
+                          borderColor: level.color + '55',
+                        }}
+                      >
+                        {level.badge}
+                      </div>
+                    </div>
+                  </div>
+                  {isSelected && (
+                    <div
+                      style={{
+                        ...styles.selectedBadge,
+                        backgroundColor: level.color,
+                      }}
+                    >
+                      TERPILIH ✓
+                    </div>
+                  )}
+                </div>
+
+                {/* Description */}
+                <p style={styles.levelDescription}>{level.description}</p>
+
+                {/* Stats */}
+                <div style={styles.statsList}>
+                  {level.details.map((d, i) => (
+                    <div key={i} style={styles.statItem}>
+                      <span style={{ ...styles.statDot, backgroundColor: level.color }} />
+                      <span style={styles.statText}>{d}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Action Buttons */}
         <div style={styles.buttonGroup}>
-          <button style={styles.startButton} onClick={handleStartGame}>
-            MULAI GAME
+          <button
+            id="btn-start-game"
+            style={styles.startButton}
+            onClick={handleStartGame}
+            onMouseEnter={(e) => {
+              ;(e.currentTarget as HTMLButtonElement).style.transform = 'scale(1.05)'
+              ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 30px rgba(59,130,246,0.6)'
+            }}
+            onMouseLeave={(e) => {
+              ;(e.currentTarget as HTMLButtonElement).style.transform = 'scale(1)'
+              ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 20px rgba(59,130,246,0.4)'
+            }}
+          >
+            🚗 MULAI GAME
           </button>
-          <button style={styles.backButton} onClick={handleBackToDashboard}>
-            KEMBALI KE DASHBOARD
+          <button
+            id="btn-back-dashboard"
+            style={styles.backButton}
+            onClick={handleBackToDashboard}
+          >
+            {onBack ? '← UBAH NAMA' : '← KEMBALI'}
           </button>
         </div>
 
-        {/* EEG pill toggle button */}
+        {/* EEG pill toggle */}
         <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'center' }}>
           <button
             style={styles.eegToggleBtn}
@@ -103,12 +208,7 @@ export function MapSelection({ onStartGame }: MapSelectionProps) {
         {/* EEG Setup Guide floating overlay */}
         {showEEGGuide && (
           <>
-            {/* Backdrop */}
-            <div
-              style={styles.eegBackdrop}
-              onClick={() => setShowEEGGuide(false)}
-            />
-            {/* Floating panel */}
+            <div style={styles.eegBackdrop} onClick={() => setShowEEGGuide(false)} />
             <div style={styles.eegFloatingPanel}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                 <span style={{ color: '#c4b5fd', fontWeight: 700, fontSize: '0.95rem' }}>🧠 Setup EEG Server (Muse 2)</span>
@@ -117,11 +217,9 @@ export function MapSelection({ onStartGame }: MapSelectionProps) {
                   style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1 }}
                 >✕</button>
               </div>
-
               <p style={{ margin: '0 0 12px', color: '#94a3b8', fontSize: '0.82rem' }}>
                 EEG Server berjalan di komputer lokal kamu karena butuh akses hardware Muse 2.
               </p>
-
               {[
                 {
                   num: '1', color: '#38bdf8',
@@ -157,7 +255,6 @@ export function MapSelection({ onStartGame }: MapSelectionProps) {
                   </div>
                 </div>
               ))}
-
               <div style={styles.eegNote}>
                 💡 Tanpa Muse 2, aplikasi tetap jalan normal dengan monitoring kamera saja.
               </div>
@@ -165,6 +262,7 @@ export function MapSelection({ onStartGame }: MapSelectionProps) {
           </>
         )}
 
+        {/* Controls hint */}
         <div style={styles.controlsHint}>
           <p>Kontrol: K untuk nyalakan mesin | WASD untuk bergerak | SPACE/SHIFT untuk rem | V untuk kamera | C untuk steering</p>
         </div>
@@ -180,81 +278,121 @@ const styles: Record<string, React.CSSProperties> = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    backgroundColor: 'rgba(0, 0, 0, 0.96)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
   },
   container: {
-    maxWidth: '900px',
-    width: '90%',
+    maxWidth: '960px',
+    width: '92%',
     padding: '2rem',
     textAlign: 'center',
   },
+  header: {
+    marginBottom: '2rem',
+  },
+  mapBadge: {
+    display: 'inline-block',
+    background: 'rgba(99, 102, 241, 0.15)',
+    border: '1px solid rgba(99, 102, 241, 0.4)',
+    borderRadius: '999px',
+    padding: '4px 18px',
+    color: '#a5b4fc',
+    fontSize: '0.85rem',
+    fontWeight: 700,
+    letterSpacing: '0.08em',
+    marginBottom: '0.75rem',
+  },
   title: {
-    fontSize: '3rem',
-    fontWeight: 'bold',
+    fontSize: '2.8rem',
+    fontWeight: 900,
     color: '#fff',
     marginBottom: '0.5rem',
     letterSpacing: '0.1em',
-    textShadow: '0 0 20px rgba(59, 130, 246, 0.5)',
+    textShadow: '0 0 30px rgba(99,102,241,0.5)',
   },
   subtitle: {
-    fontSize: '1.1rem',
-    color: 'rgba(255, 255, 255, 0.6)',
-    marginBottom: '2rem',
+    fontSize: '1rem',
+    color: 'rgba(255, 255, 255, 0.5)',
   },
-  mapGrid: {
+  levelGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-    gap: '1.5rem',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '1.25rem',
     marginBottom: '2rem',
   },
-  mapCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  levelCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     border: '2px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '16px',
+    borderRadius: '20px',
     padding: '1.5rem',
     cursor: 'pointer',
-    transition: 'all 0.3s ease',
+    transition: 'all 0.25s ease',
     position: 'relative',
-    overflow: 'hidden',
-  },
-  mapCardSelected: {
-    backgroundColor: 'rgba(59, 130, 246, 0.2)',
-    borderColor: '#3b82f6',
-    boxShadow: '0 0 30px rgba(59, 130, 246, 0.3)',
-  },
-  mapThumbnail: {
-    fontSize: '4rem',
-    marginBottom: '1rem',
-  },
-  mapInfo: {
     textAlign: 'left',
   },
-  mapName: {
-    fontSize: '1.5rem',
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: '0.5rem',
+  cardTop: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: '1rem',
   },
-  mapDescription: {
-    fontSize: '0.9rem',
-    color: 'rgba(255, 255, 255, 0.7)',
-    lineHeight: 1.5,
+  levelIcon: {
+    fontSize: '2rem',
+    lineHeight: 1,
+  },
+  levelNumber: {
+    fontSize: '1.1rem',
+    fontWeight: 800,
+    color: '#fff',
+    letterSpacing: '0.05em',
+    marginBottom: '4px',
+  },
+  difficultyBadge: {
+    display: 'inline-block',
+    border: '1px solid',
+    borderRadius: '999px',
+    padding: '2px 10px',
+    fontSize: '0.7rem',
+    fontWeight: 700,
+    letterSpacing: '0.08em',
   },
   selectedBadge: {
-    position: 'absolute',
-    top: '1rem',
-    right: '1rem',
-    backgroundColor: '#3b82f6',
     color: '#fff',
-    padding: '0.25rem 0.75rem',
+    padding: '4px 12px',
     borderRadius: '20px',
-    fontSize: '0.75rem',
-    fontWeight: 'bold',
-    letterSpacing: '0.05em',
+    fontSize: '0.7rem',
+    fontWeight: 800,
+    letterSpacing: '0.06em',
+    flexShrink: 0,
+  },
+  levelDescription: {
+    fontSize: '0.85rem',
+    color: 'rgba(255,255,255,0.65)',
+    lineHeight: 1.6,
+    marginBottom: '1rem',
+  },
+  statsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  statItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  statDot: {
+    width: '6px',
+    height: '6px',
+    borderRadius: '50%',
+    flexShrink: 0,
+  },
+  statText: {
+    fontSize: '0.78rem',
+    color: 'rgba(255,255,255,0.55)',
   },
   buttonGroup: {
     display: 'flex',
@@ -268,39 +406,41 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#fff',
     border: 'none',
     padding: '1rem 3rem',
-    fontSize: '1.25rem',
-    fontWeight: 'bold',
-    borderRadius: '8px',
+    fontSize: '1.2rem',
+    fontWeight: 800,
+    borderRadius: '12px',
     cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    letterSpacing: '0.1em',
-    boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)',
+    transition: 'all 0.2s ease',
+    letterSpacing: '0.08em',
+    boxShadow: '0 4px 20px rgba(59,130,246,0.4)',
   },
   backButton: {
-    backgroundColor: 'rgba(107, 114, 128, 0.8)',
-    color: '#fff',
-    border: '2px solid rgba(255, 255, 255, 0.2)',
-    padding: '1rem 2.5rem',
-    fontSize: '1.1rem',
-    fontWeight: 'bold',
-    borderRadius: '8px',
+    backgroundColor: 'rgba(107,114,128,0.2)',
+    color: 'rgba(255,255,255,0.7)',
+    border: '2px solid rgba(255,255,255,0.15)',
+    padding: '1rem 2rem',
+    fontSize: '1rem',
+    fontWeight: 700,
+    borderRadius: '12px',
     cursor: 'pointer',
-    transition: 'all 0.3s ease',
+    transition: 'all 0.2s ease',
     letterSpacing: '0.05em',
   },
   controlsHint: {
     marginTop: '1rem',
-    padding: '1rem',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    padding: '0.75rem 1rem',
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderRadius: '8px',
+    fontSize: '0.8rem',
+    color: 'rgba(255,255,255,0.4)',
   },
-  // ── EEG Setup Overlay ──────────────────────────────────────────────
+  // EEG overlay styles (unchanged)
   eegToggleBtn: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '6px',
-    background: 'rgba(139, 92, 246, 0.12)',
-    border: '1px solid rgba(139, 92, 246, 0.35)',
+    background: 'rgba(139,92,246,0.12)',
+    border: '1px solid rgba(139,92,246,0.35)',
     borderRadius: '999px',
     padding: '7px 18px',
     color: '#c4b5fd',
@@ -324,11 +464,11 @@ const styles: Record<string, React.CSSProperties> = {
     width: '420px',
     maxWidth: '92vw',
     background: '#0f172a',
-    border: '1px solid rgba(139, 92, 246, 0.35)',
+    border: '1px solid rgba(139,92,246,0.35)',
     borderRadius: '16px',
     padding: '20px',
     zIndex: 1101,
-    boxShadow: '0 0 60px rgba(139, 92, 246, 0.2), 0 25px 50px rgba(0,0,0,0.6)',
+    boxShadow: '0 0 60px rgba(139,92,246,0.2), 0 25px 50px rgba(0,0,0,0.6)',
   },
   eegStep: {
     display: 'flex',
@@ -351,8 +491,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   downloadLink: {
     display: 'inline-block',
-    background: 'rgba(56, 189, 248, 0.15)',
-    border: '1px solid rgba(56, 189, 248, 0.4)',
+    background: 'rgba(56,189,248,0.15)',
+    border: '1px solid rgba(56,189,248,0.4)',
     borderRadius: '6px',
     padding: '4px 12px',
     color: '#38bdf8',
@@ -363,8 +503,8 @@ const styles: Record<string, React.CSSProperties> = {
   },
   codeSnippet: {
     display: 'inline-block',
-    background: 'rgba(167, 139, 250, 0.1)',
-    border: '1px solid rgba(167, 139, 250, 0.25)',
+    background: 'rgba(167,139,250,0.1)',
+    border: '1px solid rgba(167,139,250,0.25)',
     borderRadius: '6px',
     padding: '4px 10px',
     color: '#a78bfa',
@@ -374,8 +514,8 @@ const styles: Record<string, React.CSSProperties> = {
   eegNote: {
     marginTop: '12px',
     padding: '10px 14px',
-    background: 'rgba(16, 185, 129, 0.08)',
-    border: '1px solid rgba(16, 185, 129, 0.2)',
+    background: 'rgba(16,185,129,0.08)',
+    border: '1px solid rgba(16,185,129,0.2)',
     borderRadius: '8px',
     color: '#6ee7b7',
     fontSize: '0.8rem',

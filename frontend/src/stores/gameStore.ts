@@ -27,11 +27,20 @@ interface GameStoreState {
   selectedMap: MapType
   setSelectedMap: (map: MapType) => void
 
+  // Player name (set before session starts, used in report title)
+  playerName: string
+  setPlayerName: (name: string) => void
+
+  // Selected level (1=Easy, 2=Medium, 3=Hard) — chosen in level-select screen
+  selectedLevel: number
+  setSelectedLevel: (level: number) => void
+
   // Levels (Ngawi City — 3 dynamic levels). Each level = a fresh random seed.
   currentLevel: number
   totalLevels: number
   mapSeed: number
   startNgawiRun: () => void   // begin at level 1 with a fresh seed
+  startAtLevel: (level: number) => void  // begin directly at the chosen level
   advanceLevel: () => void    // go to next level with a new seed (capped)
   resetLevels: () => void     // back to level 1, clear seed
 
@@ -111,14 +120,23 @@ export const useGameStore = create<GameStoreState>((set) => ({
     }),
 
   // Map
-  selectedMap: 'solo-city',
+  selectedMap: 'ngawi-city',
   setSelectedMap: (selectedMap) => set({ selectedMap }),
+
+  // Player name
+  playerName: '',
+  setPlayerName: (playerName) => set({ playerName }),
+
+  // Selected level
+  selectedLevel: 1,
+  setSelectedLevel: (selectedLevel) => set({ selectedLevel }),
 
   // Levels (Ngawi City)
   currentLevel: 1,
   totalLevels: 3,
   mapSeed: 0,
   startNgawiRun: () => set({ currentLevel: 1, mapSeed: Date.now() >>> 0 }),
+  startAtLevel: (level) => set({ currentLevel: level, mapSeed: Date.now() >>> 0 }),
   advanceLevel: () =>
     set((state) => ({
       currentLevel: Math.min(state.currentLevel + 1, state.totalLevels),

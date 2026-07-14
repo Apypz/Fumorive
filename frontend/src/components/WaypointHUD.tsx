@@ -29,12 +29,10 @@ export function WaypointHUD() {
   const sessionId = useSessionStore((s) => s.sessionId)
   const eegDataHistory = useEEGStore((s) => s.dataHistory)
 
-  // Level state (Ngawi City has 3 dynamic levels)
+  // Level state (Ngawi City — each session is one standalone level)
   const selectedMap = useGameStore((s) => s.selectedMap)
   const currentLevel = useGameStore((s) => s.currentLevel)
-  const totalLevels = useGameStore((s) => s.totalLevels)
   const isNgawi = selectedMap === 'ngawi-city'
-  const hasNextLevel = isNgawi && currentLevel < totalLevels
 
   // Flash effect when checkpoint reached
   const [showFlash, setShowFlash] = useState(false)
@@ -111,10 +109,9 @@ export function WaypointHUD() {
     navigate('/session-results', { state: completionData })
   }, [isNavigating, sessionId, sessionData, completionTime, violations, totalViolationPoints, eegDataHistory, navigate])
 
-  // Auto-redirect countdown when route completed.
-  // Skipped mid-run on Ngawi City — the player chooses "next level" vs "results".
+  // Auto-redirect countdown when route is completed.
   useEffect(() => {
-    if (!isRouteCompleted || hasNextLevel) return
+    if (!isRouteCompleted) return
     setCountdown(10)
     const interval = setInterval(() => {
       setCountdown((prev) => {
@@ -127,16 +124,7 @@ export function WaypointHUD() {
       })
     }, 1000)
     return () => clearInterval(interval)
-  }, [isRouteCompleted, navigateToResults, hasNextLevel])
-
-  // Advance to the next Ngawi level: reset per-level stores then bump level+seed.
-  // gameStore.advanceLevel() changes the seed → Session's GameCanvas key changes
-  // → clean remount loads the next random map in place (no navigation).
-  const handleNextLevel = useCallback(() => {
-    useWaypointStore.getState().resetWaypoints()
-    useViolationStore.getState().resetViolations()
-    useGameStore.getState().advanceLevel()
-  }, [])
+  }, [isRouteCompleted, navigateToResults])
 
   if (!sessionData) return null
 
@@ -192,28 +180,13 @@ export function WaypointHUD() {
               </span>
             </div>
           </div>
-          {hasNextLevel ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-              <button onClick={handleNextLevel} style={styles.nextLevelButton}>
-                ▶ Lanjut ke Level {currentLevel + 1}
-              </button>
-              <button onClick={handleGoToResults} disabled={isNavigating} style={{
-                ...styles.resultsSecondaryButton,
-                opacity: isNavigating ? 0.7 : 1,
-                cursor: isNavigating ? 'not-allowed' : 'pointer',
-              }}>
-                {isNavigating ? 'Memproses...' : 'Lihat Hasil Analisis'}
-              </button>
-            </div>
-          ) : (
-            <button onClick={handleGoToResults} disabled={isNavigating} style={{
+          <button onClick={handleGoToResults} disabled={isNavigating} style={{
               ...styles.dashboardButton,
               opacity: isNavigating ? 0.7 : 1,
               cursor: isNavigating ? 'not-allowed' : 'pointer'
             }}>
               {isNavigating ? 'Memproses...' : `Lihat Hasil Analisis (${countdown}s)`}
             </button>
-          )}
         </div>
       </div>
     )
@@ -236,7 +209,7 @@ export function WaypointHUD() {
         <div style={styles.routeHeader}>
           <span style={styles.routeIcon}>🏁</span>
           <span style={styles.routeName}>
-            {sessionData.routeName}{isNgawi ? ` — Lv ${currentLevel}/${totalLevels}` : ''}
+          {sessionData.routeName}{isNgawi ? ` — Lv ${currentLevel}` : ''}
           </span>
         </div>
 
