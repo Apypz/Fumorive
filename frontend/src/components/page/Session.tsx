@@ -166,8 +166,8 @@ export default function Session() {
         <MapSelection onStartGame={handleStartGame} onBack={handleBackToNameInput} />
       )}
 
-      {/* Session ID Banner */}
-      {sessionId && gameStarted && (
+      {/* Session ID Banner - HIDDEN: Already shown in EEGMonitoringWidget (top-right) */}
+      {/* {sessionId && gameStarted && (
         <div style={{
           position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)',
           zIndex: 1000, background: 'rgba(15,23,42,0.9)', backdropFilter: 'blur(8px)',
@@ -201,7 +201,7 @@ export default function Session() {
             {sessionCopied ? 'Copied!' : 'Copy'}
           </button>
         </div>
-      )}
+      )} */}
 
       {/* Tutorial Popup */}
       {showTutorial && gameStarted && (

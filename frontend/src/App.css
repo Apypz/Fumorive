@@ -11,11 +11,14 @@
 html,
 body {
   width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 #root {
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
+  min-height: 100%;
 }
 
 body {
@@ -32,13 +35,17 @@ body {
   height: 100%;
   position: relative;
   overflow: hidden;
+  background-color: #0a0a0f;
 }
 
 /* Game Canvas */
 canvas {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 /* Pause menu */
@@ -118,7 +125,7 @@ canvas {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Controls hint */
+/* Controls hint - REMOVED (causes white bars in fullscreen)
 .controls-hint {
   position: fixed;
   bottom: 1rem;
@@ -138,6 +145,7 @@ canvas {
   color: rgba(255, 255, 255, 0.6);
   letter-spacing: 0.05em;
 }
+*/
 
 /* Controls Grid */
 .controls-grid {

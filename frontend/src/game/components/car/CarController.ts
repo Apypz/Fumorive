@@ -586,8 +586,31 @@ export class CarController {
     // Gas pedal drives forward; brake pedal decelerates proportionally (0 = no brake, 1 = full brake).
     const gas = this.readPedal(gp, map.gas)
     const brake = this.readPedal(gp, map.brake)
-    this.input.throttle = Math.max(-1, Math.min(1, gas - brake))
-    this.input.brake = brake  // 0..1 analog pedal depth
+
+    // Throttle: gas drives forward, brake held with no gas = negative throttle for reverse request.
+    // Tapi kita tidak mau langsung pass throttle negatif ke physics saat masih melaju maju —
+    // itu akan trigger shift ke gear -1 terlalu cepat. Jadi:
+    // - Saat ada gas: throttle positif normal
+    // - Saat tidak ada gas + brake: throttle negatif HANYA jika kecepatan sudah sangat rendah
+    //   (di bawah 2 km/h), sehingga brake bekerja normal dulu, lalu baru mundur
+    const speedKmh = this.physics.getSpeedKmh()
+    const isNearlyStopped = speedKmh < 2.0
+
+    if (gas > 0) {
+      // Gas ditekan: maju
+      this.input.throttle = Math.max(0, Math.min(1, gas - brake))
+    } else if (brake > 0 && isNearlyStopped) {
+      // Rem ditekan + hampir berhenti → minta mundur
+      this.input.throttle = -brake
+    } else {
+      // Rem ditekan tapi masih melaju → throttle 0, biarkan brake bekerja
+      this.input.throttle = 0
+    }
+
+    // Pass brake ke physics penuh agar pengereman bertahap bekerja.
+    // Tapi saat sudah shift mundur (throttle negatif), zero-kan brake agar
+    // tidak override reverse force yang baru saja diminta.
+    this.input.brake = this.input.throttle < 0 ? 0 : brake
 
     // Paddle shifters → manual gear up/down (no-op in automatic).
     this.wheelButtonEdge(gp, WHEEL_SHIFT_UP_BUTTON, () => this.physics.shiftUp())

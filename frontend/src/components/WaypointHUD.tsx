@@ -54,13 +54,20 @@ export function WaypointHUD() {
 
     // Prepare session completion data in new format
     const currentTime = new Date()
-    const sessionStartTime = new Date(currentTime.getTime() - completionTime * 1000)
+    // completionTime bisa 0 jika waypoint belum selesai normal — gunakan elapsed dari store
+    // atau fallback ke selisih waktu sejak game dimulai (perkiraan)
+    const durationSeconds = completionTime > 0
+      ? completionTime
+      : sessionData?.elapsedTime ?? 0
+    const sessionStartTime = new Date(currentTime.getTime() - durationSeconds * 1000)
     
     const completionData = {
       sessionId: sessionId || crypto.randomUUID(),
       routeName: sessionData?.routeName || 'Unknown Route',
       startTime: sessionStartTime,
       endTime: currentTime,
+      duration: Math.round(durationSeconds),
+      completionTime: durationSeconds,
       checkpointsReached: sessionData?.reachedCount || 0,
       totalCheckpoints: sessionData?.totalWaypoints || 0,
       violations: violations.map(v => ({
@@ -343,11 +350,6 @@ function DirectionArrow() {
         backgroundColor: bgColor,
       }}>
         {distance < 1000 ? `${Math.round(distance)}m` : `${(distance / 1000).toFixed(1)}km`}
-      </div>
-
-      {/* Next checkpoint label */}
-      <div style={styles.navCheckpointLabel}>
-        CP {Math.min(sessionData.currentWaypointIndex + 1, sessionData.totalWaypoints)}
       </div>
 
       {/* Inject CSS animation */}

@@ -35,7 +35,10 @@ const DEFAULT_KEY_BINDINGS: KeyBindings = {
   gearDown: ['KeyQ'],
   handbrake: ['Space'],
   engineToggle: ['KeyR'],
-  brake: ['KeyS', 'ArrowDown'],
+  // S/ArrowDown sudah dipakai untuk throttle negatif (mundur) di CarController.
+  // Brake keyboard hanya Space — S tidak boleh double-bind sebagai brake
+  // agar mode auto bisa mundur tanpa di-override oleh brakeAxis.
+  brake: [],
 }
 
 export class InputManager {

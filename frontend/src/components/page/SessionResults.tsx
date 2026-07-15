@@ -376,6 +376,8 @@ export default function SessionResults() {
     .logo { font-size: 22px; font-weight: 900; color: #3b82f6; letter-spacing: 0.05em; }
     .report-type { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; }
     h1 { font-size: 20px; font-weight: 800; color: #1e293b; margin-bottom: 6px; }
+    .participant-badge { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #fff; padding: 10px 20px; border-radius: 24px; font-size: 14px; font-weight: 700; margin-top: 10px; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(79,70,229,0.35); }
+    .participant-icon { font-size: 16px; }
     .responden-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
     .responden-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; }
     .responden-name { font-size: 16px; font-weight: 700; color: #4f46e5; }
@@ -410,11 +412,7 @@ export default function SessionResults() {
       <div class="report-type">Laporan Analisis Sesi Berkendara</div>
     </div>
     <h1>Ngawi City ${levelLabel}</h1>
-    ${playerName ? `
-    <div class="responden-row">
-      <span class="responden-label">Responden:</span>
-      <span class="responden-name">👤 ${playerName}</span>
-    </div>` : ''}
+    ${playerName ? `<div class="participant-badge"><span class="participant-icon">👤</span><span>${playerName}</span></div>` : ''}
     <div class="meta">Tanggal: ${date} &nbsp;·&nbsp; Session ID: ${sessionData.sessionId} &nbsp;·&nbsp; Durasi: ${eegStats.durationMinutes} menit</div>
   </div>
 
@@ -1099,7 +1097,7 @@ export default function SessionResults() {
           </button>
 
           <button
-            onClick={() => navigate('/game')}
+            onClick={() => navigate('/session')}
             style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px',
               background: '#3b82f6', border: 'none', borderRadius: 12,
