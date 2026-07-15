@@ -232,9 +232,15 @@ export class SimpleMap {
     // become a single one.
     const pieces: Mesh[] = []
 
+    const roadWidth = plan.grid.roadWidth
+
     plan.roadSegments.forEach((seg) => {
-      const w = seg.horizontal ? seg.length : seg.width
-      const d = seg.horizontal ? seg.width : seg.length
+      // Extend each strip by roadWidth (roadWidth/2 per end) so it fully overlaps
+      // the intersection patch at both endpoints — eliminates hairline grass gaps
+      // at junctions regardless of how many roads meet at a node.
+      const extLen = seg.length + roadWidth
+      const w = seg.horizontal ? extLen : seg.width
+      const d = seg.horizontal ? seg.width : extLen
       const road = MeshBuilder.CreateGround(seg.name, { width: w, height: d }, this.scene)
       // Vertical strips sit a hair higher to avoid z-fighting at intersections.
       road.position = new Vector3(seg.x, seg.horizontal ? 0.01 : 0.02, seg.z)
@@ -242,10 +248,9 @@ export class SimpleMap {
       pieces.push(road)
     })
 
-    // Intersection patches fill the corners where perpendicular streets meet and
-    // any hairline gaps between abutting per-edge strips. Sit just below the
-    // strips so the strips always render on top.
-    const roadWidth = plan.grid.roadWidth
+    // Intersection patches fill the square at every connected node. They sit just
+    // below the strips (y=0.005) so the strips always render on top, and also
+    // cover the area where two strips of the same orientation meet end-to-end.
     plan.grid.nodes.forEach((node) => {
       if ((plan.grid.adj.get(node.id)?.size ?? 0) === 0) return
       const patch = MeshBuilder.CreateGround(`ngawiNode_${node.id}`, {

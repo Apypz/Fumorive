@@ -570,9 +570,13 @@ export function generateNgawiCity(seed: number, params: Partial<NgawiParams> = {
  * intersection patch. Used to flag the player for driving off-road (on grass).
  */
 export function isPointOnNgawiRoad(plan: NgawiCityPlan, x: number, z: number): boolean {
+  // Use the extended length (+ roadWidth) to match the visual road mesh which
+  // is stretched by roadWidth so strips fully overlap the intersection patches.
+  const rw = plan.grid.roadWidth
   for (const seg of plan.roadSegments) {
-    const hx = (seg.horizontal ? seg.length : seg.width) / 2
-    const hz = (seg.horizontal ? seg.width : seg.length) / 2
+    const extLen = seg.length + rw
+    const hx = (seg.horizontal ? extLen : seg.width) / 2
+    const hz = (seg.horizontal ? seg.width : extLen) / 2
     if (Math.abs(x - seg.x) <= hx && Math.abs(z - seg.z) <= hz) return true
   }
   const ph = plan.grid.roadWidth / 2
