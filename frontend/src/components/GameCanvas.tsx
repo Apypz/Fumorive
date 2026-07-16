@@ -34,7 +34,7 @@ export function GameCanvas() {
   const setCurrentGear = useGameStore((s) => s.setCurrentGear)
   const setTransmissionMode = useGameStore((s) => s.setTransmissionMode)
 
-  const { setStation, showHUD } = useRadioStore()
+  const { setStation, showHUD, setCurrentTrack } = useRadioStore()
 
   // Initialize game engine
   const initGame = useCallback(async () => {
@@ -88,6 +88,19 @@ export function GameCanvas() {
         if (impactVelocity > 3) {
           useViolationStore.getState().addViolation('collision')
         }
+      })
+
+      // Wire radio station-change callback
+      demoScene.setOnStationChange?.((station) => {
+        setStation(station)
+        showHUD()
+      })
+
+      // Wire track-change callback (fires when MP3 track changes)
+      demoScene.setOnTrackChange((station, track) => {
+        setStation(station)
+        setCurrentTrack(track)
+        showHUD()
       })
 
       await demoScene.init(engine.getContext())
@@ -272,6 +285,16 @@ export function GameCanvas() {
           setStation(newStation)
           showHUD()
         }
+      }
+
+      // [ = previous track, ] = next track (MP3 stations)
+      if (e.key === '[') {
+        sceneRef.current?.radioPrevTrack()
+        showHUD()
+      }
+      if (e.key === ']') {
+        sceneRef.current?.radioNextTrack()
+        showHUD()
       }
 
       // F12 to toggle inspector

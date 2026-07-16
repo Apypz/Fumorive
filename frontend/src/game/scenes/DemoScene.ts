@@ -80,6 +80,9 @@ export class DemoScene implements GameScene {
   private speedBumps: SpeedBumpSystem | null = null
   private ambientSound: AmbientSoundSystem | null = null
   private radio: RadioSystem | null = null
+  // Pending callbacks — bisa dipasang sebelum radio dibuat oleh init().
+  private pendingRadioStationCb: ((station: RadioStation) => void) | null = null
+  private pendingRadioTrackCb: ((station: RadioStation, track: import('../systems/RadioSystem').RadioTrackInfo | null) => void) | null = null
 
   constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'ngawi-city', seed: number = 1, level: number = 1) {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
@@ -282,7 +285,20 @@ export class DemoScene implements GameScene {
 
   /** Set callback fired whenever the playing track changes. */
   setOnTrackChange(cb: (station: RadioStation, track: import('../systems/RadioSystem').RadioTrackInfo | null) => void): void {
-    this.radio?.setOnTrackChange(cb)
+    if (this.radio) {
+      this.radio.setOnTrackChange(cb)
+    } else {
+      this.pendingRadioTrackCb = cb
+    }
+  }
+
+  /** Set callback fired whenever the station changes (cycled with R). */
+  setOnStationChange(cb: (station: RadioStation) => void): void {
+    if (this.radio) {
+      this.radio.setOnStationChange(cb)
+    } else {
+      this.pendingRadioStationCb = cb
+    }
   }
 
   /**
@@ -443,6 +459,14 @@ export class DemoScene implements GameScene {
 
     // Radio system — available on all maps, starts off.
     this.radio = new RadioSystem()
+    if (this.pendingRadioStationCb) {
+      this.radio.setOnStationChange(this.pendingRadioStationCb)
+      this.pendingRadioStationCb = null
+    }
+    if (this.pendingRadioTrackCb) {
+      this.radio.setOnTrackChange(this.pendingRadioTrackCb)
+      this.pendingRadioTrackCb = null
+    }
 
     // Setup environment (skybox only, ground is from map)
     this.environmentSetup = new EnvironmentSetup(this.scene, this.graphicsConfig)
