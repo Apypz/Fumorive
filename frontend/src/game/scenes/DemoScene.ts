@@ -33,6 +33,8 @@ import { NpcSoundSystem } from '../systems/NpcSoundSystem'
 import { PedestrianSystem } from '../systems/PedestrianSystem'
 import { SpeedBumpSystem } from '../systems/SpeedBumpSystem'
 import { AmbientSoundSystem } from '../systems/AmbientSoundSystem'
+import { RadioSystem } from '../systems/RadioSystem'
+import type { RadioStation } from '../systems/RadioSystem'
 
 export type { MapType }
 
@@ -77,6 +79,7 @@ export class DemoScene implements GameScene {
   private pedestrians: PedestrianSystem | null = null
   private speedBumps: SpeedBumpSystem | null = null
   private ambientSound: AmbientSoundSystem | null = null
+  private radio: RadioSystem | null = null
 
   constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'ngawi-city', seed: number = 1, level: number = 1) {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
@@ -258,6 +261,16 @@ export class DemoScene implements GameScene {
   }
 
   /**
+   * Cycle radio to next station (called on R key press)
+   * Returns the new station id so the caller can update the store.
+   */
+  cycleRadio(): RadioStation {
+    if (!this.radio) return 'off'
+    this.radio.cycleStation()
+    return this.radio.getCurrentStation()
+  }
+
+  /**
    * Get the waypoint system instance
    */
   getWaypointSystem(): WaypointSystem | null {
@@ -386,6 +399,8 @@ export class DemoScene implements GameScene {
       // Ambient suara kota.
       this.ambientSound = new AmbientSoundSystem()
 
+      // Radio system (shared across all maps, initialized here for Ngawi City).
+
       // Expose for browser console debugging
       ;(window as unknown as Record<string, unknown>)['__npcSound'] = this.npcSound
       ;(window as unknown as Record<string, unknown>)['__pedestrians'] = this.pedestrians
@@ -396,6 +411,9 @@ export class DemoScene implements GameScene {
       this.simpleMap.createSoloCity()
       console.log('[DemoScene] Loading Solo City map')
     }
+
+    // Radio system — available on all maps, starts off.
+    this.radio = new RadioSystem()
 
     // Setup environment (skybox only, ground is from map)
     this.environmentSetup = new EnvironmentSetup(this.scene, this.graphicsConfig)
@@ -807,6 +825,8 @@ export class DemoScene implements GameScene {
     this.speedBumps = null
     this.ambientSound?.dispose()
     this.ambientSound = null
+    this.radio?.dispose()
+    this.radio = null
     if (typeof this.simpleMap?.dispose === 'function') {
       this.simpleMap?.dispose();
     }

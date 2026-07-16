@@ -361,6 +361,37 @@ export function generateNgawiCity(seed: number, params: Partial<NgawiParams> = {
     adj.get(b)!.add(a)
   }
 
+  // --- Eliminate dead-ends (jalan buntu) ---
+  // A spanning tree always produces leaf nodes (degree 1). Keep adding edges
+  // from the full grid pool until every node has at least 2 connections so the
+  // player is never forced to reverse at a dead-end. We loop until stable
+  // because fixing one leaf can expose another.
+  {
+    const edgeKey = (a: number, b: number) =>
+      a < b ? a * nodeCount + b : b * nodeCount + a
+    const usedKeys = new Set<number>(chosenEdges.map(([a, b]) => edgeKey(a, b)))
+    let changed = true
+    while (changed) {
+      changed = false
+      for (const node of nodes) {
+        if ((adj.get(node.id)?.size ?? 0) >= 2) continue
+        // Find any unused grid edge that touches this dead-end node
+        for (const [a, b] of allEdges) {
+          if (a !== node.id && b !== node.id) continue
+          const key = edgeKey(a, b)
+          if (usedKeys.has(key)) continue
+          // Add this edge — fixes this leaf and may fix the neighbour too
+          chosenEdges.push([a, b])
+          usedKeys.add(key)
+          adj.get(a)!.add(b)
+          adj.get(b)!.add(a)
+          changed = true
+          break
+        }
+      }
+    }
+  }
+
   // --- Road segments: one short strip per chosen edge ---
   const roadSegments: RoadSegment[] = chosenEdges.map(([a, b], i) => {
     const na = nodes[a]

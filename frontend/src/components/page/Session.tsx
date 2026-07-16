@@ -6,7 +6,6 @@ import { GraphicsSettings } from '../GraphicsSettings'
 import { ControlsHUD } from '../ControlsHUD'
 import { SteeringWheelHUD } from '../SteeringWheelHUD'
 import { SpeedometerHUD } from '../SpeedometerHUD'
-import { DriftMeter } from '../DriftMeter'
 import { MapSelection } from '../MapSelection'
 import { CameraFatigueMonitor } from '../CameraFatigueMonitor'
 import { EEGMonitoringWidget } from '../EEGMonitoringWidget'
@@ -21,6 +20,7 @@ import { WheelDebugOverlay } from '../WheelDebugOverlay'
 import { GearHUD } from '../GearHUD'
 import { WaypointHUD } from '../WaypointHUD'
 import { TutorialPopup } from '../TutorialPopup'
+import { RadioHUD } from '../RadioHUD'
 import { useGameStore } from '../../stores/gameStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useWaypointStore } from '../../stores/waypointStore'
@@ -236,7 +236,6 @@ export default function Session() {
           <ControlsHUD />
           <SpeedometerHUD />
           <GearHUD />
-          <DriftMeter />
           <SteeringWheelHUD />
           <ViolationHUD />
           <WrongWayWarning />
@@ -245,6 +244,7 @@ export default function Session() {
           <TrafficLightHUD />
           <WheelDebugOverlay />
           <WaypointHUD />
+          <RadioHUD />
           <CameraFatigueMonitor isEnabled={cameraEnabled} onToggle={() => setCameraEnabled(!cameraEnabled)} onFatigueScoreChange={setCameraFatigueScore} />
           {eegEnabled && (
             <EEGMonitoringWidget sessionId={sessionId} defaultPosition="top-right" onStateChange={setEegCognitiveState} />

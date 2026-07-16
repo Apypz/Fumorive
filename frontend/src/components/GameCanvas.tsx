@@ -3,6 +3,7 @@ import { GameEngine, DemoScene } from '../game'
 import { useGameStore } from '../stores/gameStore'
 import { useViolationStore } from '../stores/violationStore'
 import { useWaypointStore } from '../stores/waypointStore'
+import { useRadioStore } from '../stores/radioStore'
 
 export function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -32,6 +33,8 @@ export function GameCanvas() {
   const setTrafficLightState = useGameStore((s) => s.setTrafficLightState)
   const setCurrentGear = useGameStore((s) => s.setCurrentGear)
   const setTransmissionMode = useGameStore((s) => s.setTransmissionMode)
+
+  const { setStation, showHUD } = useRadioStore()
 
   // Initialize game engine
   const initGame = useCallback(async () => {
@@ -261,6 +264,16 @@ export function GameCanvas() {
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // R to cycle radio station
+      if (e.key === 'r' || e.key === 'R') {
+        const scene = sceneRef.current
+        if (scene) {
+          const newStation = scene.cycleRadio()
+          setStation(newStation)
+          showHUD()
+        }
+      }
+
       // F12 to toggle inspector
       if (e.key === 'F12') {
         e.preventDefault()
