@@ -270,6 +270,21 @@ export class DemoScene implements GameScene {
     return this.radio.getCurrentStation()
   }
 
+  /** Skip to next track on MP3 stations (Ngawi FM / Radio Kota). */
+  radioNextTrack(): void {
+    this.radio?.nextTrack()
+  }
+
+  /** Go back to previous track on MP3 stations (Ngawi FM / Radio Kota). */
+  radioPrevTrack(): void {
+    this.radio?.prevTrack()
+  }
+
+  /** Set callback fired whenever the playing track changes. */
+  setOnTrackChange(cb: (station: RadioStation, track: import('../systems/RadioSystem').RadioTrackInfo | null) => void): void {
+    this.radio?.setOnTrackChange(cb)
+  }
+
   /**
    * Get the waypoint system instance
    */
