@@ -341,12 +341,13 @@ export class CarCameraManager {
     }
   }
 
-  /** Current shake Y offset (sinusoidal, fades out). */
+  /** Current shake Y offset — single smooth lurch (half-sine), no rapid vibration. */
   private getShakeOffset(): number {
     if (this.shakeTimer <= 0) return 0
-    const progress  = this.shakeTimer / this.shakeDuration
-    const frequency = 18  // oscillations per second
-    return Math.sin(this.shakeTimer * frequency * Math.PI * 2) * this.shakeIntensity * progress
+    const progress = this.shakeTimer / this.shakeDuration
+    // Half-sine: starts at 0, peaks at mid-point, returns to 0 — feels like
+    // going over a bump, not a machine-gun rattle.
+    return Math.sin(progress * Math.PI) * this.shakeIntensity
   }
 
   /**

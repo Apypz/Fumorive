@@ -388,12 +388,24 @@ export class DemoScene implements GameScene {
         this.seed
       )
       this.speedBumps.setOnBumpCross(({ impactSpeed }) => {
-        // Guncang kamera — makin kencang makin keras
-        const intensity = Math.min(0.8, 0.15 + (impactSpeed / 15) * 0.65)
-        const duration  = 0.4 + (impactSpeed / 15) * 0.3
-        this.carController?.triggerCameraShake(intensity, duration)
-        // Lewat terlalu kencang (> ~16 km/h) → mobil terhentak melambat.
-        if (impactSpeed > 4.5) this.carController?.applySpeedBumpJolt(0.62)
+        const WHEELBASE = 2.6 // metres — jarak ban depan ke ban belakang
+
+        // ── Guncangan 1: ban depan ──────────────────────────────────────────
+        const intensity1 = Math.min(0.55, 0.12 + (impactSpeed / 15) * 0.43)
+        const duration1  = 0.28 + (impactSpeed / 15) * 0.18
+        this.carController?.triggerCameraShake(intensity1, duration1)
+        if (impactSpeed > 4.5) this.carController?.applySpeedBumpJolt(0.75)
+
+        // ── Guncangan 2: ban belakang — delay = wheelbase / speed ───────────
+        // Clamp delay antara 0.15-0.6 s agar terasa nyata di semua kecepatan
+        const delay = Math.min(0.6, Math.max(0.15, WHEELBASE / Math.max(impactSpeed, 1)))
+        setTimeout(() => {
+          // Lebih ringan dari guncangan pertama
+          const intensity2 = intensity1 * 0.65
+          const duration2  = duration1  * 0.85
+          this.carController?.triggerCameraShake(intensity2, duration2)
+          if (impactSpeed > 4.5) this.carController?.applySpeedBumpJolt(0.88)
+        }, delay * 1000)
       })
 
       // Ambient suara kota.
