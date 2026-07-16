@@ -190,37 +190,21 @@ export class CarPhysics {
   }
 
   /**
-   * Calculate longitudinal (forward/backward) force.
-   * Respects gear system and analog brake input (0..1).
-   *
-   * Gaya rem = lerp(minBrakeForce, brakeForce, input.brake)
-   * Artinya:
-   *   - brake 0.0 → tidak ada gaya rem dari pedal (hanya engine braking)
-   *   - brake 0.3 → rem ringan, deselerasi pelan
-   *   - brake 1.0 → rem penuh, deselerasi maksimal
+   * Calculate longitudinal (forward/backward) force
+   * Now respects gear system - force depends on current gear
    */
   private calculateLongitudinalForce(input: CarInputState, speed: number): number {
     let force = 0
-
+    
     const gear = this.currentGear
 
-    // ── Helper: gaya rem analog (proporsional dengan kedalaman injakan) ──────
-    // Selalu ada gaya minimum saat pedal menyentuh rem (minBrakeForce),
-    // kemudian naik linear hingga brakeForce penuh.
-    const brakeIntensity = Math.max(0, Math.min(1, input.brake))
-    const minBF  = this.config.minBrakeForce ?? 4
-    const maxBF  = this.config.brakeForce
-    // Effective brake force = interpolasi antara min dan max berdasarkan intensitas
-    const effectiveBrakeForce = brakeIntensity > 0
-      ? minBF + (maxBF - minBF) * brakeIntensity
-      : 0
-    const isBraking = brakeIntensity > 0.01
-
-    // === NEUTRAL (gear 0) — no drive force ===
+    // === NEUTRAL (gear 0) - no drive force ===
     if (gear === 0) {
-      if (isBraking && Math.abs(this.forwardVelocity) > 0.1) {
-        force = -Math.sign(this.forwardVelocity) * effectiveBrakeForce
-      } else if (!isBraking && Math.abs(this.forwardVelocity) > 0.5) {
+      // No throttle drive in neutral, only braking / engine braking
+      if (input.brake > 0 && Math.abs(this.forwardVelocity) > 0.1) {
+        force = -Math.sign(this.forwardVelocity) * this.config.brakeForce * input.brake
+      }
+      if (input.brake <= 0 && Math.abs(this.forwardVelocity) > 0.5) {
         force = -Math.sign(this.forwardVelocity) * this.config.engineBraking
       }
       // Resistance forces
@@ -235,6 +219,9 @@ export class CarPhysics {
 
     // === REVERSE (gear -1) ===
     if (gear === -1) {
+      // Determine the "go backward" input based on transmission mode
+      // Manual: W (throttle>0) = go backward in R, S = brake
+      // Automatic: S (throttle<0) = go backward in R, W = brake/switch to forward
       const wantsReverse = this.transmissionMode === 'manual'
         ? input.throttle > 0
         : input.throttle < 0
@@ -245,25 +232,26 @@ export class CarPhysics {
       if (wantsReverse) {
         const absThrottle = Math.abs(input.throttle)
         if (this.forwardVelocity > 0.5) {
-          // Still rolling forward — brake first (full engine brake, no pedal needed)
+          // Still rolling forward - brake first
           force = -this.config.brakeForce
         } else if (this.forwardVelocity > -CarPhysics.REVERSE_MAX_SPEED) {
           const powerFactor = 1 - Math.pow(Math.abs(this.forwardVelocity) / CarPhysics.REVERSE_MAX_SPEED, 2) * 0.6
           force = -this.config.reverseAcceleration * CarPhysics.REVERSE_ACCEL_MULT * powerFactor * absThrottle
         }
       } else if (wantsBrake) {
+        // Opposite key in reverse gear = brake
         if (Math.abs(this.forwardVelocity) > 0.1) {
-          force = -Math.sign(this.forwardVelocity) * maxBF
+          force = -Math.sign(this.forwardVelocity) * this.config.brakeForce
         }
       }
 
-      // Pedal rem analog di gear R
-      if (isBraking && Math.abs(this.forwardVelocity) > 0.1) {
-        force = -Math.sign(this.forwardVelocity) * effectiveBrakeForce
+      // Brake pedal
+      if (input.brake > 0 && Math.abs(this.forwardVelocity) > 0.1) {
+        force = -Math.sign(this.forwardVelocity) * this.config.brakeForce * input.brake
       }
 
       // Engine braking in reverse
-      if (input.throttle === 0 && !isBraking && Math.abs(this.forwardVelocity) > 0.5) {
+      if (input.throttle === 0 && input.brake <= 0 && Math.abs(this.forwardVelocity) > 0.5) {
         force = -Math.sign(this.forwardVelocity) * this.config.engineBraking
       }
 
@@ -279,22 +267,21 @@ export class CarPhysics {
 
     // === FORWARD GEARS (1-5) ===
     const [gearMaxSpeed, accelMult] = CarPhysics.GEAR_TABLE[gear]
-
+    
     // Throttle
     if (input.throttle > 0) {
       if (this.forwardVelocity < 0) {
         // Braking if moving backward
         force = this.config.brakeForce
-      } else if (this.forwardVelocity <= gearMaxSpeed) {
+      } else if (this.forwardVelocity < gearMaxSpeed) {
+        // Accelerate with power curve limited by gear
         const gearRatio = this.forwardVelocity / gearMaxSpeed
         const powerFactor = 1 - Math.pow(gearRatio, 2) * 0.6
         force = this.config.acceleration * accelMult * powerFactor * input.throttle
-      } else {
-        // OVER REVS (Rev Limiter): Kecepatan melebihi gigi saat ini
-        force = -this.config.brakeForce * 0.4
       }
+      // If speed exceeds gear max, no more acceleration (hitting rev limiter)
     } else if (input.throttle < 0) {
-      // S key: rem atau mundur tergantung mode
+      // In automatic: S = reverse/brake. In manual forward gear: S = brake only
       if (this.transmissionMode === 'automatic') {
         if (this.forwardVelocity > 0.5) {
           force = -this.config.brakeForce
@@ -302,41 +289,23 @@ export class CarPhysics {
           force = this.config.reverseAcceleration * input.throttle
         }
       } else {
-        // Manual forward gear: S hanya ngerem
+        // Manual mode, forward gear: S = brake only (must switch to R to reverse)
         if (Math.abs(this.forwardVelocity) > 0.1) {
           force = -Math.sign(this.forwardVelocity) * this.config.brakeForce
         }
       }
     }
-
-    // ── Pedal rem analog: override force dengan gaya rem proporsional ─────────
-    // Injakan lebih dalam = deselerasi lebih kuat (simulasi gesekan kampas rem)
-    if (isBraking && Math.abs(this.forwardVelocity) > 0.1) {
-      force = -Math.sign(this.forwardVelocity) * effectiveBrakeForce
+    
+    // Brake pedal — force proporsional dengan kedalaman pedal (0 = tidak rem, 1 = rem penuh)
+    if (input.brake > 0 && Math.abs(this.forwardVelocity) > 0.1) {
+      force = -Math.sign(this.forwardVelocity) * this.config.brakeForce * input.brake
     }
-
-    // ── Handbrake: kunci roda belakang → deselerasi parsial + rear loses grip ─
-    // Tidak di-override oleh brake — handbrake dan brake bisa aktif bersamaan.
-    if (input.handbrake && Math.abs(this.forwardVelocity) > 0.1) {
-      const hbForce = this.config.handbrakeBrakeForce ?? 18
-      // Handbrake hanya memberikan gaya jika lebih kuat dari yang sudah ada
-      const hbContrib = -Math.sign(this.forwardVelocity) * hbForce
-      if (Math.abs(hbContrib) > Math.abs(force)) {
-        force = hbContrib
-      }
+    
+    // Engine braking
+    if (input.throttle === 0 && input.brake <= 0 && Math.abs(this.forwardVelocity) > 0.5) {
+      force = -Math.sign(this.forwardVelocity) * this.config.engineBraking
     }
-
-    // Engine braking (hanya saat tidak ada throttle maupun rem)
-    if (input.throttle === 0 && !isBraking && Math.abs(this.forwardVelocity) > 0.5) {
-      let engineDrag = this.config.engineBraking
-      // Jika kecepatan mobil melebihi kecepatan maksimal gigi saat ini (misal saat downshift),
-      // aplikasikan engine braking ekstrim menyerupai pengereman keras
-      if (this.forwardVelocity > gearMaxSpeed + 1) {
-        engineDrag = this.config.brakeForce * 0.7
-      }
-      force = -Math.sign(this.forwardVelocity) * engineDrag
-    }
-
+    
     // Resistance forces
     if (Math.abs(this.forwardVelocity) > 0.1) {
       const rollingResistance = this.config.rollingResistance * this.config.mass * Math.abs(this.forwardVelocity)
@@ -344,7 +313,7 @@ export class CarPhysics {
       const resistanceForce = (rollingResistance + airDrag) * Math.sign(this.forwardVelocity)
       force -= resistanceForce / this.config.mass
     }
-
+    
     return force
   }
 
@@ -411,23 +380,14 @@ export class CarPhysics {
     }
     
     // 3. Braking while turning = weight transfer, rear gets light
-    // Grip reduction proporsional dengan intensitas rem (sedikit rem = sedikit kehilangan grip)
-    if (input.brake > 0.05 && steerRatio > 0.1 && speed > 5) {
+    if (input.brake > 0 && steerRatio > 0.1 && speed > 5) {
       grip *= Math.max(0.15, 1 - this.config.brakeTurnGripLoss * steerRatio * input.brake)
     }
-
+    
     // 4. Throttle while turning = power oversteer
     if (input.throttle > 0.5 && steerRatio > 0.2 && speed > 5) {
       const powerLoss = input.throttle * steerRatio * 0.4
       grip *= Math.max(0.25, 1 - powerLoss)
-    }
-
-    // 5. HANDBRAKE: mengunci roda belakang → rear grip hampir nol
-    // Ini adalah mekanisme utama drift/oversteer dari handbrake.
-    // Grip turun drastis ke handbrakeGripLoss, membuat ekor mobil meluncur bebas.
-    if (input.handbrake && speed > 1) {
-      const hbGrip = this.config.handbrakeGripLoss ?? 0.06
-      grip = Math.min(grip, hbGrip)
     }
     
     // Clamp grip
@@ -566,11 +526,9 @@ export class CarPhysics {
    */
   private updateBodyDynamics(dt: number, turnRate: number, input: CarInputState): void {
     const lateralG = turnRate * Math.abs(this.forwardVelocity) / 9.81
-    // brake sekarang number (0..1), sehingga nose dive proporsional dengan injakan rem
-    const brakeG = input.brake * this.config.brakeForce
-    const longitudinalG = (input.throttle !== 0 || input.brake > 0)
-      ? (input.throttle * this.config.acceleration - brakeG) / 9.81 : 0
-
+    const longitudinalG = (input.throttle !== 0 || input.brake > 0) ? 
+      (input.throttle * this.config.acceleration - (input.brake > 0 ? this.config.brakeForce * input.brake : 0)) / 9.81 : 0
+    
     const targetRoll = lateralG * this.config.bodyRollFactor
     const targetPitch = -longitudinalG * this.config.bodyPitchFactor * 0.3
     
@@ -602,6 +560,11 @@ export class CarPhysics {
     return this.velocity.length()
   }
 
+  /** Scale current velocity — a jolt when crossing a speed bump too fast. */
+  applySpeedBumpJolt(retain: number): void {
+    this.velocity.scaleInPlace(Math.max(0, Math.min(1, retain)))
+  }
+
   getSpeedKmh(): number {
     return Math.round(this.velocity.length() * 3.6)
   }
@@ -620,6 +583,16 @@ export class CarPhysics {
 
   getSteerAngle(): number {
     return this.steerAngle * (180 / Math.PI)
+  }
+
+  /**
+   * Actual road-wheel angle normalised to -1..1 (current / max). Used by the
+   * on-screen steering wheel so it tracks the real front wheels like a
+   * mechanical link instead of the raw input target.
+   */
+  getSteerRatio(): number {
+    const max = this.config.maxSteerAngle
+    return max > 0 ? Math.max(-1, Math.min(1, this.steerAngle / max)) : 0
   }
 
   getIsGrounded(): boolean {
@@ -751,7 +724,7 @@ export class CarPhysics {
     }
 
     // No throttle, fully stopped → neutral (only when truly stopped)
-    if (input.throttle === 0 && input.brake < 0.01 && absForwardSpeed < 0.3 && this.currentGear !== 0) {
+    if (input.throttle === 0 && input.brake <= 0 && absForwardSpeed < 0.3 && this.currentGear !== 0) {
       this.currentGear = 0
     }
   }

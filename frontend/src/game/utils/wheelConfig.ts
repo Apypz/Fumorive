@@ -1,72 +1,84 @@
 /**
  * wheelConfig
  * ===========
- * Runtime calibration for the racing wheel (Kaiju XR1). Different wheels expose
- * the steering on different Gamepad-API axis indices (it is NOT always axis 0),
- * and the direction can be reversed. Rather than hard-code it, the steering axis
- * and its direction are chosen at runtime via the on-screen wheel debug overlay
- * and persisted to localStorage so the choice survives reloads.
+ * Calibration for the racing wheel (Kaiju XR1) in X-Input mode. The steering
+ * axis and the gas/brake pedal sources are calibrated via the wheel overlay and
+ * persisted to localStorage. Defaults follow the standard X-Input layout: pedals
+ * on the analog triggers (gas = button 7 / RT, brake = button 6 / LT), steering
+ * on axis 0.
  */
 
-const AXIS_KEY = 'fumorive_wheel_steer_axis'
-const INVERT_KEY = 'fumorive_wheel_steer_invert'
-const GAMEPAD_KEY = 'fumorive_wheel_gamepad_index'
+export type SourceType = 'axis' | 'button'
 
-function loadInt(key: string, fallback: number): number {
-  try {
-    const v = localStorage.getItem(key)
-    if (v !== null) {
-      const n = parseInt(v, 10)
-      if (!Number.isNaN(n)) return n
+export interface PedalSource {
+  type: SourceType
+  index: number
+  invert: boolean
+}
+
+export interface WheelMapping {
+  gamepadIndex: number | null // which connected device; null = auto-detect
+  steerAxis: number
+  steerInvert: boolean
+  gas: PedalSource
+  brake: PedalSource
+}
+
+const STORAGE_KEY = 'fumorive_wheel_mapping_v3'
+
+const DEFAULT: WheelMapping = {
+  gamepadIndex: null,
+  steerAxis: 0,
+  steerInvert: false,
+  gas: { type: 'button', index: 7, invert: false }, // RT
+  brake: { type: 'button', index: 6, invert: false }, // LT
+}
+
+function clone(m: WheelMapping): WheelMapping {
+  return { ...m, gas: { ...m.gas }, brake: { ...m.brake } }
+}
+
+let mapping: WheelMapping = clone(DEFAULT)
+
+// Load persisted mapping, merging over the defaults so new fields keep a value.
+try {
+  const raw = localStorage.getItem(STORAGE_KEY)
+  if (raw) {
+    const p = JSON.parse(raw) as Partial<WheelMapping>
+    mapping = {
+      ...mapping,
+      ...p,
+      gas: { ...mapping.gas, ...(p.gas ?? {}) },
+      brake: { ...mapping.brake, ...(p.brake ?? {}) },
     }
-  } catch {
-    /* localStorage unavailable */
   }
-  return fallback
+} catch {
+  /* localStorage unavailable / bad JSON — keep defaults */
 }
 
-let steerAxis = loadInt(AXIS_KEY, 0)
-let steerInvert = loadInt(INVERT_KEY, 0) === 1
-// Which gamepad index the game reads for the wheel. null = auto-detect (some
-// wheels expose the steering and pedals as separate gamepad devices).
-let gamepadIndex: number | null = loadInt(GAMEPAD_KEY, -1) < 0 ? null : loadInt(GAMEPAD_KEY, -1)
-
-export function getWheelSteerAxis(): number {
-  return steerAxis
-}
-
-export function setWheelSteerAxis(index: number): void {
-  steerAxis = index
+function persist(): void {
   try {
-    localStorage.setItem(AXIS_KEY, String(index))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mapping))
   } catch {
     /* ignore */
   }
 }
 
-export function getWheelSteerInvert(): boolean {
-  return steerInvert
+export function getWheelMapping(): WheelMapping {
+  return mapping
 }
 
-export function setWheelSteerInvert(value: boolean): void {
-  steerInvert = value
-  try {
-    localStorage.setItem(INVERT_KEY, value ? '1' : '0')
-  } catch {
-    /* ignore */
+export function setWheelMapping(patch: Partial<WheelMapping>): void {
+  mapping = {
+    ...mapping,
+    ...patch,
+    gas: { ...mapping.gas, ...(patch.gas ?? {}) },
+    brake: { ...mapping.brake, ...(patch.brake ?? {}) },
   }
+  persist()
 }
 
-export function getWheelGamepadIndex(): number | null {
-  return gamepadIndex
-}
-
-export function setWheelGamepadIndex(index: number | null): void {
-  gamepadIndex = index
-  try {
-    if (index === null) localStorage.removeItem(GAMEPAD_KEY)
-    else localStorage.setItem(GAMEPAD_KEY, String(index))
-  } catch {
-    /* ignore */
-  }
+export function resetWheelMapping(): void {
+  mapping = clone(DEFAULT)
+  persist()
 }

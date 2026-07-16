@@ -61,6 +61,10 @@ const SCARED_SPEED_MUL = 2.5   // kecepatan lari saat takut
 
 const PEDESTRIANS_PER_CROSS = 2
 
+// Berapa crossing yang ingin di-place per "cell" (persimpangan grid).
+// Nilai lebih tinggi = lebih banyak zebra cross di seluruh kota.
+const CROSSINGS_PER_CELL_RATIO = 0.75  // ~75% dari semua ruas punya crossing
+
 const HIT_RADIUS   = 1.8   // jarak pusat mobil ↔ pejalan untuk dihitung tabrakan (m)
 const HIT_COOLDOWN = 2.5   // detik sebelum pejalan yang sama bisa terhitung lagi
 
@@ -72,6 +76,7 @@ export class PedestrianSystem {
   private crossings: ZebraCross[] = []
   private materials: PBRMaterial[] = []
   private crossMeshes: Mesh[] = []
+  private pedestriansPerCross: number
 
   // Deteksi tabrakan pejalan kaki (per-pejalan cooldown + counter event baru)
   private hitCooldowns: number[] = []
@@ -97,10 +102,11 @@ export class PedestrianSystem {
     return false
   }
 
-  constructor(scene: Scene, grid: NgawiGrid, seed: number) {
+  constructor(scene: Scene, grid: NgawiGrid, seed: number, pedestriansPerCross: number = PEDESTRIANS_PER_CROSS) {
     this.scene = scene
     this.grid = grid
     this.rng   = makeRng((seed ^ 0xdeadbeef) >>> 0)
+    this.pedestriansPerCross = pedestriansPerCross
     this.placeCrossings()
     this.spawnPedestrians()
     this.hitCooldowns = this.pedestrians.map(() => 0)
@@ -109,41 +115,112 @@ export class PedestrianSystem {
   // ── Setup ────────────────────────────────────────────────────────────────
 
   private placeCrossings(): void {
-    // Taruh zebra cross di beberapa persimpangan / tengah ruas jalan.
-    // Kita ambil sebagian edge dari grid, lalu taruh crossing di tengah-tengah edge.
-    const nodes = this.grid.nodes
+    // Taruh zebra cross secara merata di seluruh grid dengan strategi berbasis sel:
+    // 1. Kumpulkan semua edge yang cukup panjang (>= 0.5 cellSize)
+    // 2. Kelompokkan per "baris" dan per "kolom" grid
+    // 3. Dari setiap baris/kolom, ambil crossing dengan sampling merata
+    //    sehingga area pinggir kota dan tengah kota sama-sama terisi
+    const nodes    = this.grid.nodes
     const cellSize = this.grid.cellSize
     const roadWidth = this.grid.roadWidth
 
-    let count = 0
-    const maxCrossings = 14
+    // Kumpulkan semua edge valid (a < b untuk hindari duplikat)
+    interface EdgeCandidate {
+      mx: number
+      mz: number
+      horizontal: boolean
+      dist: number
+      // Koordinat "baris" dan "kolom" dalam grid untuk clustering
+      rowKey: number
+      colKey: number
+    }
 
+    const candidates: EdgeCandidate[] = []
     for (const [aId, neighbors] of this.grid.adj) {
-      if (count >= maxCrossings) break
       for (const bId of neighbors) {
-        if (bId <= aId) continue // hindari duplikat
-        if (count >= maxCrossings) break
-        if (this.rng() > 0.55) continue // hanya beberapa edge
-
+        if (bId <= aId) continue
         const na = nodes[aId]
         const nb = nodes[bId]
+        const dist = Math.hypot(nb.x - na.x, nb.z - na.z)
+        if (dist < cellSize * 0.5) continue  // terlalu pendek
+
         const mx = (na.x + nb.x) / 2
         const mz = (na.z + nb.z) / 2
-        const horizontal = na.r === nb.r // berjalan di sepanjang baris = arah X
+        const horizontal = na.r === nb.r  // sama baris = jalan horizontal
 
-        // Pastikan cukup jauh dari tepi jalan / persimpangan (setidaknya 1/4 cell)
-        const dist = Math.hypot(nb.x - na.x, nb.z - na.z)
-        if (dist < cellSize * 0.5) continue
+        // Kunci pengelompokan: posisi mid-point dalam unit cellSize
+        // Ini memastikan kita bisa ambil per-row dan per-col secara seimbang
+        const rowKey = Math.round(mz / cellSize)
+        const colKey = Math.round(mx / cellSize)
 
-        this.crossings.push({
-          x: mx,
-          z: mz,
-          horizontal,
-          width: roadWidth,
-        })
-        this.buildZebraMesh(mx, mz, horizontal, roadWidth, count)
-        count++
+        candidates.push({ mx, mz, horizontal, dist, rowKey, colKey })
       }
+    }
+
+    if (candidates.length === 0) return
+
+    // Hitung target jumlah crossing berdasarkan ukuran grid dan rasio
+    const gridArea  = this.grid.rows * this.grid.cols
+    const maxCrossings = Math.max(8, Math.round(gridArea * CROSSINGS_PER_CELL_RATIO))
+
+    // Strategi distribusi merata:
+    // Kelompokkan kandidat per rowKey, lalu per colKey.
+    // Dari setiap kelompok ambil satu crossing, rotasi kelompok secara round-robin
+    // sampai target tercapai.
+    const byRow = new Map<number, EdgeCandidate[]>()
+    for (const c of candidates) {
+      const arr = byRow.get(c.rowKey) ?? []
+      arr.push(c)
+      byRow.set(c.rowKey, arr)
+    }
+
+    // Urutkan baris dari kecil ke besar agar distribusi deterministik
+    const rowKeys = Array.from(byRow.keys()).sort((a, b) => a - b)
+
+    // Buat pointer per baris untuk round-robin sampling
+    const rowPointers = new Map<number, number>()
+    for (const rk of rowKeys) {
+      // Acak starting index per baris menggunakan rng agar tidak selalu pojok kiri
+      rowPointers.set(rk, Math.floor(this.rng() * (byRow.get(rk)!.length)))
+    }
+
+    const placed = new Set<string>()  // cegah duplikat posisi
+    let count = 0
+    let pass  = 0
+    const maxPasses = 4  // berapa kali kita round-robin semua baris
+
+    while (count < maxCrossings && pass < maxPasses) {
+      let addedThisPass = 0
+      for (const rk of rowKeys) {
+        if (count >= maxCrossings) break
+        const row = byRow.get(rk)!
+        let ptr   = rowPointers.get(rk)!
+
+        // Cari kandidat yang belum dipakai di baris ini
+        let tries = 0
+        while (tries < row.length) {
+          const c = row[ptr % row.length]
+          ptr++
+          tries++
+          const key = `${Math.round(c.mx)}_${Math.round(c.mz)}`
+          if (placed.has(key)) continue
+
+          placed.add(key)
+          this.crossings.push({
+            x: c.mx,
+            z: c.mz,
+            horizontal: c.horizontal,
+            width: roadWidth,
+          })
+          this.buildZebraMesh(c.mx, c.mz, c.horizontal, roadWidth, count)
+          count++
+          addedThisPass++
+          break
+        }
+        rowPointers.set(rk, ptr)
+      }
+      if (addedThisPass === 0) break  // tidak ada kandidat baru
+      pass++
     }
   }
 
@@ -196,7 +273,7 @@ export class PedestrianSystem {
 
     for (let ci = 0; ci < this.crossings.length; ci++) {
       const cross = this.crossings[ci]
-      for (let pi = 0; pi < PEDESTRIANS_PER_CROSS; pi++) {
+      for (let pi = 0; pi < this.pedestriansPerCross; pi++) {
         const sideIndex = pi % 2
         const skinMat = new PBRMaterial(`pedSkin_${ci}_${pi}`, this.scene)
         skinMat.albedoColor = skinColors[Math.floor(this.rng() * skinColors.length)]

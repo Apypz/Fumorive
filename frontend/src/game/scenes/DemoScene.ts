@@ -27,11 +27,14 @@ import { generateNgawiCity, getNgawiLevelParams, isPointOnNgawiRoad } from '../c
 import type { NgawiCityPlan } from '../components/NgawiCityGenerator'
 import { generateNgawiRoute } from '../systems/routeGenerator'
 import { NpcTrafficSystem } from '../systems/NpcTrafficSystem'
+import type { NpcTrafficConfig } from '../systems/NpcTrafficSystem'
 import { TrafficLightSystem } from '../systems/TrafficLightSystem'
 import { NpcSoundSystem } from '../systems/NpcSoundSystem'
 import { PedestrianSystem } from '../systems/PedestrianSystem'
 import { SpeedBumpSystem } from '../systems/SpeedBumpSystem'
 import { AmbientSoundSystem } from '../systems/AmbientSoundSystem'
+import { RadioSystem } from '../systems/RadioSystem'
+import type { RadioStation } from '../systems/RadioSystem'
 
 export type { MapType }
 
@@ -76,8 +79,9 @@ export class DemoScene implements GameScene {
   private pedestrians: PedestrianSystem | null = null
   private speedBumps: SpeedBumpSystem | null = null
   private ambientSound: AmbientSoundSystem | null = null
+  private radio: RadioSystem | null = null
 
-  constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'solo-city', seed: number = 1, level: number = 1) {
+  constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'ngawi-city', seed: number = 1, level: number = 1) {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
     this.mapType = mapType
     this.seed = seed
@@ -149,10 +153,13 @@ export class DemoScene implements GameScene {
   }
 
   /**
-   * Get current steering angle (-1 to 1)
+   * Normalised steering value (-1 to 1) for the on-screen steering wheel. Uses
+   * the car's ACTUAL road-wheel angle (current/max) so the HUD wheel is
+   * mechanically linked to the front wheels like a real car: full lock = ±540°
+   * on the HUD = ±36° road-wheel angle (≈15:1 steering ratio).
    */
   getSteeringAngle(): number {
-    return this.carController?.getSteeringInput() ?? 0
+    return this.carController?.getSteerRatio() ?? 0
   }
 
   /**
@@ -254,6 +261,16 @@ export class DemoScene implements GameScene {
   }
 
   /**
+   * Cycle radio to next station (called on R key press)
+   * Returns the new station id so the caller can update the store.
+   */
+  cycleRadio(): RadioStation {
+    if (!this.radio) return 'off'
+    this.radio.cycleStation()
+    return this.radio.getCurrentStation()
+  }
+
+  /**
    * Get the waypoint system instance
    */
   getWaypointSystem(): WaypointSystem | null {
@@ -326,32 +343,43 @@ export class DemoScene implements GameScene {
       this.simpleMap.buildNgawiCity(this.ngawiPlan)
       // Feed the procedural street grid to the wrong-way detector.
       this.wrongWayDetector.loadGridNetwork(this.ngawiPlan.grid, params.roadWidth)
-      // Spawn 10 NPC cars that drive the grid, avoiding the player's spawn node.
-      this.npcTraffic = new NpcTrafficSystem(
-        this.scene,
-        this.ngawiPlan.grid,
-        10,
-        this.seed,
-        this.ngawiPlan.spawn.nodeId
-      )
-      // Traffic lights at selected intersections.
+      // Traffic lights at selected intersections — always active at all levels.
       this.trafficLights = new TrafficLightSystem(
         this.scene,
         this.ngawiPlan.grid,
         this.ngawiPlan.trafficLights,
         this.seed
       )
-      // NPC ambient sound system (engine noise + horn).
-      this.npcSound = new NpcSoundSystem()
-      this.npcSound.setGrid(this.ngawiPlan.grid)
-      this.npcSound.preload().catch((e) => console.warn('[DemoScene] NpcSoundSystem preload error:', e))
+      // Spawn NPC cars hanya di level 2+.
+      if (this.level >= 2) {
+        const npcConfig: NpcTrafficConfig = {
+          cruiseMin: params.npcCruiseMin,
+          cruiseMax: params.npcCruiseMax,
+          aggressiveness: params.npcAggressiveness,
+        }
+        this.npcTraffic = new NpcTrafficSystem(
+          this.scene,
+          this.ngawiPlan.grid,
+          params.npcCount,
+          this.seed,
+          this.ngawiPlan.spawn.nodeId,
+          npcConfig
+        )
+        // NPC ambient sound system (engine noise + horn).
+        this.npcSound = new NpcSoundSystem()
+        this.npcSound.setGrid(this.ngawiPlan.grid)
+        this.npcSound.preload().catch((e) => console.warn('[DemoScene] NpcSoundSystem preload error:', e))
+      }
 
-      // Pejalan kaki di zebra cross.
-      this.pedestrians = new PedestrianSystem(
-        this.scene,
-        this.ngawiPlan.grid,
-        this.seed
-      )
+      // Pejalan kaki di zebra cross hanya di level 3.
+      if (this.level >= 3) {
+        this.pedestrians = new PedestrianSystem(
+          this.scene,
+          this.ngawiPlan.grid,
+          this.seed,
+          params.pedestriansPerCross
+        )
+      }
 
       // Polisi tidur.
       this.speedBumps = new SpeedBumpSystem(
@@ -364,10 +392,14 @@ export class DemoScene implements GameScene {
         const intensity = Math.min(0.8, 0.15 + (impactSpeed / 15) * 0.65)
         const duration  = 0.4 + (impactSpeed / 15) * 0.3
         this.carController?.triggerCameraShake(intensity, duration)
+        // Lewat terlalu kencang (> ~16 km/h) → mobil terhentak melambat.
+        if (impactSpeed > 4.5) this.carController?.applySpeedBumpJolt(0.62)
       })
 
       // Ambient suara kota.
       this.ambientSound = new AmbientSoundSystem()
+
+      // Radio system (shared across all maps, initialized here for Ngawi City).
 
       // Expose for browser console debugging
       ;(window as unknown as Record<string, unknown>)['__npcSound'] = this.npcSound
@@ -379,6 +411,9 @@ export class DemoScene implements GameScene {
       this.simpleMap.createSoloCity()
       console.log('[DemoScene] Loading Solo City map')
     }
+
+    // Radio system — available on all maps, starts off.
+    this.radio = new RadioSystem()
 
     // Setup environment (skybox only, ground is from map)
     this.environmentSetup = new EnvironmentSetup(this.scene, this.graphicsConfig)
@@ -406,9 +441,9 @@ export class DemoScene implements GameScene {
     // Create demo objects (optional, can be removed if you only want the car)
     // this.createDemoObjects()
 
-    // Initialize waypoint system for Solo City and Ngawi City
-    if (this.mapType === 'solo-city' || this.mapType === 'ngawi-city') {
-      const route = this.mapType === 'ngawi-city' && this.ngawiPlan
+    // Initialize waypoint system for Ngawi City
+    if (this.mapType === 'ngawi-city') {
+      const route = this.ngawiPlan
         ? generateNgawiRoute(this.ngawiPlan, this.seed, { targetCheckpoints: getNgawiLevelParams(this.level).targetCheckpoints })
         : getRandomRoute(this.mapType)
       this.waypointSystem = new WaypointSystem(route)
@@ -762,9 +797,8 @@ export class DemoScene implements GameScene {
       const position = this.carController.getPosition()
       const heading = this.carController.getHeading()
       const speed = this.carController.getSpeed()
-      // Wrong-way lane directions exist for Solo City (static) and Ngawi City
-      // (loaded from its procedural grid); Sriwedari Park has none.
-      if (this.mapType === 'solo-city' || this.mapType === 'ngawi-city') {
+      // Wrong-way lane directions loaded from Ngawi City procedural grid.
+      if (this.mapType === 'ngawi-city') {
         this.wrongWayDetector.update(position, heading, speed, deltaTime)
       }
 
@@ -791,6 +825,8 @@ export class DemoScene implements GameScene {
     this.speedBumps = null
     this.ambientSound?.dispose()
     this.ambientSound = null
+    this.radio?.dispose()
+    this.radio = null
     if (typeof this.simpleMap?.dispose === 'function') {
       this.simpleMap?.dispose();
     }

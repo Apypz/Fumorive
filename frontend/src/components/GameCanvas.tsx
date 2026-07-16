@@ -3,6 +3,7 @@ import { GameEngine, DemoScene } from '../game'
 import { useGameStore } from '../stores/gameStore'
 import { useViolationStore } from '../stores/violationStore'
 import { useWaypointStore } from '../stores/waypointStore'
+import { useRadioStore } from '../stores/radioStore'
 
 export function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -33,6 +34,8 @@ export function GameCanvas() {
   const setCurrentGear = useGameStore((s) => s.setCurrentGear)
   const setTransmissionMode = useGameStore((s) => s.setTransmissionMode)
 
+  const { setStation, showHUD } = useRadioStore()
+
   // Initialize game engine
   const initGame = useCallback(async () => {
     if (!canvasRef.current) return
@@ -56,8 +59,12 @@ export function GameCanvas() {
       // Create scene
       engine.createScene()
 
-      // Create and initialize demo scene with selected map (+ seed/level for Ngawi)
-      const demoScene = new DemoScene(graphicsConfig, selectedMap, mapSeed, currentLevel)
+      // Create and initialize demo scene with selected map (+ seed/level for Ngawi).
+      // Read level & seed FRESH from the store at this moment — NOT from the React
+      // closure, which may still hold the pre-startAtLevel stale values.
+      const { currentLevel: level, mapSeed: seed, selectedMap: map } = useGameStore.getState()
+      const demoScene = new DemoScene(graphicsConfig, map, seed, level)
+
       sceneRef.current = demoScene
 
       // Set camera mode change callback to update UI
@@ -257,6 +264,16 @@ export function GameCanvas() {
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // R to cycle radio station
+      if (e.key === 'r' || e.key === 'R') {
+        const scene = sceneRef.current
+        if (scene) {
+          const newStation = scene.cycleRadio()
+          setStation(newStation)
+          showHUD()
+        }
+      }
+
       // F12 to toggle inspector
       if (e.key === 'F12') {
         e.preventDefault()

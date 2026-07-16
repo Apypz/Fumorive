@@ -43,6 +43,8 @@ interface SavedSession {
     endTime?: string;
     duration?: number;
     routeName?: string;
+    playerName?: string;
+    level?: number;
     totalWaypoints?: number;
     reachedCount?: number;
     missedCount?: number;
@@ -173,7 +175,7 @@ const Dashboard = () => {
         }
 
         return {
-            sessionId: `session_${Date.now()}`,
+            sessionId: crypto.randomUUID(),
             startTime: startTime.toISOString(),
             endTime: new Date().toISOString(),
             duration: 30 * 60, // 30 minutes in seconds
@@ -267,6 +269,7 @@ const Dashboard = () => {
         const query = searchQuery.toLowerCase();
         return sessionHistory.filter(s =>
             s.routeName?.toLowerCase().includes(query) ||
+            s.playerName?.toLowerCase().includes(query) ||
             s.sessionId.toLowerCase().includes(query) ||
             new Date(s.startTime).toLocaleDateString().includes(query)
         );
@@ -1173,7 +1176,10 @@ const Dashboard = () => {
                                     /* Session Cards */
                                     filteredSessions.map((session) => {
                                         const startDate = new Date(session.startTime);
-                                        const duration = session.duration || session.completionTime || 0;
+                                        const duration = session.duration || session.completionTime ||
+                                          (session.endTime
+                                            ? Math.floor((new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000)
+                                            : 0);
                                         const durationMin = Math.floor(duration / 60);
                                         const durationSec = Math.floor(duration % 60);
                                         const violationCount = session.violations?.length || 0;

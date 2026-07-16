@@ -159,6 +159,82 @@ export interface InputState {
   mouseY: number
   mouseDeltaX: number
   mouseDeltaY: number
+
+  // --- Vehicle controller fields ---
+  /** Nilai axis gas dari gamepad [0.0–1.0]. Keyboard forward = 1.0 jika ditekan. */
+  throttleAxis: number
+  /** Nilai axis rem dari gamepad [0.0–1.0]. Keyboard brake = 1.0 jika ditekan. */
+  brakeAxis: number
+  /** Naik gigi: Button 4 gamepad atau KeyE */
+  gearUp: boolean
+  /** Turun gigi: Button 5 gamepad atau KeyQ */
+  gearDown: boolean
+  /** Toggle handbrake: Button 1 gamepad atau tombol terkonfigurasi */
+  handbrakeToggle: boolean
+  /** Toggle engine: Button 2 gamepad atau tombol terkonfigurasi */
+  engineToggle: boolean
+}
+
+// ============================================
+// VEHICLE
+// ============================================
+
+/**
+ * Urutan posisi gigi kendaraan: R → N → 1 → 2 → 3 → 4 → 5 → 6.
+ * Naik gigi bergerak ke kanan, turun gigi bergerak ke kiri.
+ */
+export const GEAR_SEQUENCE = ['R', 'N', '1', '2', '3', '4', '5', '6'] as const
+
+/**
+ * Tipe union dari semua posisi gigi yang valid.
+ */
+export type GearPosition = typeof GEAR_SEQUENCE[number]
+
+/**
+ * Tabel batas kecepatan maksimum (unit/s) per posisi gigi.
+ * Requirement 4.1
+ */
+export const GEAR_SPEED_CAPS: Record<GearPosition, number> = {
+  R:   10,
+  N:   0,
+  '1': 29,
+  '2': 50,
+  '3': 75,
+  '4': 100,
+  '5': 130,
+  '6': 160,
+}
+
+/**
+ * Payload event yang dipancarkan VehicleController saat gigi berubah.
+ */
+export interface GearChangedPayload {
+  gear: GearPosition
+}
+
+/**
+ * Payload event yang dipancarkan VehicleController saat status handbrake berubah.
+ */
+export interface HandbrakeChangedPayload {
+  active: boolean
+}
+
+/**
+ * Payload event yang dipancarkan VehicleController saat status mesin berubah.
+ */
+export interface EngineStateChangedPayload {
+  running: boolean
+}
+
+/**
+ * Snapshot state internal kendaraan — digunakan untuk UI subscriber dan debugging.
+ */
+export interface VehicleState {
+  currentGear: GearPosition
+  engineRunning: boolean
+  handbrakeActive: boolean
+  speed: number
+  brakeDepth: number
 }
 
 // ============================================
