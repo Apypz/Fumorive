@@ -38,14 +38,42 @@ export const DEFAULT_PHYSICS_CONFIG: CarPhysicsConfig = {
   // ============================================
   // BRAKING
   // ============================================
-  /** Normal brake deceleration in m/s². Higher = stronger brakes */
+  /** Maximum brake deceleration in m/s² at full pedal press */
   brakeForce: 30,
+
+  /**
+   * Minimum brake force applied even on lightest pedal press.
+   * Prevents instant cliff-edge feel — at 0% pressure you still get this
+   * much deceleration (like brake pad friction). Range: 0..brakeForce.
+   */
+  minBrakeForce: 4,
+
+  /**
+   * How fast the keyboard SPACE-bar brake ramps from 0 to 1 (per second).
+   * Lower = softer initial bite (more ABS-like). Range: 1..10.
+   * Analog pedal (wheel controller) ignores this and reads raw value.
+   */
+  brakeRampSpeed: 3.5,
+
+  /**
+   * Rear grip multiplier when handbrake is active.
+   * Near 0 = rear wheels completely locked = maximum slide/oversteer.
+   * Tuning: 0.04 = very aggressive drift entry, 0.12 = controllable drift.
+   */
+  handbrakeGripLoss: 0.06,
+
+  /**
+   * Rear-axle braking force when handbrake is engaged (m/s²).
+   * Lower than brakeForce because only the rear wheels are locked.
+   * Too high = spin-out; too low = handbrake feels weak.
+   */
+  handbrakeBrakeForce: 18,
 
   // ============================================
   // STEERING
   // ============================================
   /** Maximum steering angle in radians. π/5 ≈ 36° */
-  maxSteerAngle: Math.PI / 5,
+  maxSteerAngle: Math.PI / 2.4,
   
   /** How fast steering wheel turns. Higher = more responsive */
   steeringSpeed: 5,

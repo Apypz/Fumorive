@@ -157,6 +157,20 @@ export interface CarPhysicsConfig {
   
   // Braking
   brakeForce: number
+  /** Minimum brake force applied even on light pedal press (0..brakeForce). Prevents cliff-edge feel. */
+  minBrakeForce: number
+  /** How fast keyboard brake builds up to full (per second). Lower = softer initial bite. */
+  brakeRampSpeed: number
+  /**
+   * Rear grip multiplier when handbrake is active (0..1).
+   * 0 = completely locked rear (pure slide), 0.05 = slight grip.
+   */
+  handbrakeGripLoss: number
+  /**
+   * Longitudinal deceleration force applied to rear axle when handbrake is active.
+   * Lower than normal brakeForce since only rear wheels are locked.
+   */
+  handbrakeBrakeForce: number
   
   // Steering
   maxSteerAngle: number
@@ -275,7 +289,8 @@ export interface DriftParticleConfig {
 export interface CarInputState {
   throttle: number    // -1 to 1
   steering: number    // -1 to 1
-  brake: boolean
+  brake: number       // 0 to 1  (0 = tidak direm, 1 = rem penuh)
+  handbrake: boolean  // true = handbrake (rem tangan) aktif
 }
 
 /**

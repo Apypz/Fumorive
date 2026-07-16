@@ -69,11 +69,13 @@ export const DEFAULT_CAMERA_CONFIG_LEGACY: CameraPositionConfig = {
 // Pedals/buttons follow the standard X-Input layout below. The STEERING axis is
 // NOT hard-coded — wheels report it on different axis indices — so it is read
 // from wheelConfig (set live via the wheel debug overlay) each frame.
-const WHEEL_GAS_BUTTON = 7       // RT — gas pedal (analog .value 0..1)
-const WHEEL_BRAKE_BUTTON = 6     // LT — brake pedal (analog .value 0..1)
-const WHEEL_SHIFT_UP_BUTTON = 5  // RB / right paddle
-const WHEEL_SHIFT_DOWN_BUTTON = 4 // LB / left paddle
-const WHEEL_HORN_BUTTON = 0      // A
+const WHEEL_GAS_BUTTON = 7        // RT — gas pedal (analog .value 0..1)
+const WHEEL_BRAKE_BUTTON = 6      // LT — brake pedal (analog .value 0..1)
+const WHEEL_SHIFT_UP_BUTTON = 5   // Button 5 (RB/right paddle) — Naik Gigi (Shift Up)
+const WHEEL_SHIFT_DOWN_BUTTON = 4 // Button 4 (LB/left paddle)  — Turun Gigi (Shift Down)
+const WHEEL_HANDBRAKE_BUTTON = 1  // Button 1 (B) — Handbrake
+const WHEEL_ENGINE_BUTTON = 2     // Button 2 (X) — Start/Stop Engine
+const WHEEL_HORN_BUTTON = 0       // A
 const WHEEL_DEADZONE = 0.06
 
 export class CarController {
@@ -112,8 +114,13 @@ export class CarController {
   private input: CarInputState = {
     throttle: 0,
     steering: 0,
-    brake: false,
+    brake: 0,
+    handbrake: false,
   }
+
+  // Keyboard brake ramp state
+  private keyboardBrakeTarget: number = 0   // 0 atau 1 (tombol ditekan/dilepas)
+  private keyboardBrakeValue: number = 0    // nilai aktual 0..1 yang di-ramp secara halus
 
   // Racing wheel (Kaiju XR1) state — read via the Gamepad API
   private gamepadIndex: number | null = null
@@ -256,7 +263,10 @@ export class CarController {
     this.input.steering = 0
     // Clear pedals/throttle so a held input from the previous mode doesn't stick.
     this.input.throttle = 0
-    this.input.brake = false
+    this.input.brake = 0
+    this.input.handbrake = false
+    this.keyboardBrakeTarget = 0
+    this.keyboardBrakeValue = 0
 
     console.log(`[CarController] Switched to ${mode} control`)
 
@@ -415,8 +425,14 @@ export class CarController {
           }
           break
         case ' ':
-          // Brake - space only
-          this.input.brake = pressed
+          // Rem — keyboard: set target untuk ramp-up analog
+          this.keyboardBrakeTarget = pressed ? 1 : 0
+          break
+        case 'h':
+          // Handbrake — tombol H (Toggle)
+          if (pressed) {
+            this.input.handbrake = !this.input.handbrake
+          }
           break
         case 'shift':
           // Horn - shift key
@@ -463,6 +479,9 @@ export class CarController {
     // Handle keyboard steering smoothing
     this.updateKeyboardSteering(dt)
     
+    // Handle keyboard brake ramp-up/down
+    this.updateKeyboardBrake(dt)
+    
     // Handle mouse steering
     this.updateMouseSteering(dt)
 
@@ -495,6 +514,30 @@ export class CarController {
       this.physics.getSlipAngle(),
       this.physics.getSpeed()
     )
+  }
+
+  /**
+   * Ramp brake input secara analog untuk keyboard.
+   * Saat SPACE ditekan: brake naik ke 1.0 secara progresif (sesuai brakeRampSpeed).
+   * Saat SPACE dilepas: brake turun kembali ke 0 secara cepat.
+   */
+  private updateKeyboardBrake(dt: number): void {
+    const config = this.physics.getConfig()
+    const rampSpeed = config.brakeRampSpeed ?? 3.5
+
+    if (this.keyboardBrakeTarget > this.keyboardBrakeValue) {
+      // Naik ke full brake sesuai rampSpeed
+      this.keyboardBrakeValue = Math.min(1, this.keyboardBrakeValue + rampSpeed * dt)
+    } else if (this.keyboardBrakeTarget < this.keyboardBrakeValue) {
+      // Lepas rem: cepat kembali ke 0 (2× lebih cepat dari ramp naik)
+      this.keyboardBrakeValue = Math.max(0, this.keyboardBrakeValue - rampSpeed * 2 * dt)
+    }
+
+    // Hanya terapkan ke input.brake jika mode bukan wheel
+    // (wheel punya analog pedal sendiri)
+    if (this.currentControlMode !== 'wheel') {
+      this.input.brake = this.keyboardBrakeValue
+    }
   }
 
   /**
@@ -616,21 +659,28 @@ export class CarController {
   }
 
   /**
-   * Read the Kaiju XR1 each frame while in 'wheel' mode and translate it into
-   * the same input the keyboard/mouse produce: steering from the wheel axis,
-   * throttle from the gas pedal, reverse/brake from the brake pedal, gear shifts
-   * from the paddles, and the horn from a face button.
+   * Read the Kaiju XR1 each frame and translate it into the same input the
+   * keyboard/mouse produce: steering from the wheel axis, throttle from the gas
+   * pedal, reverse/brake from the brake pedal, gear shifts from the paddles,
+   * and the horn from a face button.
+   *
+   * GEAR SHIFT BUTTONS (selalu aktif saat mode transmisi manual):
+   *   Button 4 (LB/left paddle)  → Turun Gigi (Shift Down)
+   *   Button 5 (RB/right paddle) → Naik Gigi  (Shift Up)
+   *
+   * Steering/pedal input hanya dibaca saat mode kontrol aktif = 'wheel'.
    */
   private updateWheelInput(_dt: number): void {
-    if (this.currentControlMode !== 'wheel') return
-
     const gp = this.activeGamepad()
-    if (!gp) {
-      // Wheel vanished mid-drive — neutralise inputs.
-      this.input.steering = 0
-      this.input.throttle = 0
-      return
-    }
+    if (!gp) return
+
+    // === GEAR SHIFT: aktif di semua mode kontrol saat transmisi manual ===
+    // Button 4 = Turun Gigi, Button 5 = Naik Gigi (Ryunix Kaiju XR1)
+    this.wheelButtonEdge(gp, WHEEL_SHIFT_DOWN_BUTTON, () => this.physics.shiftDown())
+    this.wheelButtonEdge(gp, WHEEL_SHIFT_UP_BUTTON, () => this.physics.shiftUp())
+
+    // === STEERING & PEDAL: hanya saat mode 'wheel' aktif ===
+    if (this.currentControlMode !== 'wheel') return
 
     // Steering from the wheel axis (index/direction set via the debug overlay),
     // with a small deadzone around centre.
@@ -638,15 +688,24 @@ export class CarController {
     if (Math.abs(steer) < WHEEL_DEADZONE) steer = 0
     this.input.steering = Math.max(-1, Math.min(1, steer))
 
-    // Gas pedal drives forward; brake pedal decelerates / reverses (mirrors S).
+    // Gas pedal → throttle positif.
+    // Brake pedal → input.brake analog (0..1) agar gaya rem proporsional dengan injakan.
+    // Keduanya tidak lagi digabung, sehingga gas dan rem bisa dibaca terpisah oleh physics.
     const gas = this.readButton(gp, WHEEL_GAS_BUTTON)
-    const brake = this.readButton(gp, WHEEL_BRAKE_BUTTON)
-    this.input.throttle = Math.max(-1, Math.min(1, gas - brake))
-    this.input.brake = false
+    const brakeVal = this.readButton(gp, WHEEL_BRAKE_BUTTON)
+    const brakeDeadzone = 0.04  // abaikan sentuhan kecil pada pedal rem
+    this.input.throttle = Math.max(0, Math.min(1, gas))
+    this.input.brake = brakeVal > brakeDeadzone ? Math.min(1, brakeVal) : 0
 
-    // Paddle shifters → manual gear up/down (no-op in automatic).
-    this.wheelButtonEdge(gp, WHEEL_SHIFT_UP_BUTTON, () => this.physics.shiftUp())
-    this.wheelButtonEdge(gp, WHEEL_SHIFT_DOWN_BUTTON, () => this.physics.shiftDown())
+    // Handbrake — Button 1 (B) pada Ryunix Kaiju XR1 (Toggle)
+    this.wheelButtonEdge(gp, WHEEL_HANDBRAKE_BUTTON, () => {
+      this.input.handbrake = !this.input.handbrake
+    })
+
+    // Start/Stop Engine — Button 2 (X) pada Ryunix Kaiju XR1
+    this.wheelButtonEdge(gp, WHEEL_ENGINE_BUTTON, () => {
+      this.toggleEngine()
+    })
 
     // Horn button (play on press, stop on release).
     const hornNow = gp.buttons[WHEEL_HORN_BUTTON]?.pressed ?? false

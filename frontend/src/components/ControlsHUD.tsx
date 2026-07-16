@@ -128,8 +128,20 @@ export function ControlsHUD() {
                 <span style={styles.controlDesc}>Gas (kanan) / Rem (kiri)</span>
               </div>
               <div style={styles.controlRow}>
-                <span style={styles.wheelBadge}>Paddle</span>
-                <span style={styles.controlDesc}>Ganti gigi (manual)</span>
+                <span style={styles.wheelBadgeGear}>Btn 5</span>
+                <span style={styles.controlDesc}>Naik Gigi ↑</span>
+              </div>
+              <div style={styles.controlRow}>
+                <span style={styles.wheelBadgeGear}>Btn 4</span>
+                <span style={styles.controlDesc}>Turun Gigi ↓</span>
+              </div>
+              <div style={styles.controlRow}>
+                <span style={styles.wheelBadgeHandbrake}>Btn 1</span>
+                <span style={styles.controlDesc}>Rem Tangan</span>
+              </div>
+              <div style={styles.controlRow}>
+                <span style={styles.keyBadgeEngine}>Btn 2</span>
+                <span style={styles.controlDesc}>Start/Stop Mesin</span>
               </div>
             </>
           ) : (
@@ -145,6 +157,10 @@ export function ControlsHUD() {
           <div style={styles.controlRow}>
             <span style={styles.keyBadge}>SPACE</span>
             <span style={styles.controlDesc}>Rem</span>
+          </div>
+          <div style={styles.controlRow}>
+            <span style={styles.keyBadgeHandbrake}>H</span>
+            <span style={styles.controlDesc}>Rem Tangan</span>
           </div>
           <div style={styles.controlRow}>
             <span style={styles.keyBadge}>SHIFT</span>
@@ -191,6 +207,15 @@ export function ControlsHUD() {
                 <span style={styles.keyBadgeGear}>Q</span>
                 <span style={styles.controlDesc}>Turun Gigi</span>
               </div>
+              {/* Tampilkan info controller jika ada gamepad terhubung */}
+              <div style={styles.controlRow}>
+                <span style={styles.wheelBadgeGear}>Btn 5</span>
+                <span style={styles.controlDesc}>Naik Gigi ↑ (XR1)</span>
+              </div>
+              <div style={styles.controlRow}>
+                <span style={styles.wheelBadgeGear}>Btn 4</span>
+                <span style={styles.controlDesc}>Turun Gigi ↓ (XR1)</span>
+              </div>
             </div>
             <div style={styles.hint}>
               R ← N → 1 → 2 → 3 → 4 → 5
@@ -204,7 +229,8 @@ export function ControlsHUD() {
         <>
           <div style={styles.divider} />
           <div style={styles.hint}>
-            Setir Kaiju XR1 aktif. Pedal kanan = gas, kiri = rem/mundur, paddle untuk ganti gigi.
+            Kaiju XR1 aktif. Pedal kanan = gas, kiri = rem/mundur.
+            Mode manual: Btn 5 = Naik Gigi, Btn 4 = Turun Gigi.
           </div>
         </>
       )}
@@ -428,6 +454,49 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.65rem',
     fontWeight: 'bold',
     color: '#fb923c',
+  },
+  wheelBadgeGear: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '24px',
+    height: '20px',
+    padding: '0 8px',
+    backgroundColor: 'rgba(251, 191, 36, 0.2)',
+    border: '1px solid rgba(251, 191, 36, 0.45)',
+    borderRadius: '4px',
+    fontSize: '0.65rem',
+    fontWeight: 'bold',
+    color: '#fbbf24',
+  },
+  keyBadgeHandbrake: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '24px',
+    height: '20px',
+    padding: '0 6px',
+    backgroundColor: 'rgba(244, 114, 182, 0.3)',  // pink
+    border: '1px solid rgba(244, 114, 182, 0.5)',
+    borderRadius: '4px',
+    fontSize: '0.65rem',
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+    color: '#f472b6',
+  },
+  wheelBadgeHandbrake: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '24px',
+    height: '20px',
+    padding: '0 8px',
+    backgroundColor: 'rgba(244, 114, 182, 0.2)',  // pink
+    border: '1px solid rgba(244, 114, 182, 0.45)',
+    borderRadius: '4px',
+    fontSize: '0.65rem',
+    fontWeight: 'bold',
+    color: '#f472b6',
   },
   controlDesc: {
     opacity: 0.8,

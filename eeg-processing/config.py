@@ -21,12 +21,16 @@ CHANNEL_LABELS = ["TP9", "AF7", "AF8", "TP10", "AUX"]
 # BrainFlow Board IDs
 # ---------------------------
 # Reference: https://brainflow.readthedocs.io/en/stable/SupportedBoards.html
-# Native BLE (Windows) ditangani langsung oleh BrainFlow, tanpa LSL/muselsl.
-MUSE_2_BOARD_ID = 22         # BoardIds.MUSE_2_BOARD
-MUSE_S_BOARD_ID = 21         # BoardIds.MUSE_S_BOARD (termasuk Muse S Athena)
+# PENTING: nilai integer enum board BEDA antar versi BrainFlow. Di beberapa
+# versi, id 21/22 adalah varian *BLED112* (butuh USB dongle) BUKAN native BLE.
+# Karena itu id diambil langsung dari enum BoardIds agar selalu benar:
+#   MUSE_S_BOARD / MUSE_2_BOARD = native BLE Windows (tanpa dongle, incl. Athena)
+from brainflow.board_shim import BoardIds
 
-# Urutan board yang dicoba saat auto-deteksi headband.
-# Muse S didahulukan karena itu perangkat target utama (Athena).
+MUSE_2_BOARD_ID = BoardIds.MUSE_2_BOARD.value   # native BLE
+MUSE_S_BOARD_ID = BoardIds.MUSE_S_BOARD.value   # native BLE (termasuk Muse S Athena)
+
+# Urutan board yang dicoba saat auto-deteksi headband (Muse S didahulukan).
 BOARD_ID_CANDIDATES = [MUSE_S_BOARD_ID, MUSE_2_BOARD_ID]
 
 # MAC address Muse (kosong = auto-discover via native BLE).
