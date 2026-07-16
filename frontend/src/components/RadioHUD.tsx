@@ -14,13 +14,7 @@ export function RadioHUD() {
 
   return (
     <div style={{
-      position: 'fixed',
-      // Speedometer: bottom=2rem, SVG 160px + gap 8px + digital ~36px = ~236px total
-      // Add 12px breathing room on top
-      bottom: 'calc(2rem + 248px)',
-      left: '2rem',
       width: '160px',
-      zIndex: 100,
       pointerEvents: 'none',
       background: 'rgba(0,0,0,0.70)',
       backdropFilter: 'blur(6px)',

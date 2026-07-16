@@ -64,7 +64,8 @@ export function DriftMeter() {
 const styles: Record<string, React.CSSProperties> = {
   container: {
     position: 'fixed',
-    bottom: '260px',
+    // Di atas RadioHUD: RadioHUD bottom = calc(2rem + 248px) + tinggi ~44px + gap 8px
+    bottom: 'calc(2rem + 248px + 52px)',
     left: '2rem',
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     padding: '10px 16px',

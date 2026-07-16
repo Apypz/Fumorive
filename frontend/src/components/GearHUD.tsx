@@ -53,15 +53,14 @@ export function GearHUD() {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    position: 'fixed',
-    bottom: '2rem',
-    left: '165px',
-    zIndex: 100,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     gap: '2px',
     pointerEvents: 'none',
+    flexShrink: 0,
+    justifyContent: 'flex-end',
+    paddingBottom: '0.5rem',
   },
   modeBadge: {
     fontSize: '10px',

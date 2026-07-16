@@ -6,6 +6,8 @@ import { GraphicsSettings } from '../GraphicsSettings'
 import { ControlsHUD } from '../ControlsHUD'
 import { SteeringWheelHUD } from '../SteeringWheelHUD'
 import { SpeedometerHUD } from '../SpeedometerHUD'
+import { GearHUD } from '../GearHUD'
+import { RadioHUD } from '../RadioHUD'
 import { MapSelection } from '../MapSelection'
 import { CameraFatigueMonitor } from '../CameraFatigueMonitor'
 import { EEGMonitoringWidget } from '../EEGMonitoringWidget'
@@ -17,48 +19,38 @@ import { OffRoadWarning } from '../OffRoadWarning'
 import { ViolationToast } from '../ViolationToast'
 import { TrafficLightHUD } from '../TrafficLightHUD'
 import { WheelDebugOverlay } from '../WheelDebugOverlay'
-import { GearHUD } from '../GearHUD'
 import { WaypointHUD } from '../WaypointHUD'
 import { TutorialPopup } from '../TutorialPopup'
-import { RadioHUD } from '../RadioHUD'
+import { HUDToggleBar } from '../HUDToggleBar'
 import { useGameStore } from '../../stores/gameStore'
 import { useSessionStore } from '../../stores/sessionStore'
 import { useWaypointStore } from '../../stores/waypointStore'
 import { useViolationStore } from '../../stores/violationStore'
-import { Copy, Check, User } from 'lucide-react'
+import { useHudStore } from '../../stores/hudStore'
+import { User } from 'lucide-react'
 import '../../App.css'
 
 export default function Session() {
   const { gameState, setGameState, selectedMap, currentLevel, mapSeed, playerName, setPlayerName } = useGameStore()
   const { sessionId, initializeSession } = useSessionStore()
+  const { showVehicle, showNavigation, showViolations, showMonitoring } = useHudStore()
   const [showSettings, setShowSettings] = useState(false)
-  // Step: 'name-input' → 'map-select' → 'playing'
   const [step, setStep] = useState<'name-input' | 'map-select' | 'game'>('name-input')
   const [nameInput, setNameInput] = useState(playerName)
   const [nameError, setNameError] = useState('')
   const [gameStarted, setGameStarted] = useState(false)
   const [cameraEnabled, setCameraEnabled] = useState(false)
   const [cameraFatigueScore, setCameraFatigueScore] = useState(0)
-  const [eegEnabled, setEegEnabled] = useState(true)
+  const [eegEnabled] = useState(true)
   const [eegCognitiveState, setEegCognitiveState] = useState<'alert' | 'drowsy' | 'fatigued' | undefined>()
-  const [sessionCopied, setSessionCopied] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
 
-  // Initialize session on mount
-  useEffect(() => {
-    initializeSession()
-  }, [initializeSession])
+  useEffect(() => { initializeSession() }, [initializeSession])
 
   const handleNameSubmit = () => {
     const trimmed = nameInput.trim()
-    if (!trimmed) {
-      setNameError('Nama tidak boleh kosong')
-      return
-    }
-    if (trimmed.length < 2) {
-      setNameError('Nama minimal 2 karakter')
-      return
-    }
+    if (!trimmed) { setNameError('Nama tidak boleh kosong'); return }
+    if (trimmed.length < 2) { setNameError('Nama minimal 2 karakter'); return }
     setNameError('')
     setPlayerName(trimmed)
     setStep('map-select')
@@ -79,12 +71,11 @@ export default function Session() {
     useViolationStore.getState().resetViolations()
   }
 
-  const handleBackToNameInput = () => {
-    setStep('name-input')
-  }
+  const isPlaying = gameState === 'playing' && gameStarted
 
   return (
     <div className="app">
+
       {/* ── STEP 1: Name Input ─────────────────────────────────────────── */}
       {step === 'name-input' && (
         <div style={{
@@ -96,7 +87,6 @@ export default function Session() {
             borderRadius: '24px', padding: '48px 56px', width: '420px', maxWidth: '92vw',
             textAlign: 'center', boxShadow: '0 0 60px rgba(99,102,241,0.15)',
           }}>
-            {/* Icon */}
             <div style={{
               width: 64, height: 64, borderRadius: '50%',
               background: 'rgba(99,102,241,0.15)', border: '2px solid rgba(99,102,241,0.4)',
@@ -105,14 +95,12 @@ export default function Session() {
             }}>
               <User size={28} color="#a5b4fc" />
             </div>
-
             <h2 style={{ color: '#fff', fontSize: '1.6rem', fontWeight: 800, margin: '0 0 8px', letterSpacing: '0.05em' }}>
               Siapa Namamu?
             </h2>
             <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.88rem', margin: '0 0 28px', lineHeight: 1.6 }}>
               Namamu akan dicantumkan di laporan hasil analisis sesi ini.
             </p>
-
             <div style={{ position: 'relative', marginBottom: nameError ? '8px' : '24px' }}>
               <input
                 type="text"
@@ -124,7 +112,8 @@ export default function Session() {
                 maxLength={50}
                 style={{
                   width: '100%', padding: '14px 18px', fontSize: '1rem',
-                  background: 'rgba(255,255,255,0.06)', border: `1.5px solid ${nameError ? '#ef4444' : 'rgba(99,102,241,0.4)'}`,
+                  background: 'rgba(255,255,255,0.06)',
+                  border: `1.5px solid ${nameError ? '#ef4444' : 'rgba(99,102,241,0.4)'}`,
                   borderRadius: '12px', color: '#fff', outline: 'none',
                   boxSizing: 'border-box', transition: 'border-color 0.2s',
                 }}
@@ -132,13 +121,9 @@ export default function Session() {
                 onBlur={(e) => { e.currentTarget.style.borderColor = nameError ? '#ef4444' : 'rgba(99,102,241,0.4)' }}
               />
             </div>
-
             {nameError && (
-              <p style={{ color: '#f87171', fontSize: '0.82rem', margin: '0 0 16px', textAlign: 'left' }}>
-                ⚠ {nameError}
-              </p>
+              <p style={{ color: '#f87171', fontSize: '0.82rem', margin: '0 0 16px', textAlign: 'left' }}>⚠ {nameError}</p>
             )}
-
             <button
               onClick={handleNameSubmit}
               style={{
@@ -148,12 +133,11 @@ export default function Session() {
                 letterSpacing: '0.06em', boxShadow: '0 4px 20px rgba(99,102,241,0.4)',
                 transition: 'all 0.2s',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(99,102,241,0.55)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(99,102,241,0.4)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)' }}
             >
               Lanjut ke Pilih Level →
             </button>
-
             <div style={{ marginTop: '16px', fontSize: '0.78rem', color: 'rgba(255,255,255,0.3)' }}>
               Nama tidak akan dibagikan dan hanya digunakan untuk identifikasi laporan.
             </div>
@@ -163,59 +147,16 @@ export default function Session() {
 
       {/* ── STEP 2: Map / Level Selection ─────────────────────────────── */}
       {step === 'map-select' && (
-        <MapSelection onStartGame={handleStartGame} onBack={handleBackToNameInput} />
+        <MapSelection onStartGame={handleStartGame} onBack={() => setStep('name-input')} />
       )}
 
-      {/* Session ID Banner - HIDDEN: Already shown in EEGMonitoringWidget (top-right) */}
-      {/* {sessionId && gameStarted && (
-        <div style={{
-          position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 1000, background: 'rgba(15,23,42,0.9)', backdropFilter: 'blur(8px)',
-          borderRadius: '0 0 12px 12px', padding: '6px 16px',
-          display: 'flex', alignItems: 'center', gap: '8px',
-          border: '1px solid rgba(56,189,248,0.3)', borderTop: 'none',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-        }}>
-          {playerName && (
-            <>
-              <span style={{ fontSize: '11px', color: '#a78bfa', fontWeight: 700 }}>{playerName}</span>
-              <span style={{ color: '#334155', fontSize: '11px' }}>·</span>
-            </>
-          )}
-          <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>SESSION ID:</span>
-          <code style={{ fontSize: '12px', color: '#38bdf8', fontFamily: 'monospace', userSelect: 'all', cursor: 'text', letterSpacing: '0.3px' }}>
-            {sessionId}
-          </code>
-          <button
-            onClick={() => { navigator.clipboard.writeText(sessionId); setSessionCopied(true); setTimeout(() => setSessionCopied(false), 2000) }}
-            style={{
-              background: sessionCopied ? '#059669' : '#334155',
-              border: '1px solid ' + (sessionCopied ? '#10b981' : '#475569'),
-              borderRadius: '6px', padding: '3px 10px', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: '4px',
-              color: 'white', fontSize: '11px', transition: 'all 0.2s',
-            }}
-            title="Copy Session ID untuk paste di terminal EEG"
-          >
-            {sessionCopied ? <Check size={12} /> : <Copy size={12} />}
-            {sessionCopied ? 'Copied!' : 'Copy'}
-          </button>
-        </div>
-      )} */}
-
-      {/* Tutorial Popup */}
-      {showTutorial && gameStarted && (
-        <TutorialPopup onClose={() => setShowTutorial(false)} />
-      )}
-
+      {showTutorial && gameStarted && <TutorialPopup onClose={() => setShowTutorial(false)} />}
       {gameStarted && <AlertNotification />}
-
-      {/* Game Canvas */}
       {gameStarted && <GameCanvas key={`${selectedMap}-${currentLevel}-${mapSeed}`} />}
       {gameStarted && <LoadingScreen />}
-
       <DebugOverlay />
 
+      {/* Pause Menu */}
       {gameState === 'paused' && gameStarted && (
         <div className="pause-menu">
           <div className="pause-content">
@@ -231,31 +172,90 @@ export default function Session() {
 
       {showSettings && <GraphicsSettings onClose={() => setShowSettings(false)} />}
 
-      {gameState === 'playing' && gameStarted && (
+      {/* ═══════════════════════════════════════════════════════════════
+          IN-GAME HUD — hanya aktif saat state === 'playing'
+      ═══════════════════════════════════════════════════════════════ */}
+      {isPlaying && (
         <>
+          {/* HUD toggle panel — selalu visible */}
+          <HUDToggleBar />
+
+          {/* Controls panel — sudah punya toggle sendiri */}
           <ControlsHUD />
-          <SpeedometerHUD />
-          <GearHUD />
-          <SteeringWheelHUD />
-          <ViolationHUD />
-          <WrongWayWarning />
-          <OffRoadWarning />
-          <ViolationToast />
-          <TrafficLightHUD />
+
+          {/* Wheel calibration — self-gating on gamepad */}
           <WheelDebugOverlay />
-          <WaypointHUD />
-          <RadioHUD />
-          <CameraFatigueMonitor isEnabled={cameraEnabled} onToggle={() => setCameraEnabled(!cameraEnabled)} onFatigueScoreChange={setCameraFatigueScore} />
-          {eegEnabled && (
-            <EEGMonitoringWidget sessionId={sessionId} defaultPosition="top-right" onStateChange={setEegCognitiveState} />
+
+          {/* ── BOTTOM-LEFT cluster: Radio → Speedo + Gear + Violation ── */}
+          <div style={{
+            position: 'fixed',
+            bottom: '2rem',
+            left: '2rem',
+            zIndex: 100,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: '8px',
+          }}>
+            {/* Row 1: Radio */}
+            {showVehicle && <RadioHUD />}
+
+            {/* Row 2: Speedometer + Gear + Violation — semua rata bawah */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px' }}>
+              {showVehicle && <SpeedometerHUD />}
+              {showVehicle && <GearHUD />}
+              {showViolations && <ViolationHUD />}
+            </div>
+          </div>
+
+          {/* ── BOTTOM-CENTER: Steering wheel ────────────────────────── */}
+          {showVehicle && <SteeringWheelHUD />}
+
+          {/* ── TOP-LEFT: Waypoint navigation ────────────────────────── */}
+          {showNavigation && <WaypointHUD />}
+
+          {/* ── TOP-CENTER: Traffic light state ──────────────────────── */}
+          {showNavigation && <TrafficLightHUD />}
+
+          {/* ── VIOLATIONS: warnings + toasts ────────────────────────── */}
+          {showViolations && (
+            <>
+              <ViolationToast />
+              <WrongWayWarning />
+              <OffRoadWarning />
+            </>
           )}
-          <FusionScoreDisplay cameraFatigueScore={cameraFatigueScore} />
+
+          {/* ── MONITORING: EEG + Camera + Fusion ────────────────────── */}
+          {showMonitoring && (
+            <>
+              <CameraFatigueMonitor
+                isEnabled={cameraEnabled}
+                onToggle={() => setCameraEnabled(!cameraEnabled)}
+                onFatigueScoreChange={setCameraFatigueScore}
+              />
+              {eegEnabled && (
+                <EEGMonitoringWidget
+                  sessionId={sessionId}
+                  defaultPosition="top-right"
+                  onStateChange={setEegCognitiveState}
+                />
+              )}
+              <FusionScoreDisplay cameraFatigueScore={cameraFatigueScore} />
+            </>
+          )}
         </>
       )}
 
-      {gameStarted && gameState !== 'playing' && (
-        <CameraFatigueMonitor isEnabled={cameraEnabled} onToggle={() => setCameraEnabled(!cameraEnabled)} onFatigueScoreChange={setCameraFatigueScore} />
+      {/* Keep camera running even when paused */}
+      {gameStarted && !isPlaying && (
+        <CameraFatigueMonitor
+          isEnabled={cameraEnabled}
+          onToggle={() => setCameraEnabled(!cameraEnabled)}
+          onFatigueScoreChange={setCameraFatigueScore}
+        />
       )}
     </div>
   )
 }
+
