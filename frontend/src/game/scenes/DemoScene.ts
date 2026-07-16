@@ -377,7 +377,9 @@ export class DemoScene implements GameScene {
           this.scene,
           this.ngawiPlan.grid,
           this.seed,
-          params.pedestriansPerCross
+          params.pedestriansPerCross,
+          this.ngawiPlan,
+          params.ambientPedCount
         )
       }
 

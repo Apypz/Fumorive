@@ -168,6 +168,12 @@ export interface NgawiParams {
   npcCount: number
   /** Number of pedestrians per zebra crossing. Higher = busier crossings. */
   pedestriansPerCross: number
+  /**
+   * Number of ambient pedestrians scattered around the city (sidewalks, parks,
+   * open lots) — separate from zebra-crossing pedestrians so crossings don't
+   * feel overcrowded.
+   */
+  ambientPedCount: number
   /** Minimum NPC cruise speed (m/s). */
   npcCruiseMin: number
   /** Maximum NPC cruise speed (m/s). */
@@ -206,6 +212,7 @@ export const DEFAULT_NGAWI_PARAMS: NgawiParams = {
   // Level 2 defaults (medium difficulty)
   npcCount: 16,
   pedestriansPerCross: 2,
+  ambientPedCount: 0,
   npcCruiseMin: 6,
   npcCruiseMax: 14,
   npcAggressiveness: 0.20,
@@ -242,6 +249,7 @@ export function getNgawiLevelParams(level: number): NgawiParams {
         // Level 1: NO NPC, NO pedestrians — only traffic lights matter
         npcCount: 0,
         pedestriansPerCross: 0,
+        ambientPedCount: 0,
         npcCruiseMin: 0,
         npcCruiseMax: 0,
         npcAggressiveness: 0,
@@ -262,9 +270,10 @@ export function getNgawiLevelParams(level: number): NgawiParams {
         barrierDensity: 0.28,
         parkChance: 0.20,
         propDensity: 0.32,
-        // Level 3: NPC padat + agresif, pejalan kaki banyak
+        // Level 3: NPC padat + agresif, pejalan kaki banyak + ambient (trotoar/taman)
         npcCount: 28,
-        pedestriansPerCross: 4,
+        pedestriansPerCross: 2,   // dikurangi dari 4 agar zebra cross tidak terlalu ramai
+        ambientPedCount: 24,      // pejalan kaki tersebar di trotoar, taman, dan open lot
         npcCruiseMin: 8,
         npcCruiseMax: 18,
         npcAggressiveness: 0.65,

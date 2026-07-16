@@ -20,7 +20,7 @@ import {
   PBRMaterial,
   Mesh,
 } from '@babylonjs/core'
-import type { NgawiGrid } from '../components/NgawiCityGenerator'
+import type { NgawiGrid, NgawiCityPlan } from '../components/NgawiCityGenerator'
 import { makeRng, randFloat, randInt } from '../utils/prng'
 
 export interface ZebraCross {
@@ -47,6 +47,31 @@ interface Pedestrian {
   bodyMat: PBRMaterial
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Ambient pedestrian (berjalan di trotoar / taman — tidak menyebrang jalan)
+// ─────────────────────────────────────────────────────────────────────────────
+interface AmbientPedestrian {
+  root: TransformNode
+  x: number
+  z: number
+  startX: number
+  startZ: number
+  endX: number
+  endZ: number
+  heading: number     // arah berjalan saat ini (radian)
+  speed: number
+  state: 'walking' | 'pausing'
+  pauseTimer: number
+  phaseOffset: number // offset animasi walking agar tidak sinkron antar individu
+}
+
+const AMBIENT_WALK_SPEED_MIN = 0.9
+const AMBIENT_WALK_SPEED_MAX = 1.6
+const AMBIENT_PAUSE_MIN      = 2.0
+const AMBIENT_PAUSE_MAX      = 6.0
+const SIDEWALK_OFFSET        = 2.8  // jarak dari tepi jalan ke pusat pejalan kaki (meter)
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Skinny pedestrian body proportions
 const PED_HEIGHT       = 1.7
 const PED_WIDTH        = 0.45
@@ -71,12 +96,17 @@ const HIT_COOLDOWN = 2.5   // detik sebelum pejalan yang sama bisa terhitung lag
 export class PedestrianSystem {
   private scene: Scene
   private grid: NgawiGrid
+  private plan: NgawiCityPlan | null = null
   private rng: () => number
   private pedestrians: Pedestrian[] = []
   private crossings: ZebraCross[] = []
   private materials: PBRMaterial[] = []
   private crossMeshes: Mesh[] = []
   private pedestriansPerCross: number
+
+  // Pejalan kaki ambient (trotoar, taman, open lot)
+  private ambientPeds: AmbientPedestrian[] = []
+  private _ambientWalkPhase = 0
 
   // Deteksi tabrakan pejalan kaki (per-pejalan cooldown + counter event baru)
   private hitCooldowns: number[] = []
@@ -102,17 +132,213 @@ export class PedestrianSystem {
     return false
   }
 
-  constructor(scene: Scene, grid: NgawiGrid, seed: number, pedestriansPerCross: number = PEDESTRIANS_PER_CROSS) {
+  constructor(
+    scene: Scene,
+    grid: NgawiGrid,
+    seed: number,
+    pedestriansPerCross: number = PEDESTRIANS_PER_CROSS,
+    plan: NgawiCityPlan | null = null,
+    ambientPedCount: number = 0,
+  ) {
     this.scene = scene
     this.grid = grid
+    this.plan = plan
     this.rng   = makeRng((seed ^ 0xdeadbeef) >>> 0)
     this.pedestriansPerCross = pedestriansPerCross
     this.placeCrossings()
     this.spawnPedestrians()
     this.hitCooldowns = this.pedestrians.map(() => 0)
+    if (ambientPedCount > 0 && plan) {
+      this.spawnAmbientPedestrians(plan, ambientPedCount)
+    }
   }
 
-  // ── Setup ────────────────────────────────────────────────────────────────
+  // ── Ambient pedestrian setup ──────────────────────────────────────────────
+
+  /**
+   * Spawn pejalan kaki ambient: tersebar di trotoar (sidewalk) dan area taman/open
+   * lot — TIDAK menyebrang jalan, sehingga zebra cross tidak terasa penuh.
+   * 60% di trotoar, 40% di taman/open lot.
+   */
+  private spawnAmbientPedestrians(plan: NgawiCityPlan, count: number): void {
+    const skinColors = [
+      new Color3(0.85, 0.65, 0.45),
+      new Color3(0.55, 0.38, 0.28),
+      new Color3(0.95, 0.82, 0.72),
+      new Color3(0.72, 0.52, 0.38),
+    ]
+    const shirtColors = [
+      new Color3(0.85, 0.25, 0.25),
+      new Color3(0.25, 0.45, 0.85),
+      new Color3(0.25, 0.7, 0.35),
+      new Color3(0.85, 0.75, 0.2),
+      new Color3(0.55, 0.2, 0.7),
+      new Color3(0.9, 0.9, 0.9),
+      new Color3(1.0, 0.5, 0.0),
+      new Color3(0.2, 0.8, 0.8),
+    ]
+
+    const { grid } = plan
+    const { roadWidth, cellSize, nodes } = grid
+    const sidewalkOffset = roadWidth / 2 + SIDEWALK_OFFSET
+
+    const sidewalkCount = Math.round(count * 0.6)
+    const parkCount     = count - sidewalkCount
+    const segs          = plan.roadSegments
+
+    // ── Trotoar ──────────────────────────────────────────────────────────────
+    for (let i = 0; i < sidewalkCount; i++) {
+      if (segs.length === 0) break
+      const seg        = segs[Math.floor(this.rng() * segs.length)]
+      const side       = this.rng() < 0.5 ? 1 : -1
+      const walkLength = cellSize * randFloat(this.rng, 0.25, 0.45)
+
+      let sx: number, sz: number, ex: number, ez: number, heading: number
+
+      if (seg.horizontal) {
+        // Jalan arah X → trotoar di +/-Z → jalan kaki sepanjang X
+        const cy = seg.z + side * sidewalkOffset
+        const cx = seg.x + randFloat(this.rng, -walkLength * 0.3, walkLength * 0.3)
+        const lat = randFloat(this.rng, -0.4, 0.4)
+        sx = cx - walkLength / 2
+        ex = cx + walkLength / 2
+        sz = ez = cy + lat
+        heading = this.rng() < 0.5 ? Math.PI / 2 : -Math.PI / 2
+      } else {
+        // Jalan arah Z → trotoar di +/-X → jalan kaki sepanjang Z
+        const cx = seg.x + side * sidewalkOffset
+        const cz = seg.z + randFloat(this.rng, -walkLength * 0.3, walkLength * 0.3)
+        const lat = randFloat(this.rng, -0.4, 0.4)
+        sz = cz - walkLength / 2
+        ez = cz + walkLength / 2
+        sx = ex = cx + lat
+        heading = this.rng() < 0.5 ? 0 : Math.PI
+      }
+
+      this.createAmbientPed(`asw_${i}`, sx, sz, ex, ez, heading, skinColors, shirtColors)
+    }
+
+    // ── Taman / open lot ─────────────────────────────────────────────────────
+    // Gunakan posisi benches dan trees sebagai titik pusat area taman
+    const parkSpots: { x: number; z: number }[] = [
+      ...plan.benches.map((b) => ({ x: b.x, z: b.z })),
+      ...plan.trees.map((t) => ({ x: t.x, z: t.z })),
+    ]
+
+    for (let i = 0; i < parkCount; i++) {
+      let cx: number, cz: number
+      if (parkSpots.length > 0) {
+        const spot = parkSpots[Math.floor(this.rng() * parkSpots.length)]
+        cx = spot.x + randFloat(this.rng, -3.5, 3.5)
+        cz = spot.z + randFloat(this.rng, -3.5, 3.5)
+      } else {
+        // fallback: acak di dalam batas grid
+        const node = nodes[Math.floor(this.rng() * nodes.length)]
+        cx = node.x + randFloat(this.rng, -cellSize * 0.28, cellSize * 0.28)
+        cz = node.z + randFloat(this.rng, -cellSize * 0.28, cellSize * 0.28)
+      }
+
+      const wander  = cellSize * randFloat(this.rng, 0.10, 0.22)
+      const heading = this.rng() * Math.PI * 2
+      const dx      = Math.sin(heading)
+      const dz      = Math.cos(heading)
+      const sx      = cx - dx * wander / 2
+      const sz      = cz - dz * wander / 2
+      const ex      = cx + dx * wander / 2
+      const ez      = cz + dz * wander / 2
+
+      this.createAmbientPed(`apk_${i}`, sx, sz, ex, ez, heading, skinColors, shirtColors)
+    }
+  }
+
+  /** Buat satu mesh pejalan kaki ambient dan push ke `ambientPeds`. */
+  private createAmbientPed(
+    tag: string,
+    sx: number, sz: number,
+    ex: number, ez: number,
+    heading: number,
+    skinColors: Color3[],
+    shirtColors: Color3[],
+  ): void {
+    const skinMat = new PBRMaterial(`ambSkin_${tag}`, this.scene)
+    skinMat.albedoColor = skinColors[Math.floor(this.rng() * skinColors.length)]
+    skinMat.metallic = 0; skinMat.roughness = 0.8
+
+    const shirtMat = new PBRMaterial(`ambShirt_${tag}`, this.scene)
+    shirtMat.albedoColor = shirtColors[Math.floor(this.rng() * shirtColors.length)]
+    shirtMat.metallic = 0; shirtMat.roughness = 0.8
+
+    const pantsMat = new PBRMaterial(`ambPants_${tag}`, this.scene)
+    pantsMat.albedoColor = new Color3(0.18, 0.18, 0.35)
+    pantsMat.metallic = 0; pantsMat.roughness = 0.9
+
+    this.materials.push(skinMat, shirtMat, pantsMat)
+
+    const root = this.buildPedMesh(`amb_${tag}`, skinMat, shirtMat, pantsMat)
+    root.position.x = sx
+    root.position.z = sz
+    root.rotation.y = heading
+
+    // Mulai setengah dari mereka di titik akhir agar tidak semua bergerak berbarengan
+    const startAtEnd = this.rng() < 0.5
+    this.ambientPeds.push({
+      root,
+      x:       startAtEnd ? ex : sx,
+      z:       startAtEnd ? ez : sz,
+      startX:  startAtEnd ? ex : sx,
+      startZ:  startAtEnd ? ez : sz,
+      endX:    startAtEnd ? sx : ex,
+      endZ:    startAtEnd ? sz : ez,
+      heading: startAtEnd ? (heading + Math.PI) % (Math.PI * 2) : heading,
+      speed:   randFloat(this.rng, AMBIENT_WALK_SPEED_MIN, AMBIENT_WALK_SPEED_MAX),
+      state:   startAtEnd ? 'pausing' : 'walking',
+      pauseTimer: randFloat(this.rng, 0, AMBIENT_PAUSE_MAX),
+      phaseOffset: this.rng() * Math.PI * 2,
+    })
+  }
+
+  // ── Ambient pedestrian update ─────────────────────────────────────────────
+
+  private updateAmbientPeds(dt: number): void {
+    this._ambientWalkPhase += dt * 5
+
+    for (const p of this.ambientPeds) {
+      if (p.state === 'pausing') {
+        p.pauseTimer -= dt
+        if (p.pauseTimer <= 0) {
+          p.state = 'walking'
+        }
+        p.root.position.y = 0
+        continue
+      }
+
+      // Bergerak menuju endX/endZ
+      p.x += Math.sin(p.heading) * p.speed * dt
+      p.z += Math.cos(p.heading) * p.speed * dt
+      p.root.position.x = p.x
+      p.root.position.z = p.z
+
+      // Bob animasi
+      p.root.position.y = Math.abs(Math.sin(this._ambientWalkPhase + p.phaseOffset)) * 0.05
+
+      // Cek apakah sudah sampai tujuan
+      const remaining = Math.hypot(p.endX - p.x, p.endZ - p.z)
+      if (remaining < 0.6) {
+        // Balik arah
+        const tmpX = p.startX; const tmpZ = p.startZ
+        p.startX = p.endX;   p.startZ = p.endZ
+        p.endX   = tmpX;     p.endZ   = tmpZ
+        p.x      = p.startX; p.z      = p.startZ
+        p.heading = (p.heading + Math.PI) % (Math.PI * 2)
+        p.root.position.x = p.x
+        p.root.position.z = p.z
+        p.root.rotation.y = p.heading
+        p.root.position.y = 0
+        p.state      = 'pausing'
+        p.pauseTimer = randFloat(this.rng, AMBIENT_PAUSE_MIN, AMBIENT_PAUSE_MAX)
+      }
+    }
+  }
 
   private placeCrossings(): void {
     // Taruh zebra cross secara merata di seluruh grid dengan strategi berbasis sel:
@@ -443,6 +669,9 @@ export class PedestrianSystem {
           break
       }
     }
+
+    // Update pejalan kaki ambient (trotoar + taman)
+    this.updateAmbientPeds(dt)
   }
 
   private _walkPhase = 0
@@ -459,9 +688,11 @@ export class PedestrianSystem {
 
   dispose(): void {
     this.pedestrians.forEach((p) => p.root.dispose())
+    this.ambientPeds.forEach((p) => p.root.dispose())
     this.crossMeshes.forEach((m) => m.dispose())
     this.materials.forEach((m) => m.dispose())
     this.pedestrians = []
+    this.ambientPeds = []
     this.crossMeshes = []
     this.materials = []
   }
