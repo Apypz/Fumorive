@@ -148,9 +148,6 @@ export function ViolationHUD() {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    position: 'fixed',
-    bottom: '2rem',
-    left: '230px',
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
     padding: '10px 14px',
     borderRadius: '8px',
@@ -160,8 +157,8 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: '180px',
     border: '1px solid rgba(255,255,255,0.15)',
     backdropFilter: 'blur(8px)',
-    zIndex: 100,
     pointerEvents: 'auto',
+    flexShrink: 0,
     transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
   },
   header: {

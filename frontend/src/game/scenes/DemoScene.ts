@@ -72,6 +72,7 @@ export class DemoScene implements GameScene {
   // Procedural map (Ngawi City). seed + level are unused by hand-authored maps.
   private seed: number
   private level: number
+  private timeOfDay: number
   private ngawiPlan: NgawiCityPlan | null = null
   private npcTraffic: NpcTrafficSystem | null = null
   private trafficLights: TrafficLightSystem | null = null
@@ -80,12 +81,22 @@ export class DemoScene implements GameScene {
   private speedBumps: SpeedBumpSystem | null = null
   private ambientSound: AmbientSoundSystem | null = null
   private radio: RadioSystem | null = null
+  // Pending callbacks — bisa dipasang sebelum radio dibuat oleh init().
+  private pendingRadioStationCb: ((station: RadioStation) => void) | null = null
+  private pendingRadioTrackCb: ((station: RadioStation, track: import('../systems/RadioSystem').RadioTrackInfo | null) => void) | null = null
 
-  constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'ngawi-city', seed: number = 1, level: number = 1) {
+  constructor(
+    graphicsConfig?: GraphicsConfig,
+    mapType: MapType = 'ngawi-city',
+    seed: number = 1,
+    level: number = 1,
+    timeOfDay: number = 12,
+  ) {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
     this.mapType = mapType
     this.seed = seed
     this.level = level
+    this.timeOfDay = Math.max(0, Math.min(24, timeOfDay))
   }
 
   /**
@@ -270,6 +281,34 @@ export class DemoScene implements GameScene {
     return this.radio.getCurrentStation()
   }
 
+  /** Skip to next track on MP3 stations (Ngawi FM / Radio Kota). */
+  radioNextTrack(): void {
+    this.radio?.nextTrack()
+  }
+
+  /** Go back to previous track on MP3 stations (Ngawi FM / Radio Kota). */
+  radioPrevTrack(): void {
+    this.radio?.prevTrack()
+  }
+
+  /** Set callback fired whenever the playing track changes. */
+  setOnTrackChange(cb: (station: RadioStation, track: import('../systems/RadioSystem').RadioTrackInfo | null) => void): void {
+    if (this.radio) {
+      this.radio.setOnTrackChange(cb)
+    } else {
+      this.pendingRadioTrackCb = cb
+    }
+  }
+
+  /** Set callback fired whenever the station changes (cycled with R). */
+  setOnStationChange(cb: (station: RadioStation) => void): void {
+    if (this.radio) {
+      this.radio.setOnStationChange(cb)
+    } else {
+      this.pendingRadioStationCb = cb
+    }
+  }
+
   /**
    * Get the waypoint system instance
    */
@@ -316,6 +355,49 @@ export class DemoScene implements GameScene {
     return pos ? { x: pos.x, z: pos.z } : { x: 0, z: 0 }
   }
 
+  /** Static lighting/sky palette derived from the selected hour. */
+  private getTimeOfDayVisuals() {
+    const hour = this.timeOfDay % 24
+    // Daylight curve: 0 at/before 06:00 and after 18:00, 1 at noon.
+    const daylight = Math.max(0, Math.sin(((hour - 6) / 12) * Math.PI))
+    // Warm horizon around sunrise/sunset.
+    const golden = Math.max(
+      Math.exp(-Math.pow((hour - 6.5) / 1.5, 2)),
+      Math.exp(-Math.pow((hour - 17.5) / 1.5, 2)),
+    )
+
+    const nightTop = new Color3(0.015, 0.025, 0.09)
+    const dayTop = new Color3(0.35, 0.67, 0.95)
+    const nightBottom = new Color3(0.045, 0.06, 0.13)
+    const dayBottom = new Color3(0.72, 0.84, 0.96)
+    const sunsetBottom = new Color3(0.95, 0.42, 0.18)
+
+    const topColor = Color3.Lerp(nightTop, dayTop, daylight)
+    let bottomColor = Color3.Lerp(nightBottom, dayBottom, daylight)
+    bottomColor = Color3.Lerp(bottomColor, sunsetBottom, golden * 0.75)
+
+    // Sun travels east→west. At night this acts as dim moonlight.
+    const angle = ((hour - 6) / 12) * Math.PI
+    const elevation = Math.max(0.12, Math.sin(angle))
+    const sunDirection = new Vector3(-Math.cos(angle), -elevation, -0.35).normalize()
+    const sunColor = Color3.Lerp(
+      new Color3(1.0, 0.47, 0.24),
+      new Color3(1.0, 0.95, 0.84),
+      Math.min(1, daylight * 1.4),
+    )
+
+    return {
+      daylight,
+      topColor,
+      bottomColor,
+      sunDirection,
+      sunColor: daylight > 0.02 ? sunColor : new Color3(0.35, 0.42, 0.65),
+      sunIntensity: 0.18 + daylight * 2.82,
+      ambientIntensity: 0.18 + daylight * 1.32,
+      ambientColor: Color3.Lerp(new Color3(0.10, 0.13, 0.25), new Color3(0.48, 0.54, 0.62), daylight),
+    }
+  }
+
   async init(context: SceneContext): Promise<void> {
     this.scene = context.scene
     this.canvas = context.canvas
@@ -325,11 +407,15 @@ export class DemoScene implements GameScene {
     // Setup input manager
     this.inputManager = new InputManager(this.scene, this.canvas)
 
-    // Setup lighting - bright daylight
+    const timeVisuals = this.getTimeOfDayVisuals()
+
+    // Static lighting derived from the hour selected on the level screen.
     this.lightingSetup = new LightingSetup(this.scene, this.graphicsConfig, {
-      sunDirection: new Vector3(-1, -2, -1),
-      sunIntensity: 3,
-      ambientIntensity: 1.5,
+      sunDirection: timeVisuals.sunDirection,
+      sunColor: timeVisuals.sunColor,
+      sunIntensity: timeVisuals.sunIntensity,
+      ambientColor: timeVisuals.ambientColor,
+      ambientIntensity: timeVisuals.ambientIntensity,
     })
 
     // Create map based on selected mapType
@@ -377,7 +463,9 @@ export class DemoScene implements GameScene {
           this.scene,
           this.ngawiPlan.grid,
           this.seed,
-          params.pedestriansPerCross
+          params.pedestriansPerCross,
+          this.ngawiPlan,
+          params.ambientPedCount
         )
       }
 
@@ -388,12 +476,24 @@ export class DemoScene implements GameScene {
         this.seed
       )
       this.speedBumps.setOnBumpCross(({ impactSpeed }) => {
-        // Guncang kamera — makin kencang makin keras
-        const intensity = Math.min(0.8, 0.15 + (impactSpeed / 15) * 0.65)
-        const duration  = 0.4 + (impactSpeed / 15) * 0.3
-        this.carController?.triggerCameraShake(intensity, duration)
-        // Lewat terlalu kencang (> ~16 km/h) → mobil terhentak melambat.
-        if (impactSpeed > 4.5) this.carController?.applySpeedBumpJolt(0.62)
+        const WHEELBASE = 2.6 // metres — jarak ban depan ke ban belakang
+
+        // ── Guncangan 1: ban depan ──────────────────────────────────────────
+        const intensity1 = Math.min(0.55, 0.12 + (impactSpeed / 15) * 0.43)
+        const duration1  = 0.28 + (impactSpeed / 15) * 0.18
+        this.carController?.triggerCameraShake(intensity1, duration1)
+        if (impactSpeed > 4.5) this.carController?.applySpeedBumpJolt(0.75)
+
+        // ── Guncangan 2: ban belakang — delay = wheelbase / speed ───────────
+        // Clamp delay antara 0.15-0.6 s agar terasa nyata di semua kecepatan
+        const delay = Math.min(0.6, Math.max(0.15, WHEELBASE / Math.max(impactSpeed, 1)))
+        setTimeout(() => {
+          // Lebih ringan dari guncangan pertama
+          const intensity2 = intensity1 * 0.65
+          const duration2  = duration1  * 0.85
+          this.carController?.triggerCameraShake(intensity2, duration2)
+          if (impactSpeed > 4.5) this.carController?.applySpeedBumpJolt(0.88)
+        }, delay * 1000)
       })
 
       // Ambient suara kota.
@@ -414,12 +514,20 @@ export class DemoScene implements GameScene {
 
     // Radio system — available on all maps, starts off.
     this.radio = new RadioSystem()
+    if (this.pendingRadioStationCb) {
+      this.radio.setOnStationChange(this.pendingRadioStationCb)
+      this.pendingRadioStationCb = null
+    }
+    if (this.pendingRadioTrackCb) {
+      this.radio.setOnTrackChange(this.pendingRadioTrackCb)
+      this.pendingRadioTrackCb = null
+    }
 
     // Setup environment (skybox only, ground is from map)
     this.environmentSetup = new EnvironmentSetup(this.scene, this.graphicsConfig)
     this.environmentSetup.createProceduralSkybox(
-      new Color3(0.4, 0.6, 0.9), // Top color (bright blue sky)
-      new Color3(0.7, 0.8, 0.95) // Bottom color (light horizon)
+      timeVisuals.topColor,
+      timeVisuals.bottomColor,
     )
     // Glow is a per-frame full-screen blur pass; skip it entirely on 'low'.
     if (this.graphicsConfig.shadowQuality !== 'low') {

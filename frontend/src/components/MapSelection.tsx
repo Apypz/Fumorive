@@ -88,7 +88,15 @@ interface MapSelectionProps {
 
 export function MapSelection({ onStartGame, onBack }: MapSelectionProps) {
   const navigate = useNavigate()
-  const { selectedLevel, setSelectedLevel, setSelectedMap, startAtLevel, playerName } = useGameStore()
+  const {
+    selectedLevel,
+    setSelectedLevel,
+    setSelectedMap,
+    startAtLevel,
+    playerName,
+    timeOfDay,
+    setTimeOfDay,
+  } = useGameStore()
   const [showEEGGuide, setShowEEGGuide] = useState(false)
   const [hovered, setHovered] = useState<number | null>(null)
   const [animating, setAnimating] = useState(false)
@@ -435,6 +443,36 @@ export function MapSelection({ onStartGame, onBack }: MapSelectionProps) {
                   <span style={{ color: 'rgba(255,255,255,0.65)', fontSize: '0.78rem' }}>{d.text}</span>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Static time-of-day selector */}
+          <div style={{
+            background: 'rgba(255,255,255,0.04)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: 12,
+            padding: '12px 16px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 }}>
+              <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.15em' }}>
+                WAKTU BERKENDARA
+              </div>
+              <div style={{ color: selectedLevelData.color, fontSize: '0.85rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
+                {String(Math.floor(timeOfDay) % 24).padStart(2, '0')}:{timeOfDay % 1 >= 0.5 ? '30' : '00'}
+              </div>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={23.5}
+              step={0.5}
+              value={timeOfDay}
+              onChange={(e) => setTimeOfDay(Number(e.target.value))}
+              aria-label="Pilih waktu berkendara"
+              style={{ width: '100%', cursor: 'pointer', accentColor: selectedLevelData.color }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3, color: 'rgba(255,255,255,0.28)', fontSize: '0.58rem' }}>
+              <span>🌙 00</span><span>🌅 06</span><span>☀️ 12</span><span>🌇 18</span><span>24 🌙</span>
             </div>
           </div>
 

@@ -35,6 +35,10 @@ interface GameStoreState {
   selectedLevel: number
   setSelectedLevel: (level: number) => void
 
+  // Static in-game time, selected before starting (0..24, default midday).
+  timeOfDay: number
+  setTimeOfDay: (hour: number) => void
+
   // Levels (Ngawi City — 3 dynamic levels). Each level = a fresh random seed.
   currentLevel: number
   totalLevels: number
@@ -130,6 +134,10 @@ export const useGameStore = create<GameStoreState>((set) => ({
   // Selected level
   selectedLevel: 1,
   setSelectedLevel: (selectedLevel) => set({ selectedLevel }),
+
+  // Static time of day (does not advance during gameplay)
+  timeOfDay: 12,
+  setTimeOfDay: (timeOfDay) => set({ timeOfDay: Math.max(0, Math.min(24, timeOfDay)) }),
 
   // Levels (Ngawi City)
   currentLevel: 1,

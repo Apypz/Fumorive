@@ -220,15 +220,12 @@ export function SpeedometerHUD() {
 
 const styles: Record<string, React.CSSProperties> = {
   container: {
-    position: 'fixed',
-    bottom: '2rem',
-    left: '2rem',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     gap: '0.5rem',
-    zIndex: 100,
     pointerEvents: 'none',
+    flexShrink: 0,
   },
   digitalDisplay: {
     display: 'flex',

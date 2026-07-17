@@ -583,55 +583,321 @@ export class SimpleMap {
     mergePush(signs, 'ngawiSigns', () => pbr('ngawiSignMat', new Color3(0.85, 0.34, 0.2), 0.1, 0.55), false)
   }
 
-  /** Scatter low-poly trees (merged per material) into the empty lots. */
+  /**
+   * Realistic-ish trees with 4 archetypes rolled per-tree for visual variety:
+   *
+   *  1. ROUND (deciduous)  — tall trunk, wide bushy multi-clump crown
+   *  2. PINE  (conifer)    — slim trunk, stacked cone layers (dark green)
+   *  3. OAK   (wide, low)  — thick short trunk, very wide flattened crown
+   *  4. YOUNG (slim)       — thin trunk, small round crown, sometimes tilted
+   *
+   * Additional per-tree randomness:
+   *   - Trunk tilt (small angle) — no two trees stand perfectly upright
+   *   - Clump count 3-6 varies per tree
+   *   - Deterministic hue shift between "light" and "dark" foliage buckets
+   *   - Occasional visible branch (dark cylinder stub poking through foliage)
+   *
+   * Still merged into 3 draw calls total (trunks+branches, light foliage, dark
+   * foliage) so hundreds of trees stay cheap.
+   */
   private createNgawiTrees(plan: NgawiCityPlan): void {
     if (plan.trees.length === 0) return
 
+    // ── Materials (3 shared → 3 draw calls) ─────────────────────────────────
     const trunkMat = new PBRMaterial('ngawiTrunkMat', this.scene)
-    trunkMat.albedoColor = new Color3(0.36, 0.25, 0.16)
+    trunkMat.albedoColor = new Color3(0.30, 0.20, 0.13)
     trunkMat.metallic = 0
-    trunkMat.roughness = 0.9
+    trunkMat.roughness = 0.95
 
-    const foliageMat = new PBRMaterial('ngawiFoliageMat', this.scene)
-    foliageMat.albedoColor = new Color3(0.24, 0.52, 0.24)
-    foliageMat.metallic = 0
-    foliageMat.roughness = 0.9
+    const foliageMatLight = new PBRMaterial('ngawiFoliageLightMat', this.scene)
+    foliageMatLight.albedoColor = new Color3(0.42, 0.62, 0.24)
+    foliageMatLight.metallic = 0
+    foliageMatLight.roughness = 0.85
+
+    const foliageMatDark = new PBRMaterial('ngawiFoliageDarkMat', this.scene)
+    foliageMatDark.albedoColor = new Color3(0.16, 0.36, 0.15)
+    foliageMatDark.metallic = 0
+    foliageMatDark.roughness = 0.92
 
     const trunks: Mesh[] = []
-    const crowns: Mesh[] = []
+    const foliageLight: Mesh[] = []
+    const foliageDark: Mesh[] = []
+
+    // Deterministic PRNG per tree so shapes are stable across re-renders
+    const hashRand = (n: number) => {
+      const x = Math.sin(n * 12.9898) * 43758.5453
+      return x - Math.floor(x)
+    }
 
     plan.trees.forEach((t, i) => {
       const s = t.scale
-      const trunkH = 3 * s
-      const trunk = MeshBuilder.CreateCylinder(`ngawiTrunk_${i}`, {
-        diameter: 0.6 * s,
-        height: trunkH,
-        tessellation: 6,
-      }, this.scene)
-      trunk.position = new Vector3(t.x, trunkH / 2, t.z)
-      trunk.material = trunkMat
-      trunks.push(trunk)
+      const rnd = (k: number) => hashRand(i * 13 + k * 3)
 
-      const crownH = 3.6 * s
-      const crown = MeshBuilder.CreateCylinder(`ngawiCrown_${i}`, {
-        diameterTop: 0,
-        diameterBottom: 3.2 * s,
-        height: crownH,
-        tessellation: 7,
-      }, this.scene)
-      crown.position = new Vector3(t.x, trunkH + crownH / 2, t.z)
-      crown.material = foliageMat
-      crowns.push(crown)
+      // Roll archetype (weighted: round dominant, pine common, oak & young rare)
+      const roll = rnd(0)
+      const archetype: 'round' | 'pine' | 'oak' | 'young' =
+        roll < 0.45 ? 'round' :
+        roll < 0.75 ? 'pine' :
+        roll < 0.90 ? 'oak' :
+                      'young'
 
-      // Solid collider around the trunk.
-      const cr = 0.9 * s
+      // Small random trunk tilt (max ~4°) — none for pines (they're upright)
+      const tiltMax = archetype === 'pine' ? 0.01 : 0.07
+      const tiltX = (rnd(1) - 0.5) * tiltMax
+      const tiltZ = (rnd(2) - 0.5) * tiltMax
+
+      // Small XY jitter of clump centres shared across the tree, so all
+      // clumps lean the same way as the trunk
+      const applyTilt = (h: number) => ({
+        dx: Math.sin(tiltX) * h,
+        dz: Math.sin(tiltZ) * h,
+      })
+
+      let colliderTop = 0
+      let colliderR   = 0.9 * s
+
+      // ═══════════════════════════════════════════════════════════════════
+      //   ARCHETYPE: ROUND (bushy deciduous)
+      // ═══════════════════════════════════════════════════════════════════
+      if (archetype === 'round') {
+        const trunkH   = (2.6 + rnd(3) * 0.9) * s
+        const trunkBot = (0.50 + rnd(4) * 0.12) * s
+        const trunkTop = trunkBot * (0.60 + rnd(5) * 0.10)
+
+        const trunk = MeshBuilder.CreateCylinder(`ngawiTrunk_${i}`, {
+          diameterBottom: trunkBot, diameterTop: trunkTop,
+          height: trunkH, tessellation: 8,
+        }, this.scene)
+        const tDelta = applyTilt(trunkH / 2)
+        trunk.position = new Vector3(t.x + tDelta.dx, trunkH / 2, t.z + tDelta.dz)
+        trunk.rotation = new Vector3(tiltX, 0, tiltZ)
+        trunk.material = trunkMat
+        trunks.push(trunk)
+
+        const centerY   = trunkH + 1.3 * s
+        const cDelta    = applyTilt(centerY)
+        const centerX   = t.x + cDelta.dx
+        const centerZ   = t.z + cDelta.dz
+        const mainR     = (1.7 + rnd(6) * 0.6) * s
+
+        // Main light-tone clump
+        const c0 = MeshBuilder.CreateSphere(`ngawiCrown0_${i}`, {
+          diameter: mainR * 2, segments: 8,
+        }, this.scene)
+        c0.position = new Vector3(centerX, centerY + 0.35 * s, centerZ)
+        c0.scaling  = new Vector3(1, 0.85 + rnd(7) * 0.25, 1)
+        c0.material = foliageMatLight
+        foliageLight.push(c0)
+
+        // 3-5 side/underside dark clumps
+        const numSides = 3 + Math.floor(rnd(8) * 3)
+        for (let k = 0; k < numSides; k++) {
+          const ang    = (k / numSides) * Math.PI * 2 + rnd(9 + k) * 0.7
+          const dist   = mainR * (0.55 + rnd(10 + k) * 0.30)
+          const clumpR = mainR * (0.55 + rnd(11 + k) * 0.28)
+          const cx     = centerX + Math.cos(ang) * dist
+          const cz     = centerZ + Math.sin(ang) * dist
+          const cy     = centerY + (rnd(12 + k) - 0.6) * 0.7 * s
+          const c = MeshBuilder.CreateSphere(`ngawiCrown${k + 1}_${i}`, {
+            diameter: clumpR * 2, segments: 6,
+          }, this.scene)
+          c.position = new Vector3(cx, cy, cz)
+          c.scaling  = new Vector3(1, 0.72 + rnd(13 + k) * 0.25, 1)
+          c.material = foliageMatDark
+          foliageDark.push(c)
+        }
+
+        // Small top highlight clump
+        const cTop = MeshBuilder.CreateSphere(`ngawiCrownTop_${i}`, {
+          diameter: mainR * (0.85 + rnd(14) * 0.3), segments: 6,
+        }, this.scene)
+        cTop.position = new Vector3(
+          centerX + (rnd(15) - 0.5) * 0.4 * s,
+          centerY + mainR * 0.75,
+          centerZ + (rnd(16) - 0.5) * 0.4 * s,
+        )
+        cTop.scaling  = new Vector3(0.9, 0.7, 0.9)
+        cTop.material = foliageMatLight
+        foliageLight.push(cTop)
+
+        colliderTop = trunkH + mainR * 2
+        colliderR   = 0.95 * s
+      }
+
+      // ═══════════════════════════════════════════════════════════════════
+      //   ARCHETYPE: PINE (stacked cones, dark)
+      // ═══════════════════════════════════════════════════════════════════
+      else if (archetype === 'pine') {
+        const trunkH   = (3.8 + rnd(3) * 1.4) * s
+        const trunkBot = 0.40 * s
+        const trunk = MeshBuilder.CreateCylinder(`ngawiTrunk_${i}`, {
+          diameterBottom: trunkBot, diameterTop: 0.22 * s,
+          height: trunkH, tessellation: 8,
+        }, this.scene)
+        trunk.position = new Vector3(t.x, trunkH / 2, t.z)
+        trunk.material = trunkMat
+        trunks.push(trunk)
+
+        // 3 stacked cones, each smaller as we go up
+        const numTiers = 3 + Math.floor(rnd(4) * 2) // 3 or 4
+        let yBase = trunkH * 0.35
+        let radius = (1.9 + rnd(5) * 0.4) * s
+        for (let tier = 0; tier < numTiers; tier++) {
+          const tierH = (1.5 + rnd(20 + tier) * 0.3) * s
+          const cone = MeshBuilder.CreateCylinder(`ngawiPine_${i}_${tier}`, {
+            diameterTop: 0.05 * s,
+            diameterBottom: radius * 2,
+            height: tierH,
+            tessellation: 8,
+          }, this.scene)
+          cone.position = new Vector3(t.x, yBase + tierH / 2, t.z)
+          // Alternate light/dark for stripe feel
+          const isLight = tier % 2 === 1
+          cone.material = isLight ? foliageMatLight : foliageMatDark
+          ;(isLight ? foliageLight : foliageDark).push(cone)
+
+          yBase += tierH * 0.55
+          radius *= 0.70
+        }
+
+        colliderTop = yBase
+        colliderR   = 0.7 * s
+      }
+
+      // ═══════════════════════════════════════════════════════════════════
+      //   ARCHETYPE: OAK (wide, flattened, thick trunk)
+      // ═══════════════════════════════════════════════════════════════════
+      else if (archetype === 'oak') {
+        const trunkH   = (2.0 + rnd(3) * 0.6) * s
+        const trunkBot = (0.75 + rnd(4) * 0.15) * s
+        const trunk = MeshBuilder.CreateCylinder(`ngawiTrunk_${i}`, {
+          diameterBottom: trunkBot,
+          diameterTop:    trunkBot * 0.75,
+          height: trunkH, tessellation: 10,
+        }, this.scene)
+        const tDelta = applyTilt(trunkH / 2)
+        trunk.position = new Vector3(t.x + tDelta.dx, trunkH / 2, t.z + tDelta.dz)
+        trunk.rotation = new Vector3(tiltX, 0, tiltZ)
+        trunk.material = trunkMat
+        trunks.push(trunk)
+
+        // Visible major branch stub for oak character
+        if (rnd(5) > 0.4) {
+          const branchLen = (0.9 + rnd(6) * 0.5) * s
+          const branchAng = rnd(7) * Math.PI * 2
+          const branch = MeshBuilder.CreateCylinder(`ngawiOakBr_${i}`, {
+            diameterBottom: 0.22 * s, diameterTop: 0.10 * s,
+            height: branchLen, tessellation: 6,
+          }, this.scene)
+          branch.position = new Vector3(
+            t.x + Math.cos(branchAng) * branchLen * 0.4,
+            trunkH * 0.72,
+            t.z + Math.sin(branchAng) * branchLen * 0.4,
+          )
+          branch.rotation = new Vector3(
+            Math.cos(branchAng) * 0.6, 0,
+            -Math.sin(branchAng) * 0.6,
+          )
+          branch.material = trunkMat
+          trunks.push(branch)
+        }
+
+        const centerY = trunkH + 1.0 * s
+        const mainR   = (2.4 + rnd(8) * 0.5) * s   // wider than round
+
+        // Main flattened light clump
+        const c0 = MeshBuilder.CreateSphere(`ngawiOakCrown0_${i}`, {
+          diameter: mainR * 2, segments: 10,
+        }, this.scene)
+        c0.position = new Vector3(t.x, centerY + 0.3 * s, t.z)
+        c0.scaling  = new Vector3(1, 0.55 + rnd(9) * 0.15, 1)  // flattened
+        c0.material = foliageMatLight
+        foliageLight.push(c0)
+
+        // 4-5 wide side clumps — dark
+        const numSides = 4 + Math.floor(rnd(10) * 2)
+        for (let k = 0; k < numSides; k++) {
+          const ang    = (k / numSides) * Math.PI * 2 + rnd(11 + k) * 0.4
+          const dist   = mainR * (0.60 + rnd(12 + k) * 0.25)
+          const clumpR = mainR * (0.55 + rnd(13 + k) * 0.20)
+          const cx     = t.x + Math.cos(ang) * dist
+          const cz     = t.z + Math.sin(ang) * dist
+          const cy     = centerY + (rnd(14 + k) - 0.7) * 0.5 * s
+          const c = MeshBuilder.CreateSphere(`ngawiOakCrown${k}_${i}`, {
+            diameter: clumpR * 2, segments: 6,
+          }, this.scene)
+          c.position = new Vector3(cx, cy, cz)
+          c.scaling  = new Vector3(1, 0.60 + rnd(15 + k) * 0.20, 1)
+          c.material = foliageMatDark
+          foliageDark.push(c)
+        }
+
+        colliderTop = trunkH + mainR * 1.5
+        colliderR   = 1.1 * s   // wider trunk
+      }
+
+      // ═══════════════════════════════════════════════════════════════════
+      //   ARCHETYPE: YOUNG (slim, small)
+      // ═══════════════════════════════════════════════════════════════════
+      else {
+        const trunkH   = (1.8 + rnd(3) * 0.6) * s
+        const trunkBot = 0.28 * s
+
+        const trunk = MeshBuilder.CreateCylinder(`ngawiYoungTr_${i}`, {
+          diameterBottom: trunkBot,
+          diameterTop:    trunkBot * 0.85,
+          height: trunkH, tessellation: 6,
+        }, this.scene)
+        const tDelta = applyTilt(trunkH / 2)
+        trunk.position = new Vector3(t.x + tDelta.dx, trunkH / 2, t.z + tDelta.dz)
+        trunk.rotation = new Vector3(tiltX * 1.5, 0, tiltZ * 1.5) // more pronounced tilt
+        trunk.material = trunkMat
+        trunks.push(trunk)
+
+        const centerY = trunkH + 0.7 * s
+        const cDelta  = applyTilt(centerY)
+        const centerX = t.x + cDelta.dx
+        const centerZ = t.z + cDelta.dz
+        const mainR   = (1.0 + rnd(4) * 0.3) * s
+
+        // Just 2-3 small clumps
+        const c0 = MeshBuilder.CreateSphere(`ngawiYoungCr0_${i}`, {
+          diameter: mainR * 2, segments: 6,
+        }, this.scene)
+        c0.position = new Vector3(centerX, centerY, centerZ)
+        c0.scaling  = new Vector3(1, 0.9 + rnd(5) * 0.15, 1)
+        c0.material = foliageMatLight
+        foliageLight.push(c0)
+
+        const num = 1 + Math.floor(rnd(6) * 2)
+        for (let k = 0; k < num; k++) {
+          const ang    = rnd(7 + k) * Math.PI * 2
+          const dist   = mainR * 0.5
+          const clumpR = mainR * (0.55 + rnd(8 + k) * 0.15)
+          const c = MeshBuilder.CreateSphere(`ngawiYoungCr${k + 1}_${i}`, {
+            diameter: clumpR * 2, segments: 6,
+          }, this.scene)
+          c.position = new Vector3(
+            centerX + Math.cos(ang) * dist,
+            centerY - 0.15 * s,
+            centerZ + Math.sin(ang) * dist,
+          )
+          c.material = foliageMatDark
+          foliageDark.push(c)
+        }
+
+        colliderTop = trunkH + mainR * 1.5
+        colliderR   = 0.55 * s
+      }
+
+      // ── Collider (axis-aligned box around trunk footprint) ────────────
       this.colliders.push({
-        min: new Vector3(t.x - cr, 0, t.z - cr),
-        max: new Vector3(t.x + cr, trunkH + crownH, t.z + cr),
+        min: new Vector3(t.x - colliderR, 0, t.z - colliderR),
+        max: new Vector3(t.x + colliderR, colliderTop, t.z + colliderR),
       })
     })
 
-    // Merge each group (one shared material each) → 2 draw calls for all trees.
+    // Merge into 3 meshes total
     const mergedTrunks = Mesh.MergeMeshes(trunks, true, true, undefined, false, false)
     if (mergedTrunks) {
       mergedTrunks.name = 'ngawiTrunks_merged'
@@ -639,12 +905,19 @@ export class SimpleMap {
       mergedTrunks.receiveShadows = true
       this.meshes.push(mergedTrunks)
     }
-    const mergedCrowns = Mesh.MergeMeshes(crowns, true, true, undefined, false, false)
-    if (mergedCrowns) {
-      mergedCrowns.name = 'ngawiCrowns_merged'
-      mergedCrowns.material = foliageMat
-      mergedCrowns.receiveShadows = true
-      this.meshes.push(mergedCrowns)
+    const mergedLight = Mesh.MergeMeshes(foliageLight, true, true, undefined, false, false)
+    if (mergedLight) {
+      mergedLight.name = 'ngawiFoliageLight_merged'
+      mergedLight.material = foliageMatLight
+      mergedLight.receiveShadows = true
+      this.meshes.push(mergedLight)
+    }
+    const mergedDark = Mesh.MergeMeshes(foliageDark, true, true, undefined, false, false)
+    if (mergedDark) {
+      mergedDark.name = 'ngawiFoliageDark_merged'
+      mergedDark.material = foliageMatDark
+      mergedDark.receiveShadows = true
+      this.meshes.push(mergedDark)
     }
   }
 

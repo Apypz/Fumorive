@@ -34,7 +34,7 @@ export function GameCanvas() {
   const setCurrentGear = useGameStore((s) => s.setCurrentGear)
   const setTransmissionMode = useGameStore((s) => s.setTransmissionMode)
 
-  const { setStation, showHUD } = useRadioStore()
+  const { setStation, showHUD, setCurrentTrack } = useRadioStore()
 
   // Initialize game engine
   const initGame = useCallback(async () => {
@@ -62,8 +62,13 @@ export function GameCanvas() {
       // Create and initialize demo scene with selected map (+ seed/level for Ngawi).
       // Read level & seed FRESH from the store at this moment — NOT from the React
       // closure, which may still hold the pre-startAtLevel stale values.
-      const { currentLevel: level, mapSeed: seed, selectedMap: map } = useGameStore.getState()
-      const demoScene = new DemoScene(graphicsConfig, map, seed, level)
+      const {
+        currentLevel: level,
+        mapSeed: seed,
+        selectedMap: map,
+        timeOfDay,
+      } = useGameStore.getState()
+      const demoScene = new DemoScene(graphicsConfig, map, seed, level, timeOfDay)
 
       sceneRef.current = demoScene
 
@@ -88,6 +93,19 @@ export function GameCanvas() {
         if (impactVelocity > 3) {
           useViolationStore.getState().addViolation('collision')
         }
+      })
+
+      // Wire radio station-change callback
+      demoScene.setOnStationChange?.((station) => {
+        setStation(station)
+        showHUD()
+      })
+
+      // Wire track-change callback (fires when MP3 track changes)
+      demoScene.setOnTrackChange((station, track) => {
+        setStation(station)
+        setCurrentTrack(track)
+        showHUD()
       })
 
       await demoScene.init(engine.getContext())
@@ -272,6 +290,16 @@ export function GameCanvas() {
           setStation(newStation)
           showHUD()
         }
+      }
+
+      // [ = previous track, ] = next track (MP3 stations)
+      if (e.key === '[') {
+        sceneRef.current?.radioPrevTrack()
+        showHUD()
+      }
+      if (e.key === ']') {
+        sceneRef.current?.radioNextTrack()
+        showHUD()
       }
 
       // F12 to toggle inspector

@@ -587,29 +587,23 @@ export class CarController {
     const gas = this.readPedal(gp, map.gas)
     const brake = this.readPedal(gp, map.brake)
 
-    // Throttle: gas drives forward, brake held with no gas = negative throttle for reverse request.
-    // Tapi kita tidak mau langsung pass throttle negatif ke physics saat masih melaju maju —
-    // itu akan trigger shift ke gear -1 terlalu cepat. Jadi:
-    // - Saat ada gas: throttle positif normal
-    // - Saat tidak ada gas + brake: throttle negatif HANYA jika kecepatan sudah sangat rendah
-    //   (di bawah 2 km/h), sehingga brake bekerja normal dulu, lalu baru mundur
-    const speedKmh = this.physics.getSpeedKmh()
-    const isNearlyStopped = speedKmh < 2.0
-
+    // Mirror keyboard behaviour exactly:
+    // - Gas pressed          → positive throttle (minus any simultaneous brake)
+    // - Brake pressed, no gas → negative throttle (physics handles brake-first then reverse,
+    //                           same as pressing S on keyboard — no speed guard needed here)
+    // - Nothing pressed      → coast (throttle 0)
     if (gas > 0) {
-      // Gas ditekan: maju
       this.input.throttle = Math.max(0, Math.min(1, gas - brake))
-    } else if (brake > 0 && isNearlyStopped) {
-      // Rem ditekan + hampir berhenti → minta mundur
+    } else if (brake > 0) {
+      // Pass straight through — CarPhysics already gates actual reverse
+      // until the car is nearly stopped, identical to throttle = -1 from keyboard S.
       this.input.throttle = -brake
     } else {
-      // Rem ditekan tapi masih melaju → throttle 0, biarkan brake bekerja
       this.input.throttle = 0
     }
 
-    // Pass brake ke physics penuh agar pengereman bertahap bekerja.
-    // Tapi saat sudah shift mundur (throttle negatif), zero-kan brake agar
-    // tidak override reverse force yang baru saja diminta.
+    // Zero out the brake channel when we're already requesting reverse so the
+    // physics braking force doesn't fight the reverse thrust.
     this.input.brake = this.input.throttle < 0 ? 0 : brake
 
     // Paddle shifters → manual gear up/down (no-op in automatic).
