@@ -62,8 +62,13 @@ export function GameCanvas() {
       // Create and initialize demo scene with selected map (+ seed/level for Ngawi).
       // Read level & seed FRESH from the store at this moment — NOT from the React
       // closure, which may still hold the pre-startAtLevel stale values.
-      const { currentLevel: level, mapSeed: seed, selectedMap: map } = useGameStore.getState()
-      const demoScene = new DemoScene(graphicsConfig, map, seed, level)
+      const {
+        currentLevel: level,
+        mapSeed: seed,
+        selectedMap: map,
+        timeOfDay,
+      } = useGameStore.getState()
+      const demoScene = new DemoScene(graphicsConfig, map, seed, level, timeOfDay)
 
       sceneRef.current = demoScene
 

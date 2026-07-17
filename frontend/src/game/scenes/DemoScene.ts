@@ -72,6 +72,7 @@ export class DemoScene implements GameScene {
   // Procedural map (Ngawi City). seed + level are unused by hand-authored maps.
   private seed: number
   private level: number
+  private timeOfDay: number
   private ngawiPlan: NgawiCityPlan | null = null
   private npcTraffic: NpcTrafficSystem | null = null
   private trafficLights: TrafficLightSystem | null = null
@@ -84,11 +85,18 @@ export class DemoScene implements GameScene {
   private pendingRadioStationCb: ((station: RadioStation) => void) | null = null
   private pendingRadioTrackCb: ((station: RadioStation, track: import('../systems/RadioSystem').RadioTrackInfo | null) => void) | null = null
 
-  constructor(graphicsConfig?: GraphicsConfig, mapType: MapType = 'ngawi-city', seed: number = 1, level: number = 1) {
+  constructor(
+    graphicsConfig?: GraphicsConfig,
+    mapType: MapType = 'ngawi-city',
+    seed: number = 1,
+    level: number = 1,
+    timeOfDay: number = 12,
+  ) {
     this.graphicsConfig = graphicsConfig ?? DEFAULT_GRAPHICS_CONFIG
     this.mapType = mapType
     this.seed = seed
     this.level = level
+    this.timeOfDay = Math.max(0, Math.min(24, timeOfDay))
   }
 
   /**
@@ -347,6 +355,49 @@ export class DemoScene implements GameScene {
     return pos ? { x: pos.x, z: pos.z } : { x: 0, z: 0 }
   }
 
+  /** Static lighting/sky palette derived from the selected hour. */
+  private getTimeOfDayVisuals() {
+    const hour = this.timeOfDay % 24
+    // Daylight curve: 0 at/before 06:00 and after 18:00, 1 at noon.
+    const daylight = Math.max(0, Math.sin(((hour - 6) / 12) * Math.PI))
+    // Warm horizon around sunrise/sunset.
+    const golden = Math.max(
+      Math.exp(-Math.pow((hour - 6.5) / 1.5, 2)),
+      Math.exp(-Math.pow((hour - 17.5) / 1.5, 2)),
+    )
+
+    const nightTop = new Color3(0.015, 0.025, 0.09)
+    const dayTop = new Color3(0.35, 0.67, 0.95)
+    const nightBottom = new Color3(0.045, 0.06, 0.13)
+    const dayBottom = new Color3(0.72, 0.84, 0.96)
+    const sunsetBottom = new Color3(0.95, 0.42, 0.18)
+
+    const topColor = Color3.Lerp(nightTop, dayTop, daylight)
+    let bottomColor = Color3.Lerp(nightBottom, dayBottom, daylight)
+    bottomColor = Color3.Lerp(bottomColor, sunsetBottom, golden * 0.75)
+
+    // Sun travels east→west. At night this acts as dim moonlight.
+    const angle = ((hour - 6) / 12) * Math.PI
+    const elevation = Math.max(0.12, Math.sin(angle))
+    const sunDirection = new Vector3(-Math.cos(angle), -elevation, -0.35).normalize()
+    const sunColor = Color3.Lerp(
+      new Color3(1.0, 0.47, 0.24),
+      new Color3(1.0, 0.95, 0.84),
+      Math.min(1, daylight * 1.4),
+    )
+
+    return {
+      daylight,
+      topColor,
+      bottomColor,
+      sunDirection,
+      sunColor: daylight > 0.02 ? sunColor : new Color3(0.35, 0.42, 0.65),
+      sunIntensity: 0.18 + daylight * 2.82,
+      ambientIntensity: 0.18 + daylight * 1.32,
+      ambientColor: Color3.Lerp(new Color3(0.10, 0.13, 0.25), new Color3(0.48, 0.54, 0.62), daylight),
+    }
+  }
+
   async init(context: SceneContext): Promise<void> {
     this.scene = context.scene
     this.canvas = context.canvas
@@ -356,11 +407,15 @@ export class DemoScene implements GameScene {
     // Setup input manager
     this.inputManager = new InputManager(this.scene, this.canvas)
 
-    // Setup lighting - bright daylight
+    const timeVisuals = this.getTimeOfDayVisuals()
+
+    // Static lighting derived from the hour selected on the level screen.
     this.lightingSetup = new LightingSetup(this.scene, this.graphicsConfig, {
-      sunDirection: new Vector3(-1, -2, -1),
-      sunIntensity: 3,
-      ambientIntensity: 1.5,
+      sunDirection: timeVisuals.sunDirection,
+      sunColor: timeVisuals.sunColor,
+      sunIntensity: timeVisuals.sunIntensity,
+      ambientColor: timeVisuals.ambientColor,
+      ambientIntensity: timeVisuals.ambientIntensity,
     })
 
     // Create map based on selected mapType
@@ -471,8 +526,8 @@ export class DemoScene implements GameScene {
     // Setup environment (skybox only, ground is from map)
     this.environmentSetup = new EnvironmentSetup(this.scene, this.graphicsConfig)
     this.environmentSetup.createProceduralSkybox(
-      new Color3(0.4, 0.6, 0.9), // Top color (bright blue sky)
-      new Color3(0.7, 0.8, 0.95) // Bottom color (light horizon)
+      timeVisuals.topColor,
+      timeVisuals.bottomColor,
     )
     // Glow is a per-frame full-screen blur pass; skip it entirely on 'low'.
     if (this.graphicsConfig.shadowQuality !== 'low') {
