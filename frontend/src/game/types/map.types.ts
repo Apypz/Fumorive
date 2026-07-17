@@ -11,7 +11,7 @@
 /**
  * Available map identifiers
  */
-export type MapType = 'ngawi-city'
+export type MapType = 'ngawi-city' | 'solo-city' | 'sriwedari-park'
 
 /**
  * 3D Vector type for positions
