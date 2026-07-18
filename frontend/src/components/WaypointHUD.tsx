@@ -38,9 +38,6 @@ export function WaypointHUD() {
   const nextWaypointX = useWaypointStore((s) => s.nextWaypointX)
   const nextWaypointZ = useWaypointStore((s) => s.nextWaypointZ)
   const hasNextWaypoint = useWaypointStore((s) => s.hasNextWaypoint)
-  const activeWaypointX = useWaypointStore((s) => s.activeWaypointX)
-  const activeWaypointZ = useWaypointStore((s) => s.activeWaypointZ)
-  const carHeading = useWaypointStore((s) => s.carHeading)
 
   // Flash effect when checkpoint reached
   const [showFlash, setShowFlash] = useState(false)
@@ -272,11 +269,8 @@ export function WaypointHUD() {
         {/* Next-checkpoint turn hint */}
         {hasNextWaypoint && (
           <NextTurnHint
-            activeX={activeWaypointX}
-            activeZ={activeWaypointZ}
             nextX={nextWaypointX}
             nextZ={nextWaypointZ}
-            carHeading={carHeading}
             nextLabel={
               sessionData.currentWaypointIndex + 1 >= sessionData.totalWaypoints - 1
                 ? 'Finish'
@@ -396,20 +390,21 @@ function DirectionArrow() {
  * NextTurnHint
  * ============
  * Shows a small turn-direction indicator inside the WaypointHUD panel.
- * It computes the bearing from the ACTIVE checkpoint to the NEXT checkpoint,
- * compares that to the car's current heading, and renders a left/right/straight
- * arrow so the player knows which way to turn at the upcoming intersection.
+ * Subscribes to the store directly (same pattern as DirectionArrow) so
+ * high-frequency position/heading updates do NOT force WaypointHUD to re-render.
  */
 interface NextTurnHintProps {
-  activeX: number
-  activeZ: number
   nextX: number
   nextZ: number
-  carHeading: number   // radians, Babylon convention (0 = +Z north)
   nextLabel: string
 }
 
-function NextTurnHint({ activeX, activeZ, nextX, nextZ, carHeading, nextLabel }: NextTurnHintProps) {
+function NextTurnHint({ nextX, nextZ, nextLabel }: NextTurnHintProps) {
+  // Subscribe here, not in the parent — these update at ~20 Hz
+  const activeX   = useWaypointStore((s) => s.activeWaypointX)
+  const activeZ   = useWaypointStore((s) => s.activeWaypointZ)
+  const carHeading = useWaypointStore((s) => s.carHeading)
+
   // World-space bearing from active checkpoint → next checkpoint
   const dx = nextX - activeX
   const dz = nextZ - activeZ
@@ -427,13 +422,13 @@ function NextTurnHint({ activeX, activeZ, nextX, nextZ, carHeading, nextLabel }:
   let color: string
 
   if (absDeg < 30) {
-    icon = '↑'; label = 'Lurus'; color = '#34d399'         // straight
+    icon = '↑'; label = 'Lurus'; color = '#34d399'
   } else if (absDeg > 150) {
-    icon = '↓'; label = 'Putar Balik'; color = '#f87171'   // U-turn (rare)
+    icon = '↓'; label = 'Putar Balik'; color = '#f87171'
   } else if (rel > 0) {
-    icon = '↱'; label = 'Belok Kanan'; color = '#fbbf24'   // right
+    icon = '↱'; label = 'Belok Kanan'; color = '#fbbf24'
   } else {
-    icon = '↰'; label = 'Belok Kiri'; color = '#60a5fa'    // left
+    icon = '↰'; label = 'Belok Kiri'; color = '#60a5fa'
   }
 
   return (

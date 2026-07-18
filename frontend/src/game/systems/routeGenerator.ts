@@ -24,9 +24,12 @@ interface RouteOptions {
 
 /**
  * Weighted-random pick from an array. Each element has a corresponding weight.
+ * If all weights are 0 (e.g. all candidates face backward), falls back to a
+ * uniform random pick so we never get stuck.
  */
 function weightedPick<T>(items: T[], weights: number[], rng: () => number): T {
   const total = weights.reduce((a, b) => a + b, 0)
+  if (total === 0) return items[Math.floor(rng() * items.length)] // uniform fallback
   let r = rng() * total
   for (let i = 0; i < items.length; i++) {
     r -= weights[i]
@@ -66,7 +69,9 @@ export function generateNgawiRoute(
     const candidates = Array.from(adj.get(cur) ?? []).filter((n) => !visited.has(n))
 
     if (candidates.length === 0) {
-      // Dead end — backtrack
+      // Dead end — backtrack. Unmark cur so it can be reached again from
+      // a different branch (standard backtracking DFS requirement).
+      visited.delete(cur)
       stack.pop()
       path.pop()
       continue
@@ -89,7 +94,7 @@ export function generateNgawiRoute(
       // Dot product (positive = forward, zero = lateral, negative = backward)
       const dot = dx * ndx + dz * ndz
       if (dot > 0) return 5.0   // continuing forward — strongly preferred
-      if (dot < 0) return 0.2   // going backward — heavily penalised
+      if (dot < 0) return 0.0   // going backward — blocked (weightedPick falls back to uniform if ALL are backward)
       return 2.0                 // turning left/right — neutral
     })
 
@@ -100,6 +105,16 @@ export function generateNgawiRoute(
   }
 
   // path[0] is the spawn node (car starts here).
+  // Guard: DFS must have collected at least 2 nodes (spawn + 1 destination)
+  // to build even a single midpoint checkpoint. Fail loudly rather than return
+  // a zero-waypoint route that silently breaks the WaypointSystem session.
+  if (path.length < 2) {
+    throw new Error(
+      `[routeGenerator] DFS failed: only ${path.length} node(s) collected (need ≥ 2). ` +
+      `seed=${seed}, targetCheckpoints=${target}`
+    )
+  }
+
   // We build checkpoints from the MIDPOINTS of consecutive node pairs starting
   // from path[0]→path[1], path[1]→path[2], …
   // This places each checkpoint squarely on a road segment, not at an intersection.
