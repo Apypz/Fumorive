@@ -34,6 +34,14 @@ export function WaypointHUD() {
   const currentLevel = useGameStore((s) => s.currentLevel)
   const isNgawi = selectedMap === 'ngawi-city'
 
+  // Next-checkpoint preview (the waypoint AFTER the current active one)
+  const nextWaypointX = useWaypointStore((s) => s.nextWaypointX)
+  const nextWaypointZ = useWaypointStore((s) => s.nextWaypointZ)
+  const hasNextWaypoint = useWaypointStore((s) => s.hasNextWaypoint)
+  const activeWaypointX = useWaypointStore((s) => s.activeWaypointX)
+  const activeWaypointZ = useWaypointStore((s) => s.activeWaypointZ)
+  const carHeading = useWaypointStore((s) => s.carHeading)
+
   // Flash effect when checkpoint reached
   const [showFlash, setShowFlash] = useState(false)
   const [countdown, setCountdown] = useState(10)
@@ -260,6 +268,22 @@ export function WaypointHUD() {
             }</strong>
           </div>
         )}
+
+        {/* Next-checkpoint turn hint */}
+        {hasNextWaypoint && (
+          <NextTurnHint
+            activeX={activeWaypointX}
+            activeZ={activeWaypointZ}
+            nextX={nextWaypointX}
+            nextZ={nextWaypointZ}
+            carHeading={carHeading}
+            nextLabel={
+              sessionData.currentWaypointIndex + 1 >= sessionData.totalWaypoints - 1
+                ? 'Finish'
+                : `CP ${sessionData.currentWaypointIndex + 2}`
+            }
+          />
+        )}
       </div>
 
       {/* Direction indicator - arrow pointing toward waypoint */}
@@ -368,6 +392,61 @@ function DirectionArrow() {
   )
 }
 
+/**
+ * NextTurnHint
+ * ============
+ * Shows a small turn-direction indicator inside the WaypointHUD panel.
+ * It computes the bearing from the ACTIVE checkpoint to the NEXT checkpoint,
+ * compares that to the car's current heading, and renders a left/right/straight
+ * arrow so the player knows which way to turn at the upcoming intersection.
+ */
+interface NextTurnHintProps {
+  activeX: number
+  activeZ: number
+  nextX: number
+  nextZ: number
+  carHeading: number   // radians, Babylon convention (0 = +Z north)
+  nextLabel: string
+}
+
+function NextTurnHint({ activeX, activeZ, nextX, nextZ, carHeading, nextLabel }: NextTurnHintProps) {
+  // World-space bearing from active checkpoint → next checkpoint
+  const dx = nextX - activeX
+  const dz = nextZ - activeZ
+  const worldBearing = Math.atan2(dx, dz) // 0 = north (+Z), clockwise positive
+
+  // Relative bearing: positive = right, negative = left
+  let rel = worldBearing - carHeading
+  while (rel > Math.PI)  rel -= 2 * Math.PI
+  while (rel < -Math.PI) rel += 2 * Math.PI
+
+  const absDeg = Math.abs(rel * 180 / Math.PI)
+
+  let icon: string
+  let label: string
+  let color: string
+
+  if (absDeg < 30) {
+    icon = '↑'; label = 'Lurus'; color = '#34d399'         // straight
+  } else if (absDeg > 150) {
+    icon = '↓'; label = 'Putar Balik'; color = '#f87171'   // U-turn (rare)
+  } else if (rel > 0) {
+    icon = '↱'; label = 'Belok Kanan'; color = '#fbbf24'   // right
+  } else {
+    icon = '↰'; label = 'Belok Kiri'; color = '#60a5fa'    // left
+  }
+
+  return (
+    <div style={styles.turnHintBox}>
+      <span style={{ ...styles.turnHintIcon, color }}>{icon}</span>
+      <div style={styles.turnHintText}>
+        <span style={{ ...styles.turnHintDir, color }}>{label}</span>
+        <span style={styles.turnHintNext}>setelah ini → {nextLabel}</span>
+      </div>
+    </div>
+  )
+}
+
 // ============================================
 // STYLES
 // ============================================
@@ -468,6 +547,38 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.75rem',
     color: 'rgba(255,255,255,0.8)',
     textAlign: 'center' as const,
+  },
+
+  // Turn hint box (next checkpoint direction preview)
+  turnHintBox: {
+    marginTop: '0.5rem',
+    padding: '0.35rem 0.5rem',
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '6px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+  },
+  turnHintIcon: {
+    fontSize: '1.4rem',
+    lineHeight: 1,
+    minWidth: '1.4rem',
+    textAlign: 'center' as const,
+  },
+  turnHintText: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '0.05rem',
+  },
+  turnHintDir: {
+    fontSize: '0.8rem',
+    fontWeight: 700,
+    letterSpacing: '0.02em',
+  },
+  turnHintNext: {
+    fontSize: '0.65rem',
+    color: 'rgba(255,255,255,0.45)',
   },
 
   // Navigation compass at top center

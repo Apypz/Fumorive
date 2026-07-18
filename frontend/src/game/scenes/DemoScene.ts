@@ -341,6 +341,17 @@ export class DemoScene implements GameScene {
   }
 
   /**
+   * Get the position of the waypoint AFTER the current active one.
+   * Returns null if no such waypoint (at the last checkpoint).
+   * Used by GameCanvas to show a "next next" preview arrow in the HUD.
+   */
+  getNextWaypointPosition(): { x: number; z: number } | null {
+    const wp = this.waypointSystem?.getNextWaypoint()
+    if (!wp) return null
+    return { x: wp.position.x, z: wp.position.z }
+  }
+
+  /**
    * Get car heading in radians (for navigation arrow)
    */
   getCarHeading(): number {
