@@ -30,6 +30,7 @@ export class WaypointMarkers {
   private scene: Scene
   private markers: MarkerMesh[] = []
   private activeMaterial!: PBRMaterial
+  private nextMaterial!: PBRMaterial      // preview: next checkpoint after active
   private upcomingMaterial!: PBRMaterial
   private reachedMaterial!: PBRMaterial
   private glowLayer: GlowLayer | null = null
@@ -49,7 +50,16 @@ export class WaypointMarkers {
     this.activeMaterial.metallic = 0.1
     this.activeMaterial.roughness = 0.5
 
-    // Upcoming: blue semi-transparent
+    // Next checkpoint preview: amber/orange, dimmer than active
+    this.nextMaterial = new PBRMaterial('wp_next_mat', this.scene)
+    this.nextMaterial.albedoColor = new Color3(1.0, 0.6, 0.1)
+    this.nextMaterial.emissiveColor = new Color3(0.8, 0.4, 0.0)
+    this.nextMaterial.emissiveIntensity = 0.8
+    this.nextMaterial.alpha = 0.55
+    this.nextMaterial.metallic = 0.1
+    this.nextMaterial.roughness = 0.6
+
+    // Upcoming: blue semi-transparent (hidden by default)
     this.upcomingMaterial = new PBRMaterial('wp_upcoming_mat', this.scene)
     this.upcomingMaterial.albedoColor = new Color3(0.2, 0.5, 1.0)
     this.upcomingMaterial.emissiveColor = new Color3(0.1, 0.3, 0.8)
@@ -82,10 +92,11 @@ export class WaypointMarkers {
 
     waypoints.forEach((wp, index) => {
       const isFirst = index === 0
+      const isSecond = index === 1  // next-checkpoint preview
 
       // Pillar (vertical cylinder beacon)
-      const pillarHeight = isFirst ? 15 : 10
-      const pillarDiameter = isFirst ? 2.0 : 1.2
+      const pillarHeight = isFirst ? 15 : isSecond ? 8 : 10
+      const pillarDiameter = isFirst ? 2.0 : isSecond ? 1.0 : 1.2
       const pillar = MeshBuilder.CreateCylinder(
         `wp_pillar_${wp.id}`,
         {
@@ -100,9 +111,14 @@ export class WaypointMarkers {
         pillarHeight / 2, // Bottom at ground level
         wp.position.z
       )
-      pillar.material = isFirst ? this.activeMaterial : this.upcomingMaterial
+      pillar.material = isFirst
+        ? this.activeMaterial
+        : isSecond
+          ? this.nextMaterial
+          : this.upcomingMaterial
       pillar.isPickable = false
-      pillar.isVisible = isFirst // only the active (next) checkpoint is shown
+      // Show active AND next-checkpoint markers; hide all others
+      pillar.isVisible = isFirst || isSecond
 
       // Ground ring
       const ring = MeshBuilder.CreateTorus(
@@ -115,17 +131,21 @@ export class WaypointMarkers {
         this.scene
       )
       ring.position = new Vector3(wp.position.x, 0.15, wp.position.z)
-      ring.material = isFirst ? this.activeMaterial : this.upcomingMaterial
+      ring.material = isFirst
+        ? this.activeMaterial
+        : isSecond
+          ? this.nextMaterial
+          : this.upcomingMaterial
       ring.isPickable = false
-      ring.isVisible = isFirst // only the active (next) checkpoint is shown
+      ring.isVisible = isFirst || isSecond
 
-      // Add glow to active marker
+      // Add glow to active marker only
       if (isFirst && this.glowLayer) {
         this.glowLayer.addIncludedOnlyMesh(pillar as any)
         this.glowLayer.addIncludedOnlyMesh(ring as any)
       }
 
-      // Bobbing animation on the pillar
+      // Bobbing animation on the active pillar only
       if (isFirst) {
         this.addBobbingAnimation(pillar, pillarHeight / 2)
       }
@@ -135,12 +155,23 @@ export class WaypointMarkers {
   }
 
   /**
-   * Update marker visuals based on waypoint states
+   * Update marker visuals based on waypoint states.
+   * The first 'upcoming' waypoint after the active one is shown as an
+   * amber preview marker so the player can see which way to go next.
    */
   updateStates(states: { waypointId: number; state: WaypointState }[]): void {
+    // Determine which waypoint id should be shown as the "next" preview
+    const activeIdx = states.findIndex(s => s.state === 'active')
+    const nextPreviewId =
+      activeIdx >= 0 && activeIdx + 1 < states.length
+        ? states[activeIdx + 1].waypointId
+        : -1
+
     states.forEach(({ waypointId, state }) => {
       const marker = this.markers.find(m => m.waypointId === waypointId)
       if (!marker) return
+
+      const isNextPreview = waypointId === nextPreviewId
 
       switch (state) {
         case 'active':
@@ -157,16 +188,23 @@ export class WaypointMarkers {
           break
 
         case 'upcoming':
-          // Hidden until it becomes the active target — only the next
-          // checkpoint is ever shown on screen.
-          marker.pillar.isVisible = false
-          marker.ring.isVisible = false
+          if (isNextPreview) {
+            // Show the immediately next checkpoint as amber preview
+            marker.pillar.material = this.nextMaterial
+            marker.ring.material = this.nextMaterial
+            marker.pillar.isVisible = true
+            marker.ring.isVisible = true
+          } else {
+            // Hide all other upcoming checkpoints
+            marker.pillar.isVisible = false
+            marker.ring.isVisible = false
+          }
           break
 
         case 'reached':
           marker.pillar.material = this.reachedMaterial
           marker.ring.material = this.reachedMaterial
-          marker.pillar.isVisible = false // Hide completely once reached
+          marker.pillar.isVisible = false
           marker.ring.isVisible = false
           if (this.glowLayer) {
             this.glowLayer.removeIncludedOnlyMesh(marker.pillar as any)
@@ -217,6 +255,7 @@ export class WaypointMarkers {
   dispose(): void {
     this.disposeMarkers()
     this.activeMaterial?.dispose()
+    this.nextMaterial?.dispose()
     this.upcomingMaterial?.dispose()
     this.reachedMaterial?.dispose()
     this.glowLayer?.dispose()

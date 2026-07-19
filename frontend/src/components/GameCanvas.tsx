@@ -201,6 +201,13 @@ export function GameCanvas() {
           if (activePos) {
             useWaypointStore.getState().setActiveWaypointPos(activePos.x, activePos.z)
           }
+          // Push the waypoint AFTER the active one so the HUD can show a preview
+          const nextPos = demoScene.getNextWaypointPosition()
+          useWaypointStore.getState().setNextWaypointPos(
+            nextPos?.x ?? 0,
+            nextPos?.z ?? 0,
+            nextPos !== null,
+          )
           // Push car position & heading for nav arrow
           const carPos = demoScene.getCarPosition()
           const carHdg = demoScene.getCarHeading()

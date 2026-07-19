@@ -31,9 +31,6 @@ export { InputManager } from './engine/InputManager'
 // ============================================
 // COMPONENTS
 // ============================================
-// Camera
-export { CameraController } from './components/CameraController'
-
 // Lighting & Environment
 export { LightingSetup } from './components/LightingSetup'
 export { EnvironmentSetup } from './components/EnvironmentSetup'

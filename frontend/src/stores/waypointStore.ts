@@ -15,6 +15,12 @@ interface WaypointStoreState {
   activeWaypointZ: number
   setActiveWaypointPos: (x: number, z: number) => void
 
+  // NEXT waypoint position (the one after the active one) — for preview hint
+  nextWaypointX: number
+  nextWaypointZ: number
+  hasNextWaypoint: boolean
+  setNextWaypointPos: (x: number, z: number, has: boolean) => void
+
   // Car position & heading for navigation arrow
   carX: number
   carZ: number
@@ -45,6 +51,11 @@ export const useWaypointStore = create<WaypointStoreState>((set) => ({
   activeWaypointZ: 0,
   setActiveWaypointPos: (x, z) => set({ activeWaypointX: x, activeWaypointZ: z }),
 
+  nextWaypointX: 0,
+  nextWaypointZ: 0,
+  hasNextWaypoint: false,
+  setNextWaypointPos: (x, z, has) => set({ nextWaypointX: x, nextWaypointZ: z, hasNextWaypoint: has }),
+
   carX: 0,
   carZ: 0,
   carHeading: 0,
@@ -62,6 +73,9 @@ export const useWaypointStore = create<WaypointStoreState>((set) => ({
     distanceToActive: -1,
     activeWaypointX: 0,
     activeWaypointZ: 0,
+    nextWaypointX: 0,
+    nextWaypointZ: 0,
+    hasNextWaypoint: false,
     carX: 0,
     carZ: 0,
     carHeading: 0,

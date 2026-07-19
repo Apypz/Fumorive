@@ -377,6 +377,17 @@ export class WaypointSystem {
   }
 
   /**
+   * Get the waypoint AFTER the current active one (the "next next").
+   * Used to show the player a preview of where to go after the current checkpoint.
+   * Returns null if no such waypoint exists (last or second-to-last checkpoint).
+   */
+  getNextWaypoint(): Waypoint | null {
+    const nextIndex = this.currentIndex + 1
+    if (nextIndex >= this.route.waypoints.length) return null
+    return this.route.waypoints[nextIndex]
+  }
+
+  /**
    * Get all waypoints in this route
    */
   getAllWaypoints(): Waypoint[] {
