@@ -6,7 +6,7 @@
 
 Kedua modalitas digabungkan melalui algoritma **Multimodal Fusion** dengan pembobotan 60% EEG + 40% Face untuk menghasilkan skor kelelahan gabungan (*Combined Fatigue Score*) yang lebih akurat dan *robust* dibanding pendekatan unimodal. Skor tersebut kemudian diklasifikasikan menjadi tiga tingkat: *Alert* (waspada), *Drowsy* (mengantuk), dan *Fatigued* (kelelahan berat), dengan sistem peringatan bertingkat (*progressive alert system*) yang secara otomatis memberikan notifikasi kepada pengemudi.
 
-Selain itu, Fumorive juga mengintegrasikan **simulator mengemudi 3D** berbasis *Babylon.js* sebagai lingkungan pengujian dan pelatihan. Simulator ini memungkinkan evaluasi respons pengemudi terhadap berbagai skenario jalan dalam kondisi terkontrol, sekaligus memberikan efek visual berupa *blur*, *vignette*, dan *camera sway* ketika tingkat kelelahan meningkat sebagai mekanisme umpan balik adaptif.
+Selain itu, Fumorive mengintegrasikan **simulator mengemudi 3D** berbasis *Babylon.js* sebagai lingkungan pengujian dan pelatihan yang realistis. Simulator menghadirkan kota prosedural dinamis (**"Ngawi City"**) yang jaringan jalan, bangunan, dan rutenya di-generate acak setiap sesi (sehingga selalu berbeda), dilengkapi lalu lintas kendaraan NPC beragam (sedan, SUV, van, bus, truk), pejalan kaki, serta aturan lalu lintas lengkap (lampu lalu lintas, zebra cross, polisi tidur, rambu). Pengemudi dapat mengendalikan kendaraan menggunakan keyboard, mouse, maupun **setir balap fisik (racing wheel)**, dan setiap pelanggaran (menabrak, melawan arah, keluar jalur, menerobos lampu merah, menabrak pejalan kaki) dicatat sebagai skor perilaku berkendara. Umpan balik adaptif diberikan seiring peningkatan tingkat kelelahan sebagai simulasi dampak nyata kelelahan terhadap kemampuan mengemudi.
 
 ### (2) Inovasi yang Diterapkan pada Produk
 
@@ -21,8 +21,8 @@ Seluruh alur data — dari akuisisi sinyal EEG dan deteksi wajah hingga visualis
 **c. Kalibrasi Personal (*Personal Baseline Calibration*)**
 Sistem melakukan kalibrasi awal selama 10 detik untuk menangkap *baseline* gelombang otak personal setiap pengemudi. Hal ini memungkinkan deteksi yang lebih akurat karena ambang batas kelelahan disesuaikan dengan profil neurofisiologis individu, bukan menggunakan nilai ambang statis yang sama untuk semua pengguna.
 
-**d. Simulator 3D dengan Umpan Balik Adaptif**
-Simulator mengemudi 3D menggunakan *Babylon.js* dengan mesin fisika *Havok* tidak hanya berfungsi sebagai lingkungan pengujian, tetapi juga memberikan umpan balik adaptif berdasarkan tingkat kelelahan — efek visual dan kendali kendaraan akan berubah secara dinamis seiring peningkatan skor kelelahan, mensimulasikan dampak nyata kelelahan terhadap kemampuan mengemudi.
+**d. Simulator 3D Prosedural dengan Umpan Balik Adaptif**
+Simulator mengemudi 3D menggunakan *Babylon.js* dengan model **fisika kendaraan kinematik buatan sendiri (berbasis momentum)** menghadirkan **kota prosedural dinamis** — peta, bangunan, dan rute checkpoint di-generate acak setiap sesi — lengkap dengan lalu lintas NPC cerdas (mengikuti lajur, menyalip, menaati lampu merah), pejalan kaki, dan **sistem pelanggaran berskor**. Selain sebagai lingkungan pengujian, simulator memberikan umpan balik adaptif berdasarkan tingkat kelelahan: kendali dan tampilan berubah dinamis seiring peningkatan skor kelelahan, mensimulasikan dampak nyata kelelahan terhadap kemampuan mengemudi.
 
 **e. Browser-based Face Processing (Privacy-First)**
 Seluruh pemrosesan deteksi wajah dilakukan secara lokal di browser pengguna menggunakan *TensorFlow.js* dengan backend *WebGL*, tanpa mengirimkan video atau gambar wajah ke server. Pendekatan ini menjamin privasi pengemudi sekaligus mengurangi beban jaringan dan latensi.
@@ -36,8 +36,8 @@ Seluruh pemrosesan deteksi wajah dilakukan secara lokal di browser pengguna meng
 |----------|-------------|--------|
 | Muse 2 EEG Headband | 4 kanal EEG (TP9, AF7, AF8, TP10), sampling rate 256 Hz, koneksi Bluetooth Low Energy | Akuisisi sinyal gelombang otak secara non-invasif |
 | Web Camera (720p+) | Resolusi minimum 720p, 30 FPS | Input visual untuk deteksi wajah |
-| Steering Wheel Controller | Logitech G29 / G923 atau sejenisnya, dengan Force Feedback | Kontrol kemudi simulator untuk pengalaman imersif |
-| Pedal Set | Pedal gas, rem, dan kopling (kompatibel dengan steering wheel) | Input kontrol akselerasi dan pengereman |
+| Steering Wheel Controller | Sades Ryunix **Kaiju XR1** (racing wheel X-Input, 1080°, force feedback) atau setir X-Input lain | Kontrol kemudi simulator untuk pengalaman imersif — **sudah terintegrasi** via browser Gamepad API |
+| Pedal Set | Pedal gas, rem, dan kopling (satu paket dengan setir) | Input akselerasi dan pengereman — **sudah terintegrasi** (dengan kalibrasi) |
 | Joystick (opsional) | Gamepad standar USB/Bluetooth | Input kontrol alternatif untuk simulator |
 | Mikrokontroler (Arduino/ESP32) | Arduino Mega 2560 / ESP32-WROOM-32 | Penghubung sensor fisik tambahan dan trigger IoT |
 | Sensor Getaran (*Vibration Motor*) | Motor vibrator DC, dikontrol via mikrokontroler | Umpan balik haptic pada steering wheel saat kelelahan terdeteksi |
@@ -64,7 +64,7 @@ Seluruh pemrosesan deteksi wajah dilakukan secara lokal di browser pengguna meng
 
 **Lapisan 5 — Frontend & Simulator**
 - **Framework**: React 19 + TypeScript 5 + Vite 7
-- **Game Engine**: Babylon.js 8 dengan mesin fisika Havok untuk simulasi mengemudi 3D
+- **Game Engine**: Babylon.js 8 dengan model **fisika kendaraan kinematik kustom (berbasis momentum)** untuk simulasi mengemudi 3D — lengkap dengan generasi kota prosedural (seeded PRNG), AI lalu lintas NPC, deteksi tabrakan berbasis AABB, dan optimasi performa (penggabungan mesh, pembekuan mesh statis, pemuatan bertahap)
 - **Visualisasi**: D3.js untuk grafik gelombang EEG *real-time*, dashboard pemantauan dengan widget *draggable* dan *collapsible*
 - **UI**: Mantine UI Component Library dengan dukungan *dark mode*
 - **State Management**: Zustand untuk pengelolaan state reaktif
@@ -78,8 +78,8 @@ Fumorive dirancang dengan arsitektur modular sehingga dapat diperluas untuk inte
 |----------|---------------|-----------------|
 | **Arduino Mega 2560** | Arduino IDE, C/C++ | Mikrokontroler utama untuk membaca sensor fisik (tekanan, getaran) dan mengontrol aktuator (vibration motor, buzzer, LED) |
 | **ESP32-WROOM-32** | ESP-IDF / Arduino Core, Wi-Fi + BLE | Mikrokontroler dengan konektivitas nirkabel untuk komunikasi data sensor ke backend melalui protokol MQTT/HTTP |
-| **Steering Wheel (Logitech G29/G923)** | DirectInput / XInput API, Babylon.js Gamepad API | Kontrol kemudi fisik dengan force feedback yang merespons secara adaptif terhadap tingkat kelelahan |
-| **Pedal Set (Logitech G29/G923)** | HID USB Interface | Input akselerasi dan pengereman untuk simulator mengemudi |
+| **Racing Wheel (Sades Ryunix Kaiju XR1)** | Browser **Gamepad API (X-Input)** — *sudah diimplementasikan*; Force Feedback via WebHID *direncanakan* | Kontrol kemudi fisik (setir, gas, rem, paddle pemindah gigi) dengan kalibrasi sumbu/pedal; umpan balik getaran adaptif menyusul |
+| **Pedal Set (satu paket Kaiju XR1)** | Browser Gamepad API | Input akselerasi dan pengereman untuk simulator — *sudah terintegrasi* |
 | **Joystick/Gamepad** | Web Gamepad API, Bluetooth HID | Input kontrol alternatif untuk navigasi simulator |
 | **Vibration Motor (ERM/LRA)** | PWM output Arduino/ESP32 | Umpan balik haptic pada steering wheel saat kelelahan terdeteksi |
 | **WS2812B Addressable LED Strip** | FastLED / NeoPixel library | Visualisasi fisik tingkat kelelahan melalui gradasi warna (hijau → kuning → merah) |
@@ -94,7 +94,7 @@ Integrasi komponen IoT ini akan menggunakan arsitektur berikut:
 
 **Fitur Utama Produk:**
 1. Monitoring kelelahan multimodal *real-time* (EEG + Face Recognition)
-2. Simulator mengemudi 3D dengan fisika realistis
+2. Simulator mengemudi 3D dengan **kota prosedural dinamis** (Ngawi City), lalu lintas NPC beragam (sedan/SUV/van/bus/truk), pejalan kaki, aturan lalu lintas (lampu merah, zebra cross, polisi tidur), dan **sistem pelanggaran berskor**
 3. Sistem peringatan bertingkat (*progressive alert*) — 4 level: info, warning, danger, critical
 4. Dashboard analitik dengan visualisasi gelombang otak dan metrik wajah
 5. Kalibrasi personal untuk setiap pengemudi
@@ -102,7 +102,32 @@ Integrasi komponen IoT ini akan menggunakan arsitektur berikut:
 7. Perekaman dan pemutaran ulang sesi (*session recording & playback*)
 8. Ekspor data sesi dalam format CSV dan JSON untuk analisis lanjutan
 9. Autentikasi pengguna dengan dukungan Google OAuth
-10. Rencana integrasi perangkat keras: steering wheel, pedal, joystick, sensor IoT dan mikrokontroler untuk umpan balik haptic dan monitoring tambahan
+10. Dukungan **setir balap fisik (Kaiju XR1)** & pedal via browser Gamepad API (X-Input) dengan kalibrasi; rencana lanjutan: force feedback (WebHID), sensor IoT & mikrokontroler untuk umpan balik haptic dan monitoring tambahan
+11. Preset kualitas grafis (Low / Medium / High) yang dapat dipilih untuk menyeimbangkan visual dan performa
+
+### Detail Simulator Mengemudi (Kondisi Saat Ini)
+
+Simulator mengemudi 3D Fumorive telah berkembang menjadi lingkungan berkendara yang kaya dan realistis:
+
+**Peta & Lingkungan**
+- **Solo City** dan **Sriwedari Park** — peta buatan tangan (hand-authored).
+- **Ngawi City** — kota **prosedural dinamis**: jaringan jalan, blok bangunan, dan rute checkpoint di-generate acak (*seeded PRNG*) setiap sesi sehingga selalu berbeda, terbagi menjadi **3 level** dengan kepadatan berjenjang.
+- Bangunan bervariasi: **rumah** (atap limas), **ruko/toko** (etalase + papan nama), **apartemen**, dan **gedung kantor** ber-jendela; dilengkapi pohon, taman, lampu jalan, pembatas jalan, kursi taman, marka jalan (garis putus-putus & tepi), serta properti jalan lain.
+- Fitur **waktu hari (*time-of-day*)** yang memengaruhi pencahayaan dan suasana.
+
+**Lalu Lintas & Aturan Jalan**
+- **Kendaraan NPC** ber-AI (mengikuti lajur kiri, menjaga jarak/mengikuti kendaraan di depan, menyalip, menaati lampu merah) dengan tipe beragam berukuran realistis: **sedan, hatchback, SUV, van, bus, dan truk**.
+- **Pejalan kaki** yang menyeberang di zebra cross serta berjalan di trotoar/taman.
+- **Aturan lalu lintas**: lampu lalu lintas (dengan deteksi menerobos lampu merah), **zebra cross**, **polisi tidur** (dengan efek guncangan), serta deteksi **melawan arah** dan **keluar jalur**.
+- **Sistem pelanggaran & skor**: tiap pelanggaran (menabrak objek/kendaraan/pejalan kaki, melawan arah, keluar jalur, menerobos lampu merah) dicatat dengan bobot poin dan peringatan visual — dapat menjadi metrik perilaku berkendara yang dikaitkan dengan tingkat kelelahan.
+- **Navigasi checkpoint**: rute multi-checkpoint dengan panah penunjuk arah dan estimasi jarak.
+
+**Kontrol & Kendaraan**
+- Tiga mode kemudi: **keyboard**, **mouse**, dan **setir balap fisik** — setir diintegrasikan lewat browser Gamepad API (mode **X-Input**) dengan kalibrasi sumbu/pedal (gas, rem, paddle pemindah gigi).
+- Model fisika kendaraan **kinematik berbasis momentum** dengan transmisi otomatis/manual, rasio kemudi realistis (setir hingga ~540° = ~15:1 terhadap sudut roda), speedometer, dan indikator gigi.
+
+**Kualitas Grafis & Performa**
+- Tiga preset grafis (**Low / Medium / High**) yang dapat dipilih pengguna untuk menyeimbangkan kualitas visual dan performa, dengan bayangan, *tone mapping* HDR, serta optimasi (penggabungan mesh, pembekuan mesh statis, dan **pemuatan bertahap** agar tidak nge-*lag*).
 
 ### Arsitektur Integrasi Sistem (Current Condition)
 
@@ -181,7 +206,7 @@ Seluruh kode sumber, desain arsitektur, dan algoritma deteksi kelelahan multimod
 1. **Ketergantungan pada Muse 2** — Kualitas sinyal EEG dari perangkat konsumer tidak setinggi perangkat EEG medis
 2. **Kebutuhan Internet** — Arsitektur web-based memerlukan koneksi jaringan untuk komunikasi antar komponen (meskipun face detection berjalan offline)
 3. **Kenyamanan Pemakaian** — Penggunaan headband EEG dalam jangka panjang perlu evaluasi kenyamanan lebih lanjut
-4. **Tahap Awal Pengembangan** — Beberapa fitur lanjutan (integrasi IoT, steering wheel) masih dalam tahap rencana pengembangan
+4. **Sebagian Fitur Lanjutan Belum Lengkap** — Integrasi IoT (mikrokontroler & aktuator) dan *force feedback* pada setir masih dalam tahap rencana pengembangan (input setir, pedal, dan pemindah gigi sudah berjalan via Gamepad API)
 
 ### Keterbaruan Produk Inovasi
 
