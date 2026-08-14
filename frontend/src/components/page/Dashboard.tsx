@@ -471,7 +471,7 @@ const Dashboard = () => {
                                             title: 'Setup EEG Headset (Muse 2)',
                                             desc: (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                    <span>Download dan ekstrak EEG Server Package. Lalu double-click file <code>start_eeg.bat</code>. Kenakan Muse 2 dan pastikan Bluetooth aktif.</span>
+                                                    <span>Download dan ekstrak EEG Server Package. Lalu, buka file panduan yang tersedia di dalam folder tersebut untuk petunjuk lebih lanjut.</span>
                                                     <a
                                                         href={EEG_DOWNLOAD_URL}
                                                         target="_blank"
