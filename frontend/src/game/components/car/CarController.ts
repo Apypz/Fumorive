@@ -30,9 +30,9 @@ import {
 } from '../../config'
 import { CarPhysics } from './CarPhysics'
 import { CarCameraManager } from './CarCameraManager'
-import { getWheelMapping } from '../../utils/wheelConfig'
 import type { PedalSource } from '../../utils/wheelConfig'
-import { getActiveGamepad, hasGamepad } from '../../utils/gamepadRegistry'
+import { getActiveWheel } from '../../utils/wheelProfiles'
+import { hasGamepad } from '../../utils/gamepadRegistry'
 import { DriftParticleSystem } from './DriftParticleSystem'
 import { EngineAudio } from '../../engine/EngineAudio'
 import type { SimpleMap } from '../SimpleMap'
@@ -67,13 +67,12 @@ export const DEFAULT_CAMERA_CONFIG_LEGACY: CameraPositionConfig = {
   },
 }
 
-// ── Kaiju XR1 racing wheel → Gamepad API ────────────────────────────────────
-// Steering axis and pedals are configured per mode in wheelConfig (calibrated
-// via the wheel overlay). These buttons are the shared paddle/horn defaults.
-const WHEEL_SHIFT_UP_BUTTON = 5  // RB / right paddle
-const WHEEL_SHIFT_DOWN_BUTTON = 4 // LB / left paddle
-const WHEEL_HORN_BUTTON = 0      // A
+// ── Racing wheel (Kaiju XR1 / Logitech G29) → Gamepad API ───────────────────
+// Steering axis, pedals and paddle/horn buttons come from the wheel profile
+// matching the connected device (wheelProfiles), calibrated via the overlay.
 const WHEEL_DEADZONE = 0.06
+// An axis pedal's rest is only trusted once it sits at an end of its travel.
+const PEDAL_REST_MIN = 0.9
 
 export class CarController {
   private scene: Scene
@@ -120,6 +119,8 @@ export class CarController {
   private wheelHornPrev = false
   // Captured rest value per pedal axis, for auto-ranged axis pedals.
   private pedalRest = new Map<number, number>()
+  // Pedal sources the rest values were captured for; re-baselined on change.
+  private pedalMapKey = ''
 
   constructor(
     scene: Scene, 
@@ -562,26 +563,33 @@ export class CarController {
   }
 
   /**
-   * Read the Kaiju XR1 each frame while in wheel mode and translate it into the
-   * same input the keyboard/mouse produce. Steering axis and pedal sources come
-   * from the mapping calibrated in the wheel overlay (X-Input defaults).
+   * Read the racing wheel each frame while in wheel mode and translate it into
+   * the same input the keyboard/mouse produce. Steering axis, pedal sources and
+   * buttons come from the matching wheel profile (Kaiju XR1 or Logitech G29).
    */
   private updateWheelInput(_dt: number): void {
     if (!this.isWheelMode()) return
 
-    const map = getWheelMapping()
-    const gp = getActiveGamepad(map.gamepadIndex)
-    if (!gp) {
+    const wheel = getActiveWheel()
+    if (!wheel) {
       // Wheel vanished mid-drive — neutralise inputs.
       this.input.steering = 0
       this.input.throttle = 0
       return
     }
+    const { gp, profile, mapping: map } = wheel
 
     // Steering from the configured wheel axis, with a small deadzone around centre.
     let steer = (gp.axes[map.steerAxis] ?? 0) * (map.steerInvert ? -1 : 1)
     if (Math.abs(steer) < WHEEL_DEADZONE) steer = 0
     this.input.steering = Math.max(-1, Math.min(1, steer))
+
+    // Pedals recalibrated in the overlay (e.g. a different wheel) — drop old rest values.
+    const mapKey = `${profile.id}:${gp.index}:${map.gas.type}${map.gas.index}:${map.brake.type}${map.brake.index}`
+    if (mapKey !== this.pedalMapKey) {
+      this.pedalMapKey = mapKey
+      this.pedalRest.clear()
+    }
 
     // Gas pedal drives forward; brake pedal decelerates proportionally (0 = no brake, 1 = full brake).
     const gas = this.readPedal(gp, map.gas)
@@ -607,11 +615,11 @@ export class CarController {
     this.input.brake = this.input.throttle < 0 ? 0 : brake
 
     // Paddle shifters → manual gear up/down (no-op in automatic).
-    this.wheelButtonEdge(gp, WHEEL_SHIFT_UP_BUTTON, () => this.physics.shiftUp())
-    this.wheelButtonEdge(gp, WHEEL_SHIFT_DOWN_BUTTON, () => this.physics.shiftDown())
+    this.wheelButtonEdge(gp, profile.buttons.shiftUp, () => this.physics.shiftUp())
+    this.wheelButtonEdge(gp, profile.buttons.shiftDown, () => this.physics.shiftDown())
 
     // Horn button (play on press, stop on release).
-    const hornNow = gp.buttons[WHEEL_HORN_BUTTON]?.pressed ?? false
+    const hornNow = gp.buttons[profile.buttons.horn]?.pressed ?? false
     if (hornNow && !this.wheelHornPrev) this.engineAudio.playHorn()
     else if (!hornNow && this.wheelHornPrev) this.engineAudio.stopHorn()
     this.wheelHornPrev = hornNow
@@ -625,21 +633,23 @@ export class CarController {
   }
 
   /**
-   * Axis pedals rest at one end of [-1, 1] and travel to the other. (Used when a
-   * pedal is calibrated to an axis instead of a trigger button.)
-   * The resting value is captured on first read after a mode switch; the pedal
-   * reads as the deflection from rest toward the far end, so it is 0 when
-   * released and 1 when fully pressed regardless of which end is the rest
-   * position (no manual invert needed).
+   * Axis pedals rest at one end of [-1, 1] and travel to the other (DirectInput
+   * wheels such as the Logitech G29 rest at +1). The rest end is captured on the
+   * first read that sits at an end of travel — DirectInput axes can report 0
+   * until the pedal is first touched, and capturing that would make a released
+   * pedal read as half/fully pressed (a stuck brake blocks the gas). The pedal
+   * reads as the deflection from rest toward the far end: 0 released, 1 fully
+   * pressed, whichever end is the rest (no manual invert needed).
    */
   private readPedalAxis(gp: Gamepad, idx: number): number {
     const raw = gp.axes[idx] ?? 0
-    if (!this.pedalRest.has(idx)) this.pedalRest.set(idx, raw)
-    const rest = this.pedalRest.get(idx)!
-    const far = rest <= 0 ? 1 : -1
-    const range = far - rest
-    if (Math.abs(range) < 0.1) return 0
-    return (raw - rest) / range
+    let rest = this.pedalRest.get(idx)
+    if (rest === undefined) {
+      if (Math.abs(raw) < PEDAL_REST_MIN) return 0
+      rest = raw > 0 ? 1 : -1
+      this.pedalRest.set(idx, rest)
+    }
+    return (rest - raw) / (2 * rest)
   }
 
   // === PUBLIC GETTERS ===

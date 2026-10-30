@@ -1,20 +1,17 @@
 /**
  * WheelDebugOverlay
  * =================
- * Live diagnostics + calibration for the racing wheel (Kaiju XR1, X-Input).
- * Renders while any gamepad is connected. It scans every connected gamepad and,
- * when you move a control, reports exactly which device + axis/button changed —
- * then lets you assign that input to steering / gas / brake. Saved to
+ * Live diagnostics + calibration for the racing wheel (Kaiju XR1 / Logitech
+ * G29). Renders while any gamepad is connected. It scans every connected
+ * gamepad and, when you move a control, reports exactly which device +
+ * axis/button changed — then lets you assign that input to steering / gas /
+ * brake. Each device kind keeps its own mapping (see wheelProfiles), saved to
  * localStorage and picked up by the car controller live.
  */
 
 import { useEffect, useRef, useState } from 'react'
-import {
-  getWheelMapping,
-  setWheelMapping,
-  resetWheelMapping,
-  type PedalSource,
-} from '../game/utils/wheelConfig'
+import type { PedalSource } from '../game/utils/wheelConfig'
+import { getActiveWheel, profileFor, selectWheelDevice } from '../game/utils/wheelProfiles'
 
 interface PadSnapshot {
   id: string
@@ -94,34 +91,44 @@ export function WheelDebugOverlay() {
     )
   }
 
-  const map = getWheelMapping()
   const pad = pads.find((p) => p.index === selected) ?? pads[0]
+  // The mapping shown/edited is the profile of the selected device tab.
+  const profile = profileFor(pad)
+  const map = profile.getMapping()
+  const driving = getActiveWheel()
+  // Non-standard (DirectInput) wheels expose pedals as axes; trigger-button
+  // pedal sources read nothing on them, so the car never moves.
+  const needsPedalCalib =
+    pad.mapping !== 'standard' && (map.gas.type === 'button' || map.brake.type === 'button')
 
   const assignFromMoved = (role: 'steer' | 'gas' | 'brake') => {
     if (!moved) return
+    const movedPad = pads.find((p) => p.index === moved.gp)
+    if (!movedPad) return
+    const target = profileFor(movedPad)
+    selectWheelDevice(moved.gp, target)
+    setSelected(moved.gp)
     if (role === 'steer') {
       if (moved.kind !== 'AX') return
-      setWheelMapping({ gamepadIndex: moved.gp, steerAxis: moved.idx })
+      target.setMapping({ steerAxis: moved.idx })
       return
     }
-    const cur = getWheelMapping()
+    const cur = target.getMapping()
     const src: PedalSource = {
       type: moved.kind === 'AX' ? 'axis' : 'button',
       index: moved.idx,
       invert: (role === 'gas' ? cur.gas : cur.brake).invert,
     }
-    if (role === 'gas') setWheelMapping({ gamepadIndex: moved.gp, gas: src })
-    else setWheelMapping({ gamepadIndex: moved.gp, brake: src })
+    if (role === 'gas') target.setMapping({ gas: src })
+    else target.setMapping({ brake: src })
   }
 
-  const toggleSteerInvert = () =>
-    setWheelMapping({ steerInvert: !getWheelMapping().steerInvert })
+  const toggleSteerInvert = () => profile.setMapping({ steerInvert: !map.steerInvert })
   const togglePedalInvert = (role: 'gas' | 'brake') => {
-    const cur = getWheelMapping()
-    const src = role === 'gas' ? cur.gas : cur.brake
+    const src = role === 'gas' ? map.gas : map.brake
     const next: PedalSource = { ...src, invert: !src.invert }
-    if (role === 'gas') setWheelMapping({ gas: next })
-    else setWheelMapping({ brake: next })
+    if (role === 'gas') profile.setMapping({ gas: next })
+    else profile.setMapping({ brake: next })
   }
 
   return (
@@ -132,6 +139,12 @@ export function WheelDebugOverlay() {
           ✕
         </button>
       </div>
+
+      {needsPedalCalib && (
+        <div style={styles.warnBox}>
+          Device ini bukan X-Input — pedal ada di AXES. Injak gas lalu klik "→ Gas", injak rem lalu klik "→ Rem".
+        </div>
+      )}
 
       {/* Live "what moved" + assign */}
       <div style={styles.movedBox}>
@@ -164,12 +177,12 @@ export function WheelDebugOverlay() {
       </div>
 
       {/* Current mapping summary for the selected mode */}
-      <div style={styles.sectionLabel}>MAPPING (X-INPUT)</div>
+      <div style={styles.sectionLabel}>MAPPING ({profile.name.toUpperCase()})</div>
       <MapRow label="Setir" value={`GP${map.gamepadIndex ?? 'auto'} · AX${map.steerAxis}`} inverted={map.steerInvert} onInvert={toggleSteerInvert} />
       <MapRow label="Gas" value={srcLabel(map.gas)} inverted={map.gas.invert} onInvert={() => togglePedalInvert('gas')} />
       <MapRow label="Rem" value={srcLabel(map.brake)} inverted={map.brake.invert} onInvert={() => togglePedalInvert('brake')} />
-      <button style={styles.resetBtn} onClick={() => resetWheelMapping()}>
-        ↺ Reset ke default X-Input
+      <button style={styles.resetBtn} onClick={() => profile.resetMapping()}>
+        ↺ Reset ke default {profile.name}
       </button>
 
       {/* Device list */}
@@ -183,25 +196,26 @@ export function WheelDebugOverlay() {
             title={p.id}
           >
             GP{p.index}
-            {map.gamepadIndex === p.index ? ' ●' : ''}
+            {driving?.gp.index === p.index ? ' ●' : ''}
           </button>
         ))}
       </div>
       <div style={styles.device} title={pad.id}>
         {pad.id} · {pad.axes.length} axes / {pad.buttons.length} btn
       </div>
+      <div style={styles.device}>Profil: {profile.name}</div>
       <button
-        style={{ ...styles.useDeviceBtn, ...(map.gamepadIndex === pad.index ? styles.useDeviceBtnActive : {}) }}
-        onClick={() => setWheelMapping({ gamepadIndex: pad.index })}
+        style={{ ...styles.useDeviceBtn, ...(driving?.gp.index === pad.index ? styles.useDeviceBtnActive : {}) }}
+        onClick={() => selectWheelDevice(pad.index, profile)}
       >
-        {map.gamepadIndex === pad.index ? '● Device kontrol mode ini' : 'Pakai device ini'}
+        {driving?.gp.index === pad.index ? '● Device kontrol mode ini' : 'Pakai device ini'}
       </button>
 
       {/* Axes */}
       <div style={styles.sectionLabel}>AXES</div>
       {pad.axes.length === 0 && <div style={styles.movedNone}>device ini tidak punya axis</div>}
       {pad.axes.map((v, i) => {
-        const isSteer = map.gamepadIndex === pad.index && i === map.steerAxis
+        const isSteer = driving?.gp.index === pad.index && i === map.steerAxis
         const pct = (Math.max(-1, Math.min(1, v)) * 0.5 + 0.5) * 100
         return (
           <div key={i} style={styles.axisRow}>
@@ -223,7 +237,10 @@ export function WheelDebugOverlay() {
             <span style={styles.axisVal}>{v.toFixed(2)}</span>
             <button
               style={styles.setBtn}
-              onClick={() => setWheelMapping({ gamepadIndex: pad.index, steerAxis: i })}
+              onClick={() => {
+                selectWheelDevice(pad.index, profile)
+                profile.setMapping({ steerAxis: i })
+              }}
             >
               Setir
             </button>
@@ -319,6 +336,16 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '8px',
     padding: '7px 9px',
     marginBottom: '8px',
+  },
+  warnBox: {
+    background: 'rgba(245, 158, 11, 0.15)',
+    border: '1px solid rgba(245, 158, 11, 0.5)',
+    borderRadius: '8px',
+    padding: '6px 9px',
+    marginBottom: '8px',
+    fontSize: '10px',
+    color: '#fcd34d',
+    lineHeight: 1.4,
   },
   movedLabel: { fontSize: '10px', color: '#93c5fd', marginBottom: '3px' },
   movedValue: { fontSize: '14px', fontWeight: 800, fontFamily: 'monospace', color: '#bfdbfe' },
