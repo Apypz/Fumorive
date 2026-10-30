@@ -24,14 +24,25 @@ CHANNEL_LABELS = ["TP9", "AF7", "AF8", "TP10", "AUX"]
 # PENTING: nilai integer enum board BEDA antar versi BrainFlow. Di beberapa
 # versi, id 21/22 adalah varian *BLED112* (butuh USB dongle) BUKAN native BLE.
 # Karena itu id diambil langsung dari enum BoardIds agar selalu benar:
-#   MUSE_S_BOARD / MUSE_2_BOARD = native BLE Windows (tanpa dongle, incl. Athena)
+#   MUSE_S_ATHENA_BOARD / MUSE_S_BOARD / MUSE_2_BOARD = native BLE Windows (tanpa dongle)
+# Muse S Athena memakai protokol BLE berbeda dari Muse S lama, sehingga punya
+# board id sendiri (butuh BrainFlow >= 5.22). MUSE_S_BOARD TIDAK bisa dipakai
+# untuk Athena.
 from brainflow.board_shim import BoardIds
 
-MUSE_2_BOARD_ID = BoardIds.MUSE_2_BOARD.value   # native BLE
-MUSE_S_BOARD_ID = BoardIds.MUSE_S_BOARD.value   # native BLE (termasuk Muse S Athena)
+MUSE_S_ATHENA_BOARD_ID = BoardIds.MUSE_S_ATHENA_BOARD.value  # native BLE (Muse S Athena)
+MUSE_S_BOARD_ID = BoardIds.MUSE_S_BOARD.value                # native BLE (Muse S Gen 1/2)
+MUSE_2_BOARD_ID = BoardIds.MUSE_2_BOARD.value                # native BLE
 
-# Urutan board yang dicoba saat auto-deteksi headband (Muse S didahulukan).
-BOARD_ID_CANDIDATES = [MUSE_S_BOARD_ID, MUSE_2_BOARD_ID]
+# Urutan board yang dicoba saat auto-deteksi headband (Athena didahulukan).
+BOARD_ID_CANDIDATES = [MUSE_S_ATHENA_BOARD_ID, MUSE_S_BOARD_ID, MUSE_2_BOARD_ID]
+
+# Opsi tambahan BrainFlow (params.other_info) per board.
+# Preset p1041 + low_latency mengikuti konfigurasi Neuralise yang sudah
+# terverifikasi jalan dengan Muse S Athena.
+BOARD_OTHER_INFO = {
+    MUSE_S_ATHENA_BOARD_ID: "preset=p1041;low_latency=true",
+}
 
 # MAC address Muse (kosong = auto-discover via native BLE).
 MUSE_MAC_ADDRESS = ""

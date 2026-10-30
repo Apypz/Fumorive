@@ -57,7 +57,8 @@ class EEGAcquisition:
             Dipertahankan untuk kompatibilitas API.
         board_id_candidates : list[int], optional
             Urutan BrainFlow board id yang dicoba saat auto-deteksi.
-            Default mengikuti config.BOARD_ID_CANDIDATES (Muse S lalu Muse 2).
+            Default mengikuti config.BOARD_ID_CANDIDATES (Muse S Athena,
+            Muse S, lalu Muse 2).
         mac_address : str
             MAC address Muse. Kosong = auto-discover via native BLE.
         """
@@ -117,6 +118,9 @@ class EEGAcquisition:
             params.timeout = self.timeout
             if self.mac_address:
                 params.mac_address = self.mac_address
+            other_info = config.BOARD_OTHER_INFO.get(board_id)
+            if other_info:
+                params.other_info = other_info
 
             board = BoardShim(board_id, params)
             try:

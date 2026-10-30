@@ -25,6 +25,9 @@ for board_id in config.BOARD_ID_CANDIDATES:
     params.timeout = config.STREAM_TIMEOUT
     if config.MUSE_MAC_ADDRESS:
         params.mac_address = config.MUSE_MAC_ADDRESS
+    other_info = config.BOARD_OTHER_INFO.get(board_id)
+    if other_info:
+        params.other_info = other_info
 
     board = BoardShim(board_id, params)
     try:

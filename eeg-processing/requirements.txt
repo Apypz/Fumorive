@@ -10,7 +10,8 @@
 # ===========================
 # CORE EEG DEPENDENCIES
 # ===========================
-brainflow>=5.7.0           # Native BLE acquisition for Muse 2 / Muse S (Athena)
+brainflow>=5.22.2          # Native BLE acquisition for Muse 2 / Muse S / Muse S Athena
+                            # (MUSE_S_ATHENA_BOARD butuh >= 5.22)
 
 # ===========================
 # SIGNAL PROCESSING

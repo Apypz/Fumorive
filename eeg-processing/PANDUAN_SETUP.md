@@ -59,7 +59,7 @@ Server akan:
 Saat berhasil, terminal akan menampilkan log seperti:
 
 ```
-[SUCCESS] Connected to MUSE_S_BOARD (Board 21)
+[SUCCESS] Connected to MUSE_S_ATHENA_BOARD (Board 67)
           Sampling rate : 256.0 Hz
 ```
 
@@ -98,7 +98,7 @@ Untuk mengecek apakah Muse sudah bisa terdeteksi sebelum menjalankan server:
 Jika berhasil akan muncul, misalnya:
 
 ```
-✅ Found MUSE_S_BOARD (board id 21)
+✅ Found MUSE_S_ATHENA_BOARD (board id 67)
    EEG channels: 4
    Rate: 256 Hz
 ```
