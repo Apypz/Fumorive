@@ -68,6 +68,19 @@ export async function fetchWithAuth(
 }
 
 /**
+ * Get access token, refreshing it first if it has expired.
+ * For callers that build their own requests (e.g. axios) instead of fetchWithAuth.
+ */
+export async function getValidAccessToken(): Promise<string | null> {
+    const token = getAccessToken();
+    if (token && isTokenExpired(token)) {
+        const refreshed = await refreshAccessToken();
+        return refreshed ? getAccessToken() : null;
+    }
+    return token;
+}
+
+/**
  * Refresh access token using refresh token
  */
 async function refreshAccessToken(): Promise<boolean> {

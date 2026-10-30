@@ -4,7 +4,7 @@
  */
 
 import axios from 'axios';
-import { getAccessToken } from '../utils/auth';
+import { getValidAccessToken } from './client';
 import { API_BASE_URL } from '../config/api';
 
 // Base URL for session API
@@ -80,7 +80,7 @@ export const sessionApi = {
      * Create a new session
      */
     create: async (data: SessionCreate): Promise<SessionResponse> => {
-        const token = getAccessToken();
+        const token = await getValidAccessToken();
         if (!token) {
             console.error('❌ No access token found in localStorage');
             throw new Error('Not authenticated. Please log in first.');
@@ -112,7 +112,7 @@ export const sessionApi = {
      * Get session by ID
      */
     get: async (sessionId: string): Promise<SessionResponse> => {
-        const token = getAccessToken();
+        const token = await getValidAccessToken();
         if (!token) {
             throw new Error('Not authenticated. Please log in first.');
         }
@@ -128,7 +128,7 @@ export const sessionApi = {
      * End a session
      */
     end: async (sessionId: string): Promise<SessionResponse> => {
-        const token = getAccessToken();
+        const token = await getValidAccessToken();
         if (!token) {
             throw new Error('Not authenticated. Please log in first.');
         }
@@ -148,7 +148,7 @@ export const sessionApi = {
      * Complete a session with final data
      */
     complete: async (sessionId: string, data?: SessionUpdate): Promise<SessionResponse> => {
-        const token = getAccessToken();
+        const token = await getValidAccessToken();
         if (!token) {
             throw new Error('Not authenticated. Please log in first.');
         }
@@ -183,7 +183,7 @@ export const sessionApi = {
      * Update a session
      */
     update: async (sessionId: string, data: SessionUpdate): Promise<SessionResponse> => {
-        const token = getAccessToken();
+        const token = await getValidAccessToken();
         if (!token) {
             throw new Error('Not authenticated. Please log in first.');
         }
@@ -203,7 +203,7 @@ export const sessionApi = {
      * List user's sessions with pagination
      */
     list: async (page: number = 1, pageSize: number = 20, status?: string): Promise<SessionListResponse> => {
-        const token = getAccessToken();
+        const token = await getValidAccessToken();
         if (!token) {
             throw new Error('Not authenticated. Please log in first.');
         }
@@ -231,7 +231,7 @@ export const sessionApi = {
      * Delete a session
      */
     delete: async (sessionId: string): Promise<void> => {
-        const token = getAccessToken();
+        const token = await getValidAccessToken();
         if (!token) {
             throw new Error('Not authenticated. Please log in first.');
         }
